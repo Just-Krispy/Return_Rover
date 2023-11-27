@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Rover</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        p {
+            color: #555;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Welcome to Return Rover</h1>
+        </header>
+        <main>
+            <p>This is the main page for Return Rover.</p>
+            <p>Check out the live site: <a href="https://just-krispy.github.io/Return_Rover/" target="_blank">Return Rover on GitHub Pages</a></p>
+            <!-- Add more content or sections as needed -->
+        </main>
+        <footer>
+            <p>&copy; 2023 Return Rover. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
