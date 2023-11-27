@@ -32,11 +32,15 @@
         <main>
             <p>This is the main page for Return Rover.</p>
             <p>Check out the live site: <a href="https://just-krispy.github.io/Return_Rover/" target="_blank">Return Rover on GitHub Pages</a></p>
+            <button onclick="gatherInformation()">Click here to provide information</button>
             <!-- Add more content or sections as needed -->
         </main>
         <footer>
             <p>&copy; 2023 Return Rover. All rights reserved.</p>
         </footer>
     </div>
+
+    <!-- Include the custom.js script -->
+    <script src="custom.js"></script>
 </body>
 </html>
