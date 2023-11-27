@@ -1,6 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
     // Function to display prompts and gather user information
     function gatherInformation() {
+        // ... existing code ...
+    }
+
+    // Get the button element
+    var button = document.querySelector('button');
+
+    // Add an event listener to the button
+    button.addEventListener('click', gatherInformation);
+});document.addEventListener("DOMContentLoaded", function() {
+    // Function to display prompts and gather user information
+    function gatherInformation() {
         var name = prompt("Please enter your name:");
         var email = prompt("Please enter your email:");
         var phone = prompt("Please enter your phone number:");
