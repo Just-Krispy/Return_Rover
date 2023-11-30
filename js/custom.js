@@ -1,42 +1,59 @@
 document.addEventListener("DOMContentLoaded", function() {
     console.log("DOM is ready!");
 
-    // Function to display prompts and gather user information
-    function gatherInformation() {
-        var name = prompt("Please enter your name:");
-        var email = prompt("Please enter your email:");
-        var phone = prompt("Please enter your phone number:");
+    const chatContainer = document.getElementById("chat-container");
+    const userInput = document.getElementById("user-input");
 
-        // Validate email format
-        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            alert("Invalid email format. Please enter a valid email address.");
-            return;
+    function appendMessage(message, isSystem) {
+        const messageText = isSystem ? ` ${message}` : ` ${message}`;
+        const messageParagraph = document.createElement("p");
+        messageParagraph.textContent = messageText;
+        messageParagraph.className = isSystem ? "system-message" : "user-response";
+
+        chatContainer.insertBefore(messageParagraph, userInput);
+
+        const lastMessage = document.querySelector("#chat-container p:last-child");
+        if (lastMessage) {
+            lastMessage.classList.add("success-message");
         }
-
-        // Validate phone number format
-        var phoneRegex = /^\d{10}$/;
-        if (!phoneRegex.test(phone)) {
-            alert("Invalid phone number format. Please enter a 10-digit phone number.");
-            return;
-        }
-
-        // Ask for proof of purchase with file type restrictions
-        var proofOfPurchase = prompt("Please upload proof of purchase (only .jpeg and .pdf files are accepted):");
-        var fileExtension = proofOfPurchase.substring(proofOfPurchase.lastIndexOf('.') + 1).toLowerCase();
-
-        if (fileExtension !== "jpeg" && fileExtension !== "pdf") {
-            alert("Invalid file type. Only .jpeg and .pdf files are accepted.");
-            return;
-        }
-
-        // Display gathered information
-        alert("Name: " + name + "\nEmail: " + email + "\nPhone: " + phone + "\nProof of Purchase: " + proofOfPurchase);
     }
 
-    // Get the button element using its id
-    var button = document.getElementById('infoButton');
+    function handleUserResponse(response) {
+        // Handle user responses based on your logic
+        // For example, you can call a function to process the response
+        processUserResponse(response);
+    }
 
-    // Add an event listener to the button
-    button.addEventListener('click', gatherInformation);
+    function processUserResponse(response) {
+        // Implement your logic to process the user's response
+        // You can adapt the logic from the example you provided
+        // For now, let's append the user's response to the chat
+        appendMessage(response, false);
+
+        // Clear the input field after processing the response
+        userInput.value = "";
+
+        // Scroll to the bottom of the chat
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    userInput.addEventListener("keyup", function(event) {
+        if (event.key === "Enter" || event.key === "Return") {
+            event.preventDefault();
+            const response = userInput.value.trim();
+            if (response !== "") {
+                appendMessage(response, false);
+                handleUserResponse(response);
+            }
+        }
+    });
+
+    // Initial system message
+    appendMessage("Welcome! Let's get started.", true);
+
+    // You can start the conversation or ask the first question here
+    // For example:
+    // appendMessage("Please enter your name:", true);
+
+    // This is just an example; you can customize the conversation flow based on your needs
 });

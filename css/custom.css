@@ -1,13 +1,14 @@
 body {
     margin: 0;
     padding: 0;
-    background: linear-gradient(180deg, #ffffff, #3dbcf3);
+    background: linear-gradient(180deg, #ffffff, #ffffff);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    text-size-adjust: 100%;
     text-align: center;
-    font-family: fantasy;
+    font-family: Georgia, 'Times New Roman', Times, serif;
     font-size: 2em;
 }
 
@@ -17,8 +18,10 @@ body {
     }
 
     h1 {
-        font-size: 1em;
+        color: #fff;
+        font-size: 4em;
         font-family: fantasy;
+        margin-top: 40px;
     }
 
     .logo {
@@ -29,30 +32,29 @@ body {
 
 .container {
     max-width: 100%;
-    text-align: center; /* Center the text inside the container */
+    text-align: center;
 }
 
+
 #chat-container {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgb(255, 255, 255);
     text-align: center;
-    border: 1px solid #ccc;
+    border: px solid #040000;
     padding: 20px;
     max-width: 800px;
     max-height: 70vh;
     overflow-y: auto;
     box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
     border-radius: 20px;
+    margin: 20px auto;
 }
 
-#chat-container p {
-    text-align: center;
-    font-size: 1em;
-    margin: 0;
-}
+
 
 h1 {
     color: #fff;
     font-size: 4em;
+    font-family: fantasy;
     margin-top: 40px;
 }
 
@@ -64,13 +66,13 @@ img {
 #user-input {
     width: 80%;
     padding: 20px;
-    color: black;
+    color: rgb(0, 0, 0);
     font-size: 1em;
     border-radius: 20px;
 }
 
 .system-message {
-    color: #080300;
+    color: #000000;
     font-size: 1em;
 }
 
@@ -78,32 +80,25 @@ img {
     color: red !important;
 }
 
-/* Style for the "click here to provide information" button with rounded corners and updated text */
 #infoButton {
-    border: rgb(0, 0, 0);
+    border: none;
     padding: 25px 30px;
     font-size: 1.2em;
-    border-radius: 25px; /* Set border-radius for rounded corners */
+    border-radius: 25px;
     background-color: #fbfbfb;
     color: rgb(255, 255, 255);
     cursor: pointer;
     transition: background-color 0.3s;
 }
 
-#infoButton:hover {
-    background-color: #45a049;
-}
-
-/* Center the logo image */
 .logo {
     text-align: center;
-    width: 33.33%;
-    margin: 20px auto; /* Center the image horizontally and add space at the top */
+    width: 70%;
+    margin: 20px auto;
 }
 
-/* Center the footer text */
 .footer {
     margin-top: 50px;
     text-align: center;
-    color: #fff;
+    color: #060000;
 }
