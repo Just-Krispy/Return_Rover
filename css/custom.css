@@ -85,7 +85,7 @@ img {
     font-size: 1.2em;
     border-radius: 25px; /* Set border-radius for rounded corners */
     background-color: #fbfbfb;
-    color: rgb(0, 0, 0);
+    color: rgb(255, 255, 255);
     cursor: pointer;
     transition: background-color 0.3s;
 }
