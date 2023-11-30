@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM is ready!");
+
     // Function to display prompts and gather user information
     function gatherInformation() {
         var name = prompt("Please enter your name:");

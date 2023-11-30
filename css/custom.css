@@ -1,14 +1,14 @@
 body {
     margin: 0;
     padding: 0;
+    background: linear-gradient(180deg, #ffffff, #3dbcf3);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 2em;
     text-align: center;
-    color: #fff; /* Set text color to white for better visibility on the background */
+    font-family: fantasy;
+    font-size: 2em;
 }
 
 @media (max-width: 768px) {
@@ -29,6 +29,7 @@ body {
 
 .container {
     max-width: 100%;
+    text-align: center; /* Center the text inside the container */
 }
 
 #chat-container {
@@ -52,38 +53,57 @@ body {
 h1 {
     color: #fff;
     font-size: 4em;
-    margin-top: 20px;
-    text-align: center;
+    margin-top: 40px;
 }
 
-button {
-    border-radius: 50px;
-    padding: 10px 20px;
-    font-size: 16px;
-    text-align: center;
-    background-color: #4caf50; /* Set button color to green */
-    color: #fff;
-    border: none;
+img {
+    display: block;
+    margin: auto;
+}
+
+#user-input {
+    width: 80%;
+    padding: 20px;
+    color: black;
+    font-size: 1em;
+    border-radius: 20px;
+}
+
+.system-message {
+    color: #080300;
+    font-size: 1em;
+}
+
+.success-message {
+    color: red !important;
+}
+
+/* Style for the "click here to provide information" button with rounded corners and updated text */
+#infoButton {
+    border: rgb(0, 0, 0);
+    padding: 25px 30px;
+    font-size: 1.2em;
+    border-radius: 25px; /* Set border-radius for rounded corners */
+    background-color: #fbfbfb;
+    color: rgb(0, 0, 0);
     cursor: pointer;
-    margin-top: 20px;
+    transition: background-color 0.3s;
 }
 
-button:hover {
-    background-color: #45a049; /* Darken the button color on hover */
+#infoButton:hover {
+    background-color: #45a049;
 }
 
+/* Center the logo image */
 .logo {
     text-align: center;
     width: 33.33%;
+    margin: 20px auto; /* Center the image horizontally and add space at the top */
 }
 
+/* Center the footer text */
 .footer {
-    margin-top: 50px; /* Increase the margin to move the footer lower on the page */
-    text-align: center; /* Center the text in the footer */
-    color: #fff; /* Set text color to white for better visibility on the background */
-}
-
-/* Center the live site link in the footer */
-.footer a {
-    color: #fff; /* Set link color to white for better visibility on the background */
+    margin-top: 50px;
+    text-align: center;
+    color: #fff;
 }
