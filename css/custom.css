@@ -1,38 +1,89 @@
 body {
-    font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 0;
-    background: #fff;
-    color: #000;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 2em;
+    text-align: center;
+    color: #fff; /* Set text color to white for better visibility on the background */
+}
+
+@media (max-width: 768px) {
+    body {
+        font-size: 1em;
+    }
+
+    h1 {
+        font-size: 1em;
+        font-family: fantasy;
+    }
+
+    .logo {
+        max-width: 70%;
+        height: auto;
+    }
 }
 
 .container {
-    max-width: 800px;
-    margin: auto;
+    max-width: 100%;
+}
+
+#chat-container {
+    background: rgba(255, 255, 255, 0.8);
     text-align: center;
+    border: 1px solid #ccc;
     padding: 20px;
-    background-color: #fff;
+    max-width: 800px;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+}
+
+#chat-container p {
+    text-align: center;
+    font-size: 1em;
+    margin: 0;
 }
 
 h1 {
-    color: #000;
+    color: #fff;
+    font-size: 4em;
+    margin-top: 20px;
+    text-align: center;
 }
 
 button {
+    border-radius: 50px;
     padding: 10px 20px;
     font-size: 16px;
-    background-color: #4caf50;
-    color: #000;
+    text-align: center;
+    background-color: #4caf50; /* Set button color to green */
+    color: #fff;
     border: none;
     cursor: pointer;
     margin-top: 20px;
 }
 
 button:hover {
-    background-color: #45a049;
+    background-color: #45a049; /* Darken the button color on hover */
+}
+
+.logo {
+    text-align: center;
+    width: 33.33%;
+}
+
+.footer {
+    margin-top: 50px; /* Increase the margin to move the footer lower on the page */
+    text-align: center; /* Center the text in the footer */
+    color: #fff; /* Set text color to white for better visibility on the background */
+}
+
+/* Center the live site link in the footer */
+.footer a {
+    color: #fff; /* Set link color to white for better visibility on the background */
 }
