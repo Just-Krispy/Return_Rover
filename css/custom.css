@@ -19,9 +19,9 @@ body {
 
     h1 {
         color: #fff;
-        font-size: 4em;
+        font-size: 2em; /* Reduce the font size for mobile screens */
         font-family: fantasy;
-        margin-top: 40px;
+        margin-top: 20px; /* Reduce the top margin for mobile screens */
     }
 
     .logo {
