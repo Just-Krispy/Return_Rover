@@ -20,8 +20,8 @@ body {
     h1 {
         color: #fff;
         font-size: 2em; /* Reduce the font size for mobile screens */
-        font-family: fantasy;
-        margin-top: 20px; /* Reduce the top margin for mobile screens */
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: 40px; /* Reduce the top margin for mobile screens */
     }
 
     .logo {
