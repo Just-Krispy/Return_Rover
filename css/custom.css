@@ -39,7 +39,7 @@ body {
 #chat-container {
     background: rgb(255, 255, 255);
     text-align: center;
-    border: px solid #040000;
+    border: 0px solid #ffffff;
     padding: 20px;
     max-width: 800px;
     max-height: 70vh;
@@ -49,7 +49,11 @@ body {
     margin: 20px auto;
 }
 
-
+#chat-container p {
+    text-align: center;
+    font-size: 1em;
+    margin: 0;
+}
 
 h1 {
     color: #fff;
@@ -68,6 +72,7 @@ img {
     padding: 20px;
     color: rgb(0, 0, 0);
     font-size: 1em;
+    border: 0px solid #ffffff;
     border-radius: 20px;
 }
 
@@ -91,11 +96,16 @@ img {
     transition: background-color 0.3s;
 }
 
+#infoButton:hover {
+    background-color: #50d0ff;
+}
+
 .logo {
     text-align: center;
-    width: 70%;
+    width: 50%;
     margin: 20px auto;
 }
+
 
 .footer {
     margin-top: 50px;
