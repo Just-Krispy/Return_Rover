@@ -15,14 +15,15 @@ body {
 @media (max-width: 768px) {
     body {
         font-size: 1em;
-        font-family: Georgia, 'Times New Roman', Times, serif; /* Add the desired font-family for mobile screens */
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 15%; /* Increase padding for mobile screens */
     }
 
     h1 {
         color: #fff;
-        font-size: 2em; /* Reduce the font size for mobile screens */
-        font-family: fantasy; /* Add the desired font-family for mobile screens */
-        margin-top: 40px; /* Reduce the top margin for mobile screens */
+        font-size: 2em;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: 5%; /* Use percentage for responsive design */
     }
 
     .logo {
