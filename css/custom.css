@@ -19,8 +19,8 @@ body {
 
     h1 {
         color: #fff;
-        font-size: 2em; /* Reduce the font size for mobile screens */
-        font-family: Georgia, 'Times New Roman', Times, serif;
+        font-size: 1em; /* Reduce the font size for mobile screens */
+        font-family: fantasy;
         margin-top: 10px; /* Reduce the top margin for mobile screens */
     }
 
@@ -59,7 +59,7 @@ h1 {
     color: #fff;
     font-size: 4em;
     font-family: fantasy;
-    margin-top: 40px;
+    margin-top: 50px;
 }
 
 img {
