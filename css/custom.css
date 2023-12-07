@@ -16,7 +16,7 @@ body {
     body {
         font-size: 1em;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        padding-top: 15%; /* Increase padding for mobile screens */
+        padding-top: 25%; /* Increase padding for mobile screens */
     }
 
     h1 {
