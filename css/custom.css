@@ -21,7 +21,7 @@ body {
         color: #fff;
         font-size: 2em; /* Reduce the font size for mobile screens */
         font-family: Georgia, 'Times New Roman', Times, serif;
-        margin-top: 40px; /* Reduce the top margin for mobile screens */
+        margin-top: 10px; /* Reduce the top margin for mobile screens */
     }
 
     .logo {
