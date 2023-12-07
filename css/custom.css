@@ -23,7 +23,7 @@ body {
         color: #fff;
         font-size: 2em;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        margin-top: 5%; /* Use percentage for responsive design */
+        margin-top: 15%; /* Use percentage for responsive design */
     }
 
     .logo {
