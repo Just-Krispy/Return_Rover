@@ -1,6 +1,6 @@
 body {
     margin: 0;
-    padding: 0;
+    padding: 20px;
     background: linear-gradient(180deg, #ffffff, #ffffff);
     display: flex;
     flex-direction: column;
@@ -22,7 +22,7 @@ body {
         color: #fff;
         font-size: 2em; /* Reduce the font size for mobile screens */
         font-family: fantasy; /* Add the desired font-family for mobile screens */
-        margin-top: 20px; /* Reduce the top margin for mobile screens */
+        margin-top: 40px; /* Reduce the top margin for mobile screens */
     }
 
     .logo {
