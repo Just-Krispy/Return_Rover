@@ -1,0 +1,16 @@
+
+
+.snowflake {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: url('images/snowflake.png') no-repeat center/contain;
+    pointer-events: none;
+    animation: fall linear infinite;
+}
+
+@keyframes fall {
+    to {
+        transform: translateY(calc(100vh - 10px));
+    }
+}
