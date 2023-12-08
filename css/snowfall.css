@@ -4,7 +4,7 @@
     position: fixed;
     width: 10px;
     height: 10px;
-    background: url('https://github.com/Just-Krispy/Return_Rover/tree/main/images/snowflake') no-repeat center/contain;
+    background: url('https://github.com/Just-Krispy/Return_Rover/tree/main/images/snowflake.png') no-repeat center/contain;
     pointer-events: none;
     animation: fall linear infinite;
 }
