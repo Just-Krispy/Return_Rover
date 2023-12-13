@@ -2,11 +2,12 @@
 
 .snowflake {
     position: fixed;
-    width: 10px;
-    height: 10px;
+    width: 30px;
+    height: 30px;
     background: url('images/snowflake.png') no-repeat center/contain;
     pointer-events: none;
     animation: fall linear infinite;
+    z-index: 9999;
 }
 
 @keyframes fall {
