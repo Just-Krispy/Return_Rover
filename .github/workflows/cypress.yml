@@ -23,7 +23,3 @@ jobs:
 
     - name: Run Cypress tests
       run: npm run cy:run
-
-    - name: Check Cypress exit code
-      run: echo "Cypress exit code: $?"
-
