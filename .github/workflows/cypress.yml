@@ -19,7 +19,9 @@ jobs:
         node-version: '16'  
 
     - name: Install dependencies
-      run: npm install
+      run: |
+        cd automations/cypress/cypress/e2e 
+        npm install
 
     - name: Run Cypress tests
       run: |
