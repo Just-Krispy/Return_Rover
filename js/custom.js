@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const userInput = document.getElementById('user-input');
 
     // Start the conversation by asking for the user's name
-    askQuestion('Please enter your name:');
+    askQuestion('Please enter your full name:');
 
     // User information object to store responses
     const userInfo = {
@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         // Check if the response is not empty
         if (response !== '') {
-            // Log user responses to the console (you can replace this with further processing)
+            // Log user responses to the console 
             console.log('User response:', response);
 
             // Update user information based on the current question
