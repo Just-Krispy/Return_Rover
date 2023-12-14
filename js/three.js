@@ -1,40 +1,44 @@
-// Create a scene, camera, and renderer
-var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-var renderer = new THREE.WebGLRenderer();
+<script type="module">
+    import * as THREE from 'https://threejs.org/build/three.module.js';
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+    // Create a scene, camera, and renderer
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    var renderer = new THREE.WebGLRenderer();
 
-// Create a geometry for the snowflakes
-var geometry = new THREE.Geometry();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-for (var i = 0; i < 10000; i++) {
-    var vertex = new THREE.Vector3();
-    vertex.x = THREE.Math.randFloatSpread(2000); // x position
-    vertex.y = THREE.Math.randFloatSpread(2000); // y position
-    vertex.z = THREE.Math.randFloatSpread(2000); // z position
+    // Create a geometry for the snowflakes
+    var geometry = new THREE.Geometry();
 
-    geometry.vertices.push(vertex);
-}
+    for (let i = 0; i < 10000; i++) {
+        var vertex = new THREE.Vector3();
+        vertex.x = THREE.Math.randFloatSpread(2000); // x position
+        vertex.y = THREE.Math.randFloatSpread(2000); // y position
+        vertex.z = THREE.Math.randFloatSpread(2000); // z position
 
-// Create a material for the snowflakes
-var material = new THREE.PointsMaterial({ color: 0xffffff, size: 5 });
+        geometry.vertices.push(vertex);
+    }
 
-// Create a points system for the snowflakes and add it to the scene
-var points = new THREE.Points(geometry, material);
-scene.add(points);
+    // Create a material for the snowflakes
+    var material = new THREE.PointsMaterial({ color: 0xffffff, size: 5 });
 
-// Position the camera
-camera.position.z = 500;
+    // Create a points system for the snowflakes and add it to the scene
+    var points = new THREE.Points(geometry, material);
+    scene.add(points);
 
-// Create the animation
-function animate() {
-    requestAnimationFrame(animate);
+    // Position the camera
+    camera.position.z = 500;
 
-    points.rotation.y += 0.001;
+    // Create the animation
+    function animate() {
+        requestAnimationFrame(animate);
 
-    renderer.render(scene, camera);
-}
+        points.rotation.y += 0.001;
 
-animate();
+        renderer.render(scene, camera);
+    }
+
+    animate();
+</script>
