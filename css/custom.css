@@ -16,19 +16,19 @@ body {
     body {
         font-size: 1em;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        padding-top: 20%; /* Increase padding for mobile screens */
+        padding-top: 20px; /* Changed from percentage to fixed unit */
     }
 
     h1 {
         color: #fff;
-        font-size: 2em;
+        font-size: 4vw; /* Changed from em to vw for responsive font size */
         font-family: Georgia, 'Times New Roman', Times, serif;
         margin-top: 15%; /* Use percentage for responsive design */
     }
 
     .logo {
-        max-width: 100%;
-        height: auto;
+        max-width: 50%;
+        height: 50%;
     }
 }
 
@@ -59,7 +59,7 @@ body {
 
 h1 {
     color: #fff;
-    font-size: 4em;
+    font-size: 4vw;
     font-family: Georgia, 'Times New Roman', Times, serif;
     margin-top: 50px;
 }
@@ -67,6 +67,7 @@ h1 {
 img {
     display: block;
     margin: auto;
+    margin: 50px auto;
 }
 
 #user-input {
@@ -103,9 +104,9 @@ img {
 }
 
 .logo {
-    text-align: center;
-    width: 50%;
-    margin: 20px auto;
+    max-width: 50%;
+    height: 50%;
+    margin-bottom: 50px;
 }
 
 
