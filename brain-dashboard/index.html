@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Second Brain - Mission Control</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0a0a1a;
+            --bg-card: rgba(255,255,255,0.04);
+            --bg-card-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.08);
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --text-muted: #64748b;
+            --indigo: #6366f1;
+            --cyan: #22d3ee;
+            --amber: #f59e0b;
+            --green: #22c55e;
+            --red: #ef4444;
+            --pink: #ec4899;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Background gradient blobs */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%;
+            left: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -20%;
+            right: -15%;
+            width: 50%;
+            height: 50%;
+            background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .dashboard {
+            position: relative;
+            z-index: 1;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+        }
+
+        /* ---- HEADER ---- */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .brain-icon {
+            font-size: 36px;
+            line-height: 1;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--indigo), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .mode-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .mode-badge.live {
+            background: rgba(34,197,94,0.15);
+            color: var(--green);
+            border: 1px solid rgba(34,197,94,0.3);
+        }
+        .mode-badge.demo {
+            background: rgba(245,158,11,0.15);
+            color: var(--amber);
+            border: 1px solid rgba(245,158,11,0.3);
+        }
+        .mode-badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        .mode-badge.live .dot { background: var(--green); }
+        .mode-badge.demo .dot { background: var(--amber); }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .refresh-info {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .btn-refresh {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-refresh:hover {
+            background: var(--bg-card-hover);
+            color: var(--text);
+        }
+
+        /* ---- GLASS CARD ---- */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 24px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: rgba(255,255,255,0.12);
+        }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icon { font-size: 16px; }
+
+        /* ---- STAT CARDS ---- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            text-align: center;
+            padding: 28px 16px;
+        }
+        .stat-value {
+            font-size: 42px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .stat-value.indigo { color: var(--indigo); }
+        .stat-value.cyan { color: var(--cyan); }
+        .stat-value.amber { color: var(--amber); }
+        .stat-value.green { color: var(--green); }
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+        .stat-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ---- GRID LAYOUT ---- */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .full-width {
+            margin-bottom: 24px;
+        }
+
+        /* ---- VAULT STRUCTURE (EPARAX) ---- */
+        .vault-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .vault-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 4px 0;
+            transition: opacity 0.2s;
+        }
+        .vault-bar-row:hover { opacity: 0.85; }
+        .vault-bar-label {
+            width: 90px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .vault-bar-track {
+            flex: 1;
+            height: 28px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .vault-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.9);
+            min-width: fit-content;
+        }
+        .vault-bar-fill.inbox    { background: linear-gradient(90deg, var(--amber), #f97316); }
+        .vault-bar-fill.projects { background: linear-gradient(90deg, var(--indigo), #8b5cf6); }
+        .vault-bar-fill.areas    { background: linear-gradient(90deg, var(--cyan), #06b6d4); }
+        .vault-bar-fill.resources{ background: linear-gradient(90deg, var(--green), #10b981); }
+        .vault-bar-fill.galaxy   { background: linear-gradient(90deg, var(--pink), #a855f7); }
+        .vault-bar-fill.archive  { background: linear-gradient(90deg, #6b7280, #9ca3af); }
+
+        .vault-bar-count {
+            width: 40px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            text-align: left;
+            flex-shrink: 0;
+        }
+        .vault-detail-panel {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(0,0,0,0.3);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .vault-detail-panel.open { display: block; }
+        .vault-detail-panel h4 {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+        .vault-detail-panel ul {
+            list-style: none;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .vault-detail-panel li {
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+        .vault-detail-panel li:last-child { border: none; }
+
+        /* ---- ACTIVITY FEED ---- */
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 8px;
+            border-radius: 8px;
+            transition: background 0.15s;
+        }
+        .activity-item:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .activity-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .activity-icon.ingest  { background: rgba(34,197,94,0.15); }
+        .activity-icon.search  { background: rgba(99,102,241,0.15); }
+        .activity-icon.chat    { background: rgba(34,211,238,0.15); }
+        .activity-icon.move    { background: rgba(245,158,11,0.15); }
+        .activity-icon.capture { background: rgba(236,72,153,0.15); }
+        .activity-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .activity-text {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.4;
+        }
+        .activity-text strong {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ---- ASK THE VAULT ---- */
+        .ask-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ask-input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .ask-input:focus {
+            border-color: var(--indigo);
+        }
+        .ask-input::placeholder {
+            color: var(--text-muted);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--indigo), #8b5cf6);
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .ask-result {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-dim);
+            min-height: 60px;
+        }
+        .ask-result .answer {
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+        .ask-result .sources {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .ask-result .sources span {
+            display: inline-block;
+            background: rgba(99,102,241,0.12);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 2px 4px 2px 0;
+            color: var(--indigo);
+            font-weight: 500;
+        }
+        .demo-notice {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .demo-notice a {
+            color: var(--cyan);
+            text-decoration: none;
+        }
+
+        /* ---- QUICK CAPTURE ---- */
+        .capture-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .capture-row {
+            display: flex;
+            gap: 10px;
+        }
+        .capture-input {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .capture-input:focus { border-color: var(--cyan); }
+        .capture-input::placeholder { color: var(--text-muted); }
+        .btn-capture {
+            background: linear-gradient(135deg, var(--cyan), #06b6d4);
+            border: none;
+            color: #0a0a1a;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-capture:hover { opacity: 0.9; }
+        .btn-capture:disabled { opacity: 0.5; cursor: not-allowed; }
+        .capture-feedback {
+            font-size: 12px;
+            min-height: 18px;
+        }
+        .capture-feedback.success { color: var(--green); }
+        .capture-feedback.error { color: var(--red); }
+
+        /* ---- SYSTEM HEALTH ---- */
+        .health-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .health-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .health-row .svc-name {
+            font-weight: 600;
+            color: var(--text);
+            flex: 1;
+        }
+        .health-row .svc-port {
+            color: var(--text-muted);
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            margin-right: 12px;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .status-dot.up { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+        .status-dot.down { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+        .status-dot.unknown { background: var(--text-muted); }
+
+        /* ---- AUTOMATION STATUS ---- */
+        .workflow-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        .workflow-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            font-size: 13px;
+            gap: 8px;
+        }
+        .workflow-name {
+            font-weight: 500;
+            color: var(--text);
+            flex: 1;
+            min-width: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .workflow-schedule {
+            color: var(--text-muted);
+            font-size: 11px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .workflow-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .workflow-status.active {
+            background: rgba(34,197,94,0.12);
+            color: var(--green);
+        }
+        .workflow-status.idle {
+            background: rgba(100,116,139,0.15);
+            color: var(--text-muted);
+        }
+        .workflow-status.error {
+            background: rgba(239,68,68,0.12);
+            color: var(--red);
+        }
+
+        /* ---- SCROLLBAR ---- */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        /* ---- LOADING SPINNER ---- */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: var(--indigo);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 900px) {
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .header h1 { font-size: 22px; }
+            .stat-value { font-size: 32px; }
+        }
+        @media (max-width: 500px) {
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .dashboard { padding: 16px 12px 40px; }
+            .stat-card { padding: 20px 12px; }
+            .ask-form { flex-direction: column; }
+            .capture-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <span class="brain-icon">🧠</span>
+            <h1>Second Brain</h1>
+        </div>
+        <div class="header-right">
+            <span id="modeBadge" class="mode-badge demo">
+                <span class="dot"></span>
+                <span id="modeLabel">DEMO</span>
+            </span>
+            <span id="refreshInfo" class="refresh-info">--</span>
+            <button class="btn-refresh" onclick="refreshAll()" title="Refresh now">&#8635; Refresh</button>
+        </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="stats-row">
+        <div class="card stat-card">
+            <div class="stat-value indigo" id="statNotes">--</div>
+            <div class="stat-label">Total Notes</div>
+            <div class="stat-sub" id="statNotesSub"></div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-value cyan" id="statChunks">--</div>
+            <div class="stat-label">Chunks Indexed</div>
+            <div class="stat-sub">RAG search index</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-value amber" id="statQuestions">--</div>
+            <div class="stat-label">Questions Answered</div>
+            <div class="stat-sub">Vault conversations</div>
+        </div>
+        <div class="card stat-card">
+            <div class="stat-value green" id="statToday">--</div>
+            <div class="stat-label">Ingested Today</div>
+            <div class="stat-sub">New notes processed</div>
+        </div>
+    </div>
+
+    <!-- ROW: VAULT STRUCTURE + ACTIVITY -->
+    <div class="grid-2">
+        <!-- VAULT STRUCTURE -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📂</span> Vault Structure (EPARAX)</div>
+            <div class="vault-bars" id="vaultBars"></div>
+            <div class="vault-detail-panel" id="vaultDetail">
+                <h4 id="vaultDetailTitle">--</h4>
+                <ul id="vaultDetailList"></ul>
+            </div>
+        </div>
+
+        <!-- ACTIVITY FEED -->
+        <div class="card">
+            <div class="card-title"><span class="icon">📡</span> Recent Activity</div>
+            <div class="activity-list" id="activityFeed"></div>
+        </div>
+    </div>
+
+    <!-- ROW: ASK THE VAULT + QUICK CAPTURE -->
+    <div class="grid-2">
+        <!-- ASK THE VAULT -->
+        <div class="card">
+            <div class="card-title"><span class="icon">💬</span> Ask the Vault</div>
+            <div class="ask-form">
+                <input type="text" class="ask-input" id="askInput" placeholder="Ask your second brain anything..." onkeydown="if(event.key==='Enter')askVault()">
+                <button class="btn-primary" id="askBtn" onclick="askVault()">Ask</button>
+            </div>
+            <div class="ask-result" id="askResult">
+                <div class="demo-notice" id="askPlaceholder">
+                    Type a question to search your vault using conversational RAG.
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK CAPTURE -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🔖</span> Quick Capture</div>
+            <div class="capture-form">
+                <input type="url" class="capture-input" id="captureUrl" placeholder="URL to capture...">
+                <div class="capture-row">
+                    <input type="text" class="capture-input" id="captureTitle" placeholder="Title (optional)">
+                    <input type="text" class="capture-input" id="captureTags" placeholder="Tags (comma-separated)">
+                </div>
+                <div class="capture-row">
+                    <button class="btn-capture" id="captureBtn" onclick="captureBookmark()">Capture</button>
+                </div>
+                <div class="capture-feedback" id="captureFeedback"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW: SYSTEM HEALTH + AUTOMATION -->
+    <div class="grid-2">
+        <!-- SYSTEM HEALTH -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🩺</span> System Health</div>
+            <div class="health-grid" id="healthGrid"></div>
+        </div>
+
+        <!-- AUTOMATION STATUS -->
+        <div class="card">
+            <div class="card-title"><span class="icon">⚙️</span> Automation Workflows (n8n)</div>
+            <div class="workflow-list" id="workflowList"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// =============================================
+//  CONFIGURATION
+// =============================================
+const TAILSCALE_BASE = 'http://100.103.26.21';
+const API_PORT = 9876;
+const RAG_PORT = 9878;
+const CHAT_PORT = 9879;
+const BM_PORT = 9880;
+const FETCH_TIMEOUT = 3000;
+
+let isLive = false;
+let refreshTimer = null;
+
+// =============================================
+//  DEMO DATA
+// =============================================
+const DEMO = {
+    health: {
+        status: 'ok',
+        uptime: '14d 7h 32m',
+        services: ['vault-search', 'vault-chat', 'bookmark-capture', 'auto-ingest', 'vault-organize']
+    },
+    vaultStructure: {
+        Inbox:     { count: 3,  notes: ['Quick note - AI agents comparison.md', 'Bookmark - Latent Space podcast.md', 'Clipping - Transformer architecture.md'] },
+        Projects:  { count: 0,  notes: [] },
+        Areas:     { count: 3,  notes: ['Personal Knowledge Management.md', 'Health & Fitness Tracker.md', 'Career Development 2026.md'] },
+        Resources: { count: 43, notes: ['RAG Architecture Patterns.md', 'LangChain vs LlamaIndex.md', 'Vector Database Comparison.md', 'Obsidian Plugin Development.md', 'n8n Workflow Recipes.md', 'Claude API Best Practices.md', 'Self-Hosting Guide.md', 'Tailscale VPN Setup.md', 'Zettelkasten Method.md', 'Building a Second Brain (BASB).md', 'Progressive Summarization.md', 'Spaced Repetition Systems.md', 'NotebookLM Integration.md', 'Whisper Transcription Pipeline.md', 'YouTube to Notes Pipeline.md'] },
+        Galaxy:    { count: 0,  notes: [] },
+        Archive:   { count: 0,  notes: [] }
+    },
+    ragStats: {
+        total_chunks: 273,
+        total_notes: 49,
+        embedding_model: 'all-MiniLM-L6-v2',
+        last_indexed: '2026-03-05T08:12:44Z'
+    },
+    chatStats: {
+        total_questions: 15,
+        avg_response_time: '2.3s',
+        top_topics: ['RAG', 'PKM', 'n8n workflows'],
+        last_question: '2026-03-05T07:45:00Z'
+    },
+    chatHistory: [
+        { q: 'What are the best RAG chunking strategies?', a: 'Based on your notes, the most effective strategies are: (1) semantic chunking using sentence boundaries, (2) recursive splitting with 512-token windows and 50-token overlap, and (3) parent-child document splitting for preserving context.', sources: ['RAG Architecture Patterns.md', 'Vector Database Comparison.md'], ts: '2026-03-05T07:45:00Z' },
+        { q: 'How does Zettelkasten differ from PARA?', a: 'Your notes highlight that Zettelkasten focuses on atomic, interconnected ideas with unique IDs, while PARA (Projects, Areas, Resources, Archive) organizes by actionability. Many PKM practitioners combine both -- using PARA for folder structure and Zettelkasten linking within notes.', sources: ['Zettelkasten Method.md', 'Building a Second Brain (BASB).md'], ts: '2026-03-05T06:30:00Z' },
+        { q: 'What n8n workflows do I have for auto-ingestion?', a: 'You have several ingestion workflows: (1) YouTube transcript ingestor running every 6 hours, (2) RSS feed monitor checking hourly, (3) bookmark capture webhook, and (4) daily Obsidian vault sync. The YouTube pipeline processes the most content.', sources: ['n8n Workflow Recipes.md', 'YouTube to Notes Pipeline.md'], ts: '2026-03-04T22:15:00Z' }
+    ],
+    bookmarkStats: {
+        total_captured: 37,
+        today: 2,
+        last_capture: '2026-03-05T06:18:00Z'
+    },
+    ingestStats: {
+        total_ingested: 49,
+        today: 2,
+        last_ingest: '2026-03-05T08:12:44Z',
+        pending: 0
+    },
+    activity: [
+        { type: 'ingest',  text: 'Ingested <strong>Bookmark - Latent Space podcast.md</strong>',          ts: '2026-03-05T08:12:44Z' },
+        { type: 'chat',    text: 'Answered: "What are the best RAG chunking strategies?"',                  ts: '2026-03-05T07:45:00Z' },
+        { type: 'search',  text: 'Searched vault for <strong>embedding models comparison</strong>',         ts: '2026-03-05T07:30:00Z' },
+        { type: 'ingest',  text: 'Ingested <strong>Clipping - Transformer architecture.md</strong>',       ts: '2026-03-05T07:15:00Z' },
+        { type: 'chat',    text: 'Answered: "How does Zettelkasten differ from PARA?"',                     ts: '2026-03-05T06:30:00Z' },
+        { type: 'capture', text: 'Captured bookmark: <strong>https://simonwillison.net/2026/...</strong>',  ts: '2026-03-05T06:18:00Z' },
+        { type: 'search',  text: 'Searched vault for <strong>self-hosting vector database</strong>',        ts: '2026-03-05T05:50:00Z' },
+        { type: 'move',    text: 'Organized <strong>3 notes</strong> from Inbox to Resources',              ts: '2026-03-05T04:00:00Z' },
+        { type: 'chat',    text: 'Answered: "What n8n workflows do I have for auto-ingestion?"',            ts: '2026-03-04T22:15:00Z' },
+        { type: 'ingest',  text: 'Auto-ingested <strong>2 YouTube transcripts</strong>',                    ts: '2026-03-04T18:00:00Z' }
+    ],
+    services: [
+        { name: 'vault-search',      port: 9876, status: 'up' },
+        { name: 'vault-chat',        port: 9879, status: 'up' },
+        { name: 'bookmark-capture',  port: 9880, status: 'up' },
+        { name: 'health-endpoint',   port: 9876, status: 'up' },
+        { name: 'fc-data-fetcher',   port: 5002, status: 'up' }
+    ],
+    workflows: [
+        { name: 'Daily Vault Organizer',           schedule: 'Every day 6 AM UTC',       status: 'active' },
+        { name: 'YouTube Transcript Ingestor',      schedule: 'Every 6 hours',            status: 'active' },
+        { name: 'RSS Feed Monitor',                 schedule: 'Every hour',               status: 'active' },
+        { name: 'Bookmark Capture Webhook',         schedule: 'On trigger',               status: 'active' },
+        { name: 'Daily Note Resurfacer',            schedule: 'Every day 9 AM UTC',       status: 'active' },
+        { name: 'Weekly Synthesis Report',           schedule: 'Sundays 10 AM UTC',       status: 'active' },
+        { name: 'Obsidian Vault Sync',              schedule: 'Every day midnight',       status: 'active' },
+        { name: 'RAG Index Rebuilder',              schedule: 'Every 4 hours',            status: 'active' },
+        { name: 'Broken Link Checker',              schedule: 'Mondays 3 AM UTC',        status: 'active' },
+        { name: 'Duplicate Note Detector',           schedule: 'Wednesdays 4 AM UTC',     status: 'idle' },
+        { name: 'Tag Normalizer',                   schedule: 'Daily 5 AM UTC',           status: 'active' },
+        { name: 'Stale Note Archiver',              schedule: 'Fridays 2 AM UTC',        status: 'idle' },
+        { name: 'FarmCredit Data Fetcher',           schedule: 'Weekdays 7 AM EST',       status: 'active' },
+        { name: 'Discord Digest Generator',          schedule: 'Daily 11 PM UTC',         status: 'active' },
+        { name: 'Vault Backup to S3',               schedule: 'Daily 1 AM UTC',          status: 'active' }
+    ]
+};
+
+// =============================================
+//  FETCH HELPERS
+// =============================================
+async function apiFetch(url, timeout = FETCH_TIMEOUT) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.json();
+    } catch (e) {
+        clearTimeout(timer);
+        throw e;
+    }
+}
+
+async function checkLive() {
+    try {
+        await apiFetch(`${TAILSCALE_BASE}:${API_PORT}/`, 3000);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+// =============================================
+//  RENDERING
+// =============================================
+function setMode(live) {
+    isLive = live;
+    const badge = document.getElementById('modeBadge');
+    const label = document.getElementById('modeLabel');
+    badge.className = `mode-badge ${live ? 'live' : 'demo'}`;
+    label.textContent = live ? 'LIVE' : 'DEMO';
+}
+
+function updateRefreshTime() {
+    document.getElementById('refreshInfo').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function renderStats(data) {
+    const total = Object.values(data.vaultStructure).reduce((s, v) => s + v.count, 0);
+    document.getElementById('statNotes').textContent = total;
+
+    const parts = Object.entries(data.vaultStructure)
+        .filter(([_, v]) => v.count > 0)
+        .map(([k, v]) => `${v.count} ${k}`)
+        .join(' · ');
+    document.getElementById('statNotesSub').textContent = parts;
+
+    document.getElementById('statChunks').textContent = data.ragStats.total_chunks.toLocaleString();
+    document.getElementById('statQuestions').textContent = data.chatStats.total_questions;
+    document.getElementById('statToday').textContent = data.ingestStats.today;
+}
+
+function renderVault(structure) {
+    const container = document.getElementById('vaultBars');
+    container.innerHTML = '';
+    const maxCount = Math.max(...Object.values(structure).map(v => v.count), 1);
+
+    const folders = ['Inbox', 'Projects', 'Areas', 'Resources', 'Galaxy', 'Archive'];
+    folders.forEach(folder => {
+        const data = structure[folder] || { count: 0, notes: [] };
+        const pct = Math.max((data.count / maxCount) * 100, data.count > 0 ? 8 : 2);
+        const cssClass = folder.toLowerCase();
+
+        const row = document.createElement('div');
+        row.className = 'vault-bar-row';
+        row.innerHTML = `
+            <span class="vault-bar-label">${folder}</span>
+            <div class="vault-bar-track">
+                <div class="vault-bar-fill ${cssClass}" style="width: ${pct}%">${data.count > 0 ? data.count : ''}</div>
+            </div>
+            <span class="vault-bar-count">${data.count}</span>
+        `;
+        row.addEventListener('click', () => showVaultDetail(folder, data));
+        container.appendChild(row);
+    });
+}
+
+function showVaultDetail(folder, data) {
+    const panel = document.getElementById('vaultDetail');
+    const title = document.getElementById('vaultDetailTitle');
+    const list = document.getElementById('vaultDetailList');
+
+    if (panel.classList.contains('open') && title.textContent === `${folder} (${data.count} notes)`) {
+        panel.classList.remove('open');
+        return;
+    }
+
+    title.textContent = `${folder} (${data.count} notes)`;
+    list.innerHTML = '';
+
+    if (data.notes.length === 0) {
+        list.innerHTML = '<li style="color:var(--text-muted);font-style:italic">No notes in this folder</li>';
+    } else {
+        data.notes.forEach(n => {
+            const li = document.createElement('li');
+            li.textContent = n;
+            list.appendChild(li);
+        });
+        if (data.count > data.notes.length) {
+            const li = document.createElement('li');
+            li.style.color = 'var(--text-muted)';
+            li.style.fontStyle = 'italic';
+            li.textContent = `...and ${data.count - data.notes.length} more`;
+            list.appendChild(li);
+        }
+    }
+    panel.classList.add('open');
+}
+
+function renderActivity(items) {
+    const container = document.getElementById('activityFeed');
+    container.innerHTML = '';
+    const icons = { ingest: '📥', search: '🔍', chat: '💬', move: '📦', capture: '🔖' };
+
+    items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'activity-item';
+        const ago = timeAgo(new Date(item.ts));
+        el.innerHTML = `
+            <div class="activity-icon ${item.type}">${icons[item.type] || '📋'}</div>
+            <div class="activity-body">
+                <div class="activity-text">${item.text}</div>
+                <div class="activity-time">${ago}</div>
+            </div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function renderHealth(services) {
+    const container = document.getElementById('healthGrid');
+    container.innerHTML = '';
+    services.forEach(svc => {
+        const el = document.createElement('div');
+        el.className = 'health-row';
+        el.innerHTML = `
+            <span class="svc-name">${svc.name}</span>
+            <span class="svc-port">:${svc.port}</span>
+            <span class="status-dot ${svc.status}"></span>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function renderWorkflows(workflows) {
+    const container = document.getElementById('workflowList');
+    container.innerHTML = '';
+    workflows.forEach(wf => {
+        const el = document.createElement('div');
+        el.className = 'workflow-item';
+        el.innerHTML = `
+            <span class="workflow-name" title="${wf.name}">${wf.name}</span>
+            <span class="workflow-schedule">${wf.schedule}</span>
+            <span class="workflow-status ${wf.status}">${wf.status}</span>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function timeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+}
+
+// =============================================
+//  ASK THE VAULT
+// =============================================
+async function askVault() {
+    const input = document.getElementById('askInput');
+    const result = document.getElementById('askResult');
+    const btn = document.getElementById('askBtn');
+    const q = input.value.trim();
+    if (!q) return;
+
+    if (!isLive) {
+        result.innerHTML = `
+            <div class="demo-notice">
+                Connect via Tailscale for live queries.<br>
+                <a href="http://100.103.26.21:9876" target="_blank">100.103.26.21:9876</a>
+            </div>
+        `;
+        return;
+    }
+
+    btn.disabled = true;
+    result.innerHTML = '<div class="spinner"></div> Thinking...';
+
+    try {
+        const data = await apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/vault-chat?q=${encodeURIComponent(q)}`, 15000);
+        let html = `<div class="answer">${escapeHtml(data.answer || data.response || JSON.stringify(data))}</div>`;
+        if (data.sources && data.sources.length) {
+            html += '<div class="sources">Sources: ';
+            data.sources.forEach(s => { html += `<span>${escapeHtml(typeof s === 'string' ? s : s.title || s.file)}</span>`; });
+            html += '</div>';
+        }
+        result.innerHTML = html;
+    } catch (err) {
+        result.innerHTML = `<div style="color:var(--red)">Error: ${escapeHtml(err.message)}</div>`;
+    }
+    btn.disabled = false;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// =============================================
+//  QUICK CAPTURE
+// =============================================
+async function captureBookmark() {
+    const url = document.getElementById('captureUrl').value.trim();
+    const title = document.getElementById('captureTitle').value.trim();
+    const tags = document.getElementById('captureTags').value.trim();
+    const fb = document.getElementById('captureFeedback');
+    const btn = document.getElementById('captureBtn');
+
+    if (!url) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Please enter a URL.';
+        return;
+    }
+
+    if (!isLive) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Capture requires live VPS connection via Tailscale.';
+        return;
+    }
+
+    btn.disabled = true;
+    fb.className = 'capture-feedback';
+    fb.textContent = 'Capturing...';
+
+    try {
+        const body = { url };
+        if (title) body.title = title;
+        if (tags) body.tags = tags.split(',').map(t => t.trim());
+
+        const res = await fetch(`${TAILSCALE_BASE}:${BM_PORT}/bookmark-capture`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        fb.className = 'capture-feedback success';
+        fb.textContent = 'Captured successfully!';
+        document.getElementById('captureUrl').value = '';
+        document.getElementById('captureTitle').value = '';
+        document.getElementById('captureTags').value = '';
+    } catch (err) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Failed: ' + err.message;
+    }
+    btn.disabled = false;
+}
+
+// =============================================
+//  LIVE DATA FETCHING
+// =============================================
+async function fetchLiveData() {
+    const data = JSON.parse(JSON.stringify(DEMO)); // Start with demo as base
+
+    try {
+        const [health, ragStats, chatStats, chatHistory, bmStats, ingestStats] = await Promise.allSettled([
+            apiFetch(`${TAILSCALE_BASE}:${API_PORT}/`),
+            apiFetch(`${TAILSCALE_BASE}:${RAG_PORT}/stats`),
+            apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/stats`),
+            apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/history`),
+            apiFetch(`${TAILSCALE_BASE}:${BM_PORT}/stats`),
+            apiFetch(`${TAILSCALE_BASE}:${API_PORT}/auto-ingest`)
+        ]);
+
+        if (health.status === 'fulfilled' && health.value) {
+            data.health = health.value;
+            // Update services status based on health response
+            if (health.value.services) {
+                data.services = data.services.map(svc => {
+                    const live = health.value.services[svc.name];
+                    return { ...svc, status: live ? 'up' : 'down' };
+                });
+            }
+        }
+
+        if (ragStats.status === 'fulfilled' && ragStats.value) {
+            data.ragStats = { ...data.ragStats, ...ragStats.value };
+            if (ragStats.value.folder_counts) {
+                Object.entries(ragStats.value.folder_counts).forEach(([folder, count]) => {
+                    if (data.vaultStructure[folder]) {
+                        data.vaultStructure[folder].count = count;
+                    }
+                });
+            }
+        }
+
+        if (chatStats.status === 'fulfilled' && chatStats.value) {
+            data.chatStats = { ...data.chatStats, ...chatStats.value };
+        }
+
+        if (chatHistory.status === 'fulfilled' && chatHistory.value) {
+            if (Array.isArray(chatHistory.value)) {
+                data.chatHistory = chatHistory.value;
+            } else if (chatHistory.value.history) {
+                data.chatHistory = chatHistory.value.history;
+            }
+        }
+
+        if (bmStats.status === 'fulfilled' && bmStats.value) {
+            data.bookmarkStats = { ...data.bookmarkStats, ...bmStats.value };
+        }
+
+        if (ingestStats.status === 'fulfilled' && ingestStats.value) {
+            data.ingestStats = { ...data.ingestStats, ...ingestStats.value };
+        }
+
+    } catch (err) {
+        console.warn('Error fetching some live data:', err);
+    }
+
+    return data;
+}
+
+// =============================================
+//  MAIN RENDER
+// =============================================
+async function renderAll(data) {
+    renderStats(data);
+    renderVault(data.vaultStructure);
+    renderActivity(data.activity);
+    renderHealth(data.services);
+    renderWorkflows(data.workflows);
+    updateRefreshTime();
+}
+
+async function refreshAll() {
+    if (isLive) {
+        const live = await checkLive();
+        if (live) {
+            const data = await fetchLiveData();
+            renderAll(data);
+        } else {
+            setMode(false);
+            renderAll(DEMO);
+        }
+    } else {
+        const live = await checkLive();
+        if (live) {
+            setMode(true);
+            const data = await fetchLiveData();
+            renderAll(data);
+            startAutoRefresh();
+        } else {
+            renderAll(DEMO);
+        }
+    }
+    updateRefreshTime();
+}
+
+function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    if (isLive) {
+        refreshTimer = setInterval(refreshAll, 60000);
+    }
+}
+
+// =============================================
+//  INIT
+// =============================================
+(async function init() {
+    // Render demo data immediately for fast first paint
+    renderAll(DEMO);
+
+    // Then check if live
+    const live = await checkLive();
+    setMode(live);
+
+    if (live) {
+        const data = await fetchLiveData();
+        renderAll(data);
+        startAutoRefresh();
+    }
+})();
+</script>
+
+</body>
+</html>
