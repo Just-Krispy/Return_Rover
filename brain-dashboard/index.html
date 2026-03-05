@@ -710,6 +710,22 @@
         </div>
     </div>
 
+    <!-- KNOWLEDGE GRAPH -->
+    <div class="card" style="position: relative; overflow: hidden;">
+        <div class="card-title"><span class="icon">🕸️</span> Knowledge Graph <span id="graphStats" style="font-size:0.75rem;color:var(--text-dim);font-weight:400;margin-left:8px;"></span></div>
+        <div id="graphContainer" style="width:100%;height:450px;position:relative;border-radius:var(--radius-sm);background:rgba(0,0,0,0.3);">
+            <canvas id="graphCanvas" style="width:100%;height:100%;"></canvas>
+            <div id="graphTooltip" style="display:none;position:absolute;background:rgba(15,15,35,0.95);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:0.8rem;pointer-events:none;z-index:10;max-width:250px;"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:50%;background:#6366f1;display:inline-block;"></span> Resources</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:50%;background:#22d3ee;display:inline-block;"></span> Areas</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block;"></span> Projects</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:50%;background:#a855f7;display:inline-block;"></span> Galaxy</span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--text-dim);"><span style="width:10px;height:10px;border-radius:50%;background:#ef4444;display:inline-block;"></span> Inbox</span>
+        </div>
+    </div>
+
     <!-- ROW: SYSTEM HEALTH + AUTOMATION -->
     <div class="grid-2">
         <!-- SYSTEM HEALTH -->
@@ -1201,11 +1217,185 @@ function startAutoRefresh() {
 }
 
 // =============================================
+//  KNOWLEDGE GRAPH
+// =============================================
+const GRAPH_COLORS = {
+    Resources: '#6366f1', Areas: '#22d3ee', Projects: '#f59e0b',
+    Galaxy: '#a855f7', Archive: '#6b7280', Inbox: '#ef4444', root: '#94a3b8'
+};
+
+const DEMO_GRAPH = {
+    nodes: [
+        {id:'Lex Fridman 490',folder:'Resources',word_count:450,connections:5},
+        {id:'Lex Fridman 491',folder:'Resources',word_count:380,connections:4},
+        {id:'Lex Fridman 489',folder:'Resources',word_count:320,connections:3},
+        {id:'Huberman - Dopamine',folder:'Resources',word_count:520,connections:4},
+        {id:'Huberman - Play',folder:'Resources',word_count:410,connections:3},
+        {id:'Huberman - Light',folder:'Resources',word_count:350,connections:3},
+        {id:'Stratechery - Xbox',folder:'Resources',word_count:280,connections:2},
+        {id:'Stratechery - Attention',folder:'Resources',word_count:310,connections:2},
+        {id:'GPT-5.4',folder:'Resources',word_count:200,connections:3},
+        {id:'GitHub Security',folder:'Resources',word_count:180,connections:2},
+        {id:'Wikipedia Hack',folder:'Resources',word_count:190,connections:2},
+        {id:'Anthropic Supply Chain',folder:'Resources',word_count:220,connections:3},
+        {id:'Jido Framework',folder:'Resources',word_count:170,connections:2},
+        {id:'Intel - Capital',folder:'Resources',word_count:300,connections:1},
+        {id:'YT - Second Brain',folder:'Resources',word_count:250,connections:3},
+        {id:'YT - Obsidian',folder:'Resources',word_count:220,connections:3},
+        {id:'Liv Stats Card',folder:'Areas',word_count:707,connections:2},
+        {id:'Archer Summary',folder:'Areas',word_count:127,connections:2},
+        {id:'Vault Report',folder:'Areas',word_count:180,connections:3},
+        {id:'Weekly Synthesis',folder:'Inbox',word_count:600,connections:8},
+        {id:'Learning Report',folder:'Inbox',word_count:300,connections:2},
+    ],
+    edges: [
+        {source:'Lex Fridman 490',target:'Lex Fridman 491',weight:3},{source:'Lex Fridman 490',target:'GPT-5.4',weight:2},
+        {source:'Lex Fridman 491',target:'YT - Second Brain',weight:2},{source:'Lex Fridman 489',target:'Lex Fridman 490',weight:3},
+        {source:'Huberman - Dopamine',target:'Huberman - Play',weight:3},{source:'Huberman - Dopamine',target:'Huberman - Light',weight:2},
+        {source:'Huberman - Play',target:'Huberman - Light',weight:2},{source:'Stratechery - Xbox',target:'Stratechery - Attention',weight:3},
+        {source:'GPT-5.4',target:'Anthropic Supply Chain',weight:2},{source:'GPT-5.4',target:'Jido Framework',weight:1},
+        {source:'GitHub Security',target:'Wikipedia Hack',weight:2},{source:'Anthropic Supply Chain',target:'Intel - Capital',weight:1},
+        {source:'YT - Second Brain',target:'YT - Obsidian',weight:3},{source:'YT - Second Brain',target:'Vault Report',weight:1},
+        {source:'YT - Obsidian',target:'Archer Summary',weight:1},{source:'Weekly Synthesis',target:'Vault Report',weight:2},
+        {source:'Weekly Synthesis',target:'Lex Fridman 490',weight:1},{source:'Weekly Synthesis',target:'Huberman - Dopamine',weight:1},
+        {source:'Weekly Synthesis',target:'GPT-5.4',weight:1},{source:'Liv Stats Card',target:'Learning Report',weight:2},
+        {source:'Archer Summary',target:'Vault Report',weight:2},{source:'Weekly Synthesis',target:'YT - Second Brain',weight:1},
+    ],
+    stats: {total_nodes:49,total_edges:640,avg_connections:26.1,orphan_nodes:1,most_connected:'Weekly Synthesis'}
+};
+
+let graphNodes = [], graphEdges = [], graphAnim = null;
+
+function initGraph(data) {
+    const graph = data || DEMO_GRAPH;
+    const canvas = document.getElementById('graphCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('graphContainer');
+    const W = container.clientWidth, H = container.clientHeight;
+    canvas.width = W * 2; canvas.height = H * 2;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.scale(2, 2);
+
+    const stats = graph.stats || {};
+    document.getElementById('graphStats').textContent =
+        `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges · ${stats.orphan_nodes || 0} orphans`;
+
+    // Initialize node positions with force-directed layout
+    graphNodes = graph.nodes.map((n, i) => {
+        const angle = (i / graph.nodes.length) * Math.PI * 2;
+        const r = 120 + Math.random() * 60;
+        return {
+            ...n, x: W/2 + Math.cos(angle) * r + (Math.random()-0.5)*80,
+            y: H/2 + Math.sin(angle) * r + (Math.random()-0.5)*80,
+            vx: 0, vy: 0,
+            radius: Math.max(4, Math.min(12, (n.word_count || 200) / 80)),
+            color: GRAPH_COLORS[n.folder] || '#94a3b8'
+        };
+    });
+
+    const nodeMap = {};
+    graphNodes.forEach(n => nodeMap[n.id] = n);
+    graphEdges = graph.edges.filter(e => nodeMap[e.source] && nodeMap[e.target]).map(e => ({
+        source: nodeMap[e.source], target: nodeMap[e.target], weight: e.weight || 1
+    }));
+
+    // Simulate physics
+    let tick = 0;
+    function simulate() {
+        tick++;
+        const alpha = Math.max(0.001, 0.3 * Math.pow(0.99, tick));
+        // Repulsion
+        for (let i = 0; i < graphNodes.length; i++) {
+            for (let j = i+1; j < graphNodes.length; j++) {
+                const a = graphNodes[i], b = graphNodes[j];
+                let dx = b.x - a.x, dy = b.y - a.y;
+                let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                let force = -800 / (dist * dist);
+                let fx = (dx / dist) * force * alpha, fy = (dy / dist) * force * alpha;
+                a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+            }
+        }
+        // Attraction (edges)
+        graphEdges.forEach(e => {
+            let dx = e.target.x - e.source.x, dy = e.target.y - e.source.y;
+            let dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            let force = (dist - 60) * 0.01 * alpha * e.weight;
+            let fx = (dx / dist) * force, fy = (dy / dist) * force;
+            e.source.vx += fx; e.source.vy += fy;
+            e.target.vx -= fx; e.target.vy -= fy;
+        });
+        // Center gravity
+        graphNodes.forEach(n => {
+            n.vx += (W/2 - n.x) * 0.002 * alpha;
+            n.vy += (H/2 - n.y) * 0.002 * alpha;
+            n.vx *= 0.8; n.vy *= 0.8;
+            n.x += n.vx; n.y += n.vy;
+            n.x = Math.max(20, Math.min(W-20, n.x));
+            n.y = Math.max(20, Math.min(H-20, n.y));
+        });
+        draw();
+        if (tick < 300) graphAnim = requestAnimationFrame(simulate);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        // Draw edges
+        graphEdges.forEach(e => {
+            ctx.beginPath();
+            ctx.moveTo(e.source.x, e.source.y);
+            ctx.lineTo(e.target.x, e.target.y);
+            ctx.strokeStyle = `rgba(255,255,255,${0.03 + e.weight * 0.02})`;
+            ctx.lineWidth = 0.5 + e.weight * 0.3;
+            ctx.stroke();
+        });
+        // Draw nodes
+        graphNodes.forEach(n => {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+            ctx.fillStyle = n.color;
+            ctx.globalAlpha = 0.85;
+            ctx.fill();
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, n.radius + 3, 0, Math.PI * 2);
+            ctx.fillStyle = n.color;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        });
+    }
+
+    // Tooltip on hover
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const tooltip = document.getElementById('graphTooltip');
+        let found = null;
+        for (const n of graphNodes) {
+            const dx = n.x - mx, dy = n.y - my;
+            if (dx*dx + dy*dy < (n.radius+5)*(n.radius+5)) { found = n; break; }
+        }
+        if (found) {
+            tooltip.style.display = 'block';
+            tooltip.style.left = (mx + 15) + 'px';
+            tooltip.style.top = (my - 10) + 'px';
+            tooltip.innerHTML = `<strong>${found.id}</strong><br><span style="color:${found.color}">${found.folder}</span><br>${found.word_count || '?'} words · ${found.connections || 0} connections`;
+        } else {
+            tooltip.style.display = 'none';
+        }
+    });
+
+    if (graphAnim) cancelAnimationFrame(graphAnim);
+    simulate();
+}
+
+// =============================================
 //  INIT
 // =============================================
 (async function init() {
     // Render demo data immediately for fast first paint
     renderAll(DEMO);
+    initGraph(DEMO_GRAPH);
 
     // Then check if live
     const live = await checkLive();
@@ -1214,6 +1404,12 @@ function startAutoRefresh() {
     if (live) {
         const data = await fetchLiveData();
         renderAll(data);
+        // Fetch live graph
+        try {
+            const gResp = await fetch(`${TAILSCALE_BASE}:9881/graph`, {signal: AbortSignal.timeout(5000)});
+            const gData = await gResp.json();
+            initGraph(gData);
+        } catch(e) { /* keep demo graph */ }
         startAutoRefresh();
     }
 })();
