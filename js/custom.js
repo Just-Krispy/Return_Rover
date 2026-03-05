@@ -133,11 +133,14 @@
         document.documentElement.setAttribute("data-theme", theme);
         localStorage.setItem("rr-theme", theme);
     }
+    // Always set an explicit theme on load
     const saved = localStorage.getItem("rr-theme");
     if (saved) {
         applyTheme(saved);
     } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
         applyTheme("dark");
+    } else {
+        applyTheme("light");
     }
     toggle.addEventListener("click", () => {
         const current = document.documentElement.getAttribute("data-theme");
