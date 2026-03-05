@@ -1,30 +1,21 @@
-// snowfall.js
+/* ============================================
+   Return Rover — Lightweight Snowfall Effect
+   CSS-driven particles, no images needed
+   ============================================ */
 
-document.addEventListener("DOMContentLoaded", function () {
-    console.log("Snowfall script is running!");
-    // Number of snowflakes
-    const numberOfSnowflakes = 50;
+(function () {
+    "use strict";
 
-    // Create snowflakes
-    for (let i = 0; i < numberOfSnowflakes; i++) {
-        createSnowflake();
+    const COUNT = 30;
+
+    for (let i = 0; i < COUNT; i++) {
+        const flake = document.createElement("div");
+        flake.className = "snowflake";
+        flake.style.left = Math.random() * 100 + "%";
+        flake.style.animationDuration = 6 + Math.random() * 8 + "s";
+        flake.style.animationDelay = Math.random() * 10 + "s";
+        flake.style.width = flake.style.height = 3 + Math.random() * 5 + "px";
+        flake.style.opacity = 0.3 + Math.random() * 0.5;
+        document.body.appendChild(flake);
     }
-
-    function createSnowflake() {
-        const snowflake = document.createElement("div");
-        snowflake.className = "snowflake";
-        document.body.appendChild(snowflake);
-
-        const startPosition = Math.random() * window.innerWidth;
-        const fallDuration = Math.random() * 5 + 5; // Vary the fall duration for a more natural look
-
-        snowflake.style.left = startPosition + "px";
-        snowflake.style.animationDuration = fallDuration + "s";
-
-        snowflake.addEventListener("animationiteration", () => {
-            // Reset snowflake when it reaches the bottom
-            snowflake.style.left = Math.random() * window.innerWidth + "px";
-            snowflake.style.animationDuration = Math.random() * 5 + 5 + "s";
-        });
-    }
-});
+})();

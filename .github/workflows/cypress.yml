@@ -1,0 +1,39 @@
+name: Cypress E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: automations
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: automations/package-lock.json
+
+      - run: npm ci
+
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: automations
+          config-file: cypress/cypress.config.js
+          browser: chrome
+          headless: true
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: automations/cypress/screenshots

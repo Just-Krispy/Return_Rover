@@ -2,12 +2,14 @@ const { defineConfig } = require("cypress");
 
 module.exports = defineConfig({
   e2e: {
-    experimentalStudio: true,
+    baseUrl: "https://just-krispy.github.io/Return_Rover/",
     supportFile: false,
-    viewportWidth: 1920,
-    viewportHeight: 1080,
+    viewportWidth: 1280,
+    viewportHeight: 720,
+    video: false,
+    screenshotOnRunFailure: true,
     setupNodeEvents(on, config) {
-      // ... setup node events here
+      // Node event listeners
     },
   },
 });
