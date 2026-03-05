@@ -1,6 +1,6 @@
 /* ============================================
    Return Rover — Three.js Particle Background
-   Uses modern BufferGeometry + responsive canvas
+   Dual-layer particles with depth + mouse parallax
    ============================================ */
 
 (function () {
@@ -17,36 +17,47 @@
     function init() {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.z = 600;
+        camera.position.z = 700;
 
         const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        const COUNT = 3000;
-        const positions = new Float32Array(COUNT * 3);
-        const velocities = new Float32Array(COUNT);
+        // Two particle layers for depth
+        const layers = [
+            { count: 2000, speed: 0.15, size: 2, opacity: 0.25, spread: 1800, color: 0x3b82f6 },
+            { count: 800, speed: 0.4, size: 3.5, opacity: 0.5, spread: 1200, color: 0x818cf8 },
+        ];
 
-        for (let i = 0; i < COUNT; i++) {
-            positions[i * 3] = (Math.random() - 0.5) * 1600;
-            positions[i * 3 + 1] = (Math.random() - 0.5) * 1600;
-            positions[i * 3 + 2] = (Math.random() - 0.5) * 1600;
-            velocities[i] = 0.2 + Math.random() * 0.5;
-        }
+        const groups = [];
 
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        layers.forEach((cfg) => {
+            const positions = new Float32Array(cfg.count * 3);
+            const velocities = new Float32Array(cfg.count);
 
-        const material = new THREE.PointsMaterial({
-            color: 0x4a9eff,
-            size: 2.5,
-            transparent: true,
-            opacity: 0.6,
-            sizeAttenuation: true,
+            for (let i = 0; i < cfg.count; i++) {
+                positions[i * 3] = (Math.random() - 0.5) * cfg.spread;
+                positions[i * 3 + 1] = (Math.random() - 0.5) * cfg.spread;
+                positions[i * 3 + 2] = (Math.random() - 0.5) * cfg.spread;
+                velocities[i] = cfg.speed * (0.6 + Math.random() * 0.8);
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+            const material = new THREE.PointsMaterial({
+                color: cfg.color,
+                size: cfg.size,
+                transparent: true,
+                opacity: cfg.opacity,
+                sizeAttenuation: true,
+                depthWrite: false,
+            });
+
+            const points = new THREE.Points(geometry, material);
+            scene.add(points);
+            groups.push({ points, geometry, velocities, cfg, material });
         });
-
-        const points = new THREE.Points(geometry, material);
-        scene.add(points);
 
         let mouseX = 0, mouseY = 0;
         document.addEventListener("mousemove", (e) => {
@@ -61,32 +72,39 @@
         });
 
         // React to theme changes
-        function updateColor() {
+        function updateColors() {
             const dark = document.documentElement.getAttribute("data-theme") === "dark";
-            material.color.setHex(dark ? 0x5ba8ff : 0x4a9eff);
-            material.opacity = dark ? 0.5 : 0.35;
-            material.needsUpdate = true;
+            groups[0].material.color.setHex(dark ? 0x60a5fa : 0x3b82f6);
+            groups[0].material.opacity = dark ? 0.2 : 0.2;
+            groups[1].material.color.setHex(dark ? 0xa78bfa : 0x818cf8);
+            groups[1].material.opacity = dark ? 0.35 : 0.4;
+            groups.forEach((g) => { g.material.needsUpdate = true; });
         }
-        const observer = new MutationObserver(updateColor);
+        const observer = new MutationObserver(updateColors);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-        updateColor();
+        updateColors();
 
         function animate() {
             requestAnimationFrame(animate);
 
-            const pos = geometry.attributes.position.array;
-            for (let i = 0; i < COUNT; i++) {
-                pos[i * 3 + 1] -= velocities[i];
-                if (pos[i * 3 + 1] < -800) {
-                    pos[i * 3 + 1] = 800;
-                    pos[i * 3] = (Math.random() - 0.5) * 1600;
+            groups.forEach((g, idx) => {
+                const pos = g.geometry.attributes.position.array;
+                const half = g.cfg.spread / 2;
+                for (let i = 0; i < g.cfg.count; i++) {
+                    pos[i * 3 + 1] -= g.velocities[i];
+                    if (pos[i * 3 + 1] < -half) {
+                        pos[i * 3 + 1] = half;
+                        pos[i * 3] = (Math.random() - 0.5) * g.cfg.spread;
+                    }
                 }
-            }
-            geometry.attributes.position.needsUpdate = true;
+                g.geometry.attributes.position.needsUpdate = true;
 
-            points.rotation.y += 0.0003;
-            points.rotation.x += (mouseY * 0.1 - points.rotation.x) * 0.02;
-            camera.position.x += (mouseX * 50 - camera.position.x) * 0.01;
+                g.points.rotation.y += 0.0002 * (idx + 1);
+            });
+
+            camera.position.x += (mouseX * 60 - camera.position.x) * 0.015;
+            camera.position.y += (-mouseY * 30 - camera.position.y) * 0.015;
+            camera.lookAt(scene.position);
 
             renderer.render(scene, camera);
         }

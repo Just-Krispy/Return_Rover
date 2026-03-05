@@ -25,4 +25,10 @@ describe("Element Interaction", () => {
     cy.get("#dark-toggle").click();
     cy.get("html").should("have.attr", "data-theme", "light");
   });
+
+  it("shows progress bar with numbered steps", () => {
+    cy.get(".step").should("have.length", 4);
+    cy.get(".step").eq(0).find(".step-num").should("contain.text", "1");
+    cy.get(".step").eq(0).should("have.class", "active");
+  });
 });

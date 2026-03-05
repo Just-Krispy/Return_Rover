@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Return Rover — fast, friendly product return and refund processing.">
+    <meta name="description" content="Return Rover — fast, friendly product return and refund processing. Start your return in under 60 seconds.">
     <meta name="theme-color" content="#0a0e17">
+    <meta property="og:title" content="Return Rover">
+    <meta property="og:description" content="Fast, friendly returns — let's fetch your refund.">
+    <meta property="og:image" content="images/puppy_envelope.png">
     <title>Return Rover</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐶</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/custom.css">
     <link rel="stylesheet" href="css/snowfall.css">
 </head>
@@ -14,40 +20,84 @@
     <canvas id="three-bg" aria-hidden="true"></canvas>
 
     <div class="page-wrapper">
-        <header>
-            <img src="images/puppy_envelope.png" class="logo" alt="Return Rover mascot — a puppy carrying an envelope" width="200" height="200">
-            <h1>Return Rover</h1>
-            <p class="tagline">Fast, friendly returns — let's fetch your refund.</p>
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="mascot-container">
+                <div class="mascot-glow" aria-hidden="true"></div>
+                <div class="mascot-ring" aria-hidden="true"></div>
+                <img src="images/puppy_envelope.png" class="logo" alt="Return Rover mascot — a puppy carrying an envelope" width="200" height="200">
+            </div>
+            <h1>Return <span class="accent-text">Rover</span></h1>
+            <p class="tagline">Start your return in under 60 seconds.</p>
         </header>
 
+        <!-- Feature Pills -->
+        <div class="features" aria-label="Key features">
+            <div class="pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span>Instant</span>
+            </div>
+            <div class="pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <span>Secure</span>
+            </div>
+            <div class="pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span>Easy</span>
+            </div>
+        </div>
+
+        <!-- Chat Interface -->
         <main>
             <div id="chat-container" role="log" aria-live="polite" aria-label="Return form conversation">
+                <div id="chat-header">
+                    <div class="chat-header-dot"></div>
+                    <span>Return Assistant</span>
+                </div>
                 <div id="chat-messages"></div>
                 <form id="chat-form" autocomplete="off">
                     <label for="user-input" class="sr-only">Your response</label>
                     <input type="text" id="user-input" placeholder="Type your response..." aria-required="true">
                     <button type="submit" id="send-btn" aria-label="Send response">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </button>
                 </form>
             </div>
 
             <div id="progress-bar" aria-label="Form progress">
-                <div class="step active" data-step="1">Name</div>
-                <div class="step" data-step="2">Email</div>
-                <div class="step" data-step="3">Phone</div>
-                <div class="step" data-step="4">Upload</div>
+                <div class="step active" data-step="1"><span class="step-num">1</span>Name</div>
+                <div class="step" data-step="2"><span class="step-num">2</span>Email</div>
+                <div class="step" data-step="3"><span class="step-num">3</span>Phone</div>
+                <div class="step" data-step="4"><span class="step-num">4</span>Upload</div>
             </div>
         </main>
 
+        <!-- Social Proof -->
+        <div class="social-proof">
+            <div class="stat">
+                <strong>10k+</strong>
+                <span>Returns processed</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <strong>&lt; 60s</strong>
+                <span>Average time</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <strong>4.9/5</strong>
+                <span>Satisfaction</span>
+            </div>
+        </div>
+
         <footer>
-            <p>&copy; 2023–2026 Return Rover. All rights reserved.</p>
+            <p>&copy; 2023–2026 Return Rover. Built with care.</p>
         </footer>
     </div>
 
     <button id="dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </button>
 
     <script src="js/three-bg.js"></script>
