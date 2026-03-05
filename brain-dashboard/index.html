@@ -1033,12 +1033,8 @@
 // =============================================
 //  CONFIGURATION
 // =============================================
-const TAILSCALE_BASE = 'http://100.103.26.21';
-const API_PORT = 9876;
-const RAG_PORT = 9878;
-const CHAT_PORT = 9879;
-const BM_PORT = 9880;
-const FETCH_TIMEOUT = 3000;
+const API_GATEWAY = 'http://100.103.26.21:8888';
+const FETCH_TIMEOUT = 5000;
 
 let isLive = false;
 let refreshTimer = null;
@@ -1166,7 +1162,7 @@ async function apiFetch(url) {
 }
 
 async function checkLive() {
-    const data = await apiFetch(`${TAILSCALE_BASE}:${API_PORT}/`);
+    const data = await apiFetch(`${API_GATEWAY}/`);
     return !!(data && data.status === 'ok');
 }
 
@@ -1370,11 +1366,12 @@ async function askVault() {
     resultDiv.innerHTML = '<span class="spinner"></span> Thinking...';
 
     try {
-        const data = await apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/vault-chat?q=${encodeURIComponent(q)}&session=${encodeURIComponent(chatSessionId)}`);
+        const data = await apiFetch(`${API_GATEWAY}/api/chat/chat?q=${encodeURIComponent(q)}&session=${encodeURIComponent(chatSessionId)}`);
         if (data && data.answer) {
+            const sourceNames = (data.sources || []).map(s => typeof s === 'string' ? s : s.file);
             resultDiv.innerHTML = `
                 <div class="answer">${escapeHtml(data.answer)}</div>
-                ${data.sources ? `<div class="sources">Sources: ${data.sources.map(s => `<span>${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+                ${sourceNames.length ? `<div class="sources">Sources: ${sourceNames.map(s => `<span>${escapeHtml(s)}</span>`).join('')}</div>` : ''}
             `;
         } else {
             resultDiv.innerHTML = '<div class="demo-notice">No answer returned. Try a different question.</div>';
@@ -1413,11 +1410,10 @@ async function captureBookmark() {
         if (title) body.title = title;
         if (tags) body.tags = tags.split(',').map(t => t.trim());
 
-        const res = await fetch(`${TAILSCALE_BASE}:${BM_PORT}/bookmark-capture`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-        });
+        const params = new URLSearchParams({ url: body.url });
+        if (body.title) params.set('title', body.title);
+        if (body.tags) params.set('tags', body.tags.join(','));
+        const res = await fetch(`${API_GATEWAY}/api/bookmarks/capture?${params}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         fb.className = 'capture-feedback success';
         fb.textContent = 'Captured successfully!';
@@ -1438,56 +1434,89 @@ async function fetchLiveData() {
     const data = JSON.parse(JSON.stringify(DEMO)); // Start with demo as base
 
     try {
-        const [health, ragStats, chatStats, chatHistory, bmStats, ingestStats] = await Promise.allSettled([
-            apiFetch(`${TAILSCALE_BASE}:${API_PORT}/`),
-            apiFetch(`${TAILSCALE_BASE}:${RAG_PORT}/stats`),
-            apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/stats`),
-            apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/history`),
-            apiFetch(`${TAILSCALE_BASE}:${BM_PORT}/stats`),
-            apiFetch(`${TAILSCALE_BASE}:${API_PORT}/auto-ingest`)
+        const [health, ragStats, chatStats, chatHistory, bmStats, graphData] = await Promise.allSettled([
+            apiFetch(`${API_GATEWAY}/api/health`),
+            apiFetch(`${API_GATEWAY}/api/rag/stats`),
+            apiFetch(`${API_GATEWAY}/api/chat/stats`),
+            apiFetch(`${API_GATEWAY}/api/chat/history?n=10`),
+            apiFetch(`${API_GATEWAY}/api/bookmarks/stats`),
+            apiFetch(`${API_GATEWAY}/api/graph/graph`)
         ]);
 
+        // Health: {"gateway":"running","disk":"17%","memory":"12%","load":"0.06","n8n":"Up 15 minutes"}
         if (health.status === 'fulfilled' && health.value) {
-            data.health = health.value;
-            // Update services status based on health response
-            if (health.value.services) {
-                data.services = data.services.map(svc => {
-                    const live = health.value.services[svc.name];
-                    return { ...svc, status: live ? 'up' : 'down' };
-                });
-            }
+            const h = health.value;
+            data.health = {
+                status: h.gateway === 'running' ? 'ok' : 'degraded',
+                uptime: h.n8n || 'unknown',
+                disk: h.disk, memory: h.memory, load: h.load,
+                services: data.health.services
+            };
         }
 
+        // RAG: {"total_notes":200,"indexed_notes":200,"total_chunks":1203}
         if (ragStats.status === 'fulfilled' && ragStats.value) {
-            data.ragStats = { ...data.ragStats, ...ragStats.value };
-            if (ragStats.value.folder_counts) {
-                Object.entries(ragStats.value.folder_counts).forEach(([folder, count]) => {
-                    if (data.vaultStructure[folder]) {
-                        data.vaultStructure[folder].count = count;
-                    }
-                });
-            }
+            const r = ragStats.value;
+            data.ragStats = { ...data.ragStats, ...r };
+            data.ingestStats = { ...data.ingestStats, total_ingested: r.total_notes };
         }
 
+        // Chat: {"questions_asked":2,"avg_response_time_ms":2572,"active_sessions":1}
         if (chatStats.status === 'fulfilled' && chatStats.value) {
-            data.chatStats = { ...data.chatStats, ...chatStats.value };
+            const c = chatStats.value;
+            data.chatStats = {
+                ...data.chatStats,
+                total_questions: c.questions_asked || 0,
+                avg_response_time: c.avg_response_time_ms ? (c.avg_response_time_ms / 1000).toFixed(1) + 's' : data.chatStats.avg_response_time,
+                active_sessions: c.active_sessions
+            };
         }
 
+        // Chat history: {"history":[{question,answer,sources:[{file,similarity}],timestamp}]}
         if (chatHistory.status === 'fulfilled' && chatHistory.value) {
-            if (Array.isArray(chatHistory.value)) {
-                data.chatHistory = chatHistory.value;
-            } else if (chatHistory.value.history) {
-                data.chatHistory = chatHistory.value.history;
+            const hist = chatHistory.value.history || chatHistory.value;
+            if (Array.isArray(hist) && hist.length > 0) {
+                data.chatHistory = hist.map(h => ({
+                    q: h.question,
+                    a: h.answer,
+                    sources: (h.sources || []).map(s => typeof s === 'string' ? s : s.file),
+                    ts: h.timestamp
+                }));
+                // Build activity feed from real chat history
+                data.activity = hist.map(h => ({
+                    type: 'chat',
+                    text: `Answered: "${escapeHtml(h.question.substring(0, 60))}${h.question.length > 60 ? '...' : ''}"`,
+                    ts: h.timestamp
+                }));
             }
         }
 
+        // Bookmarks: {"total_captured":1,"vault_inbox":"..."}
         if (bmStats.status === 'fulfilled' && bmStats.value) {
             data.bookmarkStats = { ...data.bookmarkStats, ...bmStats.value };
         }
 
-        if (ingestStats.status === 'fulfilled' && ingestStats.value) {
-            data.ingestStats = { ...data.ingestStats, ...ingestStats.value };
+        // Graph: derive vault folder counts from nodes
+        if (graphData.status === 'fulfilled' && graphData.value && graphData.value.nodes) {
+            const folderCounts = {};
+            graphData.value.nodes.forEach(n => {
+                const folder = n.folder || 'root';
+                folderCounts[folder] = (folderCounts[folder] || 0) + 1;
+            });
+            // Update vault structure with real counts
+            Object.keys(data.vaultStructure).forEach(f => {
+                data.vaultStructure[f].count = folderCounts[f] || 0;
+            });
         }
+
+        // Build live service health by checking what data we got back
+        data.services = [
+            { name: 'vault-search', port: 9878, status: ragStats.status === 'fulfilled' && ragStats.value ? 'up' : 'down' },
+            { name: 'vault-chat', port: 9879, status: chatStats.status === 'fulfilled' && chatStats.value ? 'up' : 'down' },
+            { name: 'bookmark-capture', port: 9880, status: bmStats.status === 'fulfilled' && bmStats.value ? 'up' : 'down' },
+            { name: 'knowledge-graph', port: 9881, status: graphData.status === 'fulfilled' && graphData.value ? 'up' : 'down' },
+            { name: 'health-endpoint', port: 9876, status: health.status === 'fulfilled' && health.value ? 'up' : 'down' }
+        ];
 
     } catch (err) {
         console.warn('Error fetching some live data:', err);
@@ -1831,9 +1860,22 @@ function initGraph(data) {
         renderAll(data);
         // Fetch live graph
         try {
-            const gResp = await fetch(`${TAILSCALE_BASE}:9881/graph`, {signal: AbortSignal.timeout(5000)});
+            const gResp = await fetch(`${API_GATEWAY}/api/graph/graph`, {signal: AbortSignal.timeout(8000)});
             const gData = await gResp.json();
-            initGraph(gData);
+            // Filter graph for performance: keep top nodes by connections, limit edges
+            if (gData.nodes && gData.nodes.length > 50) {
+                const sorted = [...gData.nodes].sort((a, b) => (b.connections || 0) - (a.connections || 0));
+                const topNodes = sorted.slice(0, 60);
+                const nodeIds = new Set(topNodes.map(n => n.id));
+                const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+                initGraph({
+                    nodes: topNodes,
+                    edges: filteredEdges,
+                    stats: { total_nodes: gData.nodes.length, total_edges: gData.edges?.length || 0, orphan_nodes: gData.nodes.filter(n => !n.connections).length, most_connected: sorted[0]?.id || '' }
+                });
+            } else {
+                initGraph(gData);
+            }
         } catch(e) { /* keep demo graph */ }
         startAutoRefresh();
     }
