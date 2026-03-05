@@ -133,15 +133,9 @@
         document.documentElement.setAttribute("data-theme", theme);
         localStorage.setItem("rr-theme", theme);
     }
-    // Always set an explicit theme on load
+    // Default to light mode; respect user's toggle choice if saved
     const saved = localStorage.getItem("rr-theme");
-    if (saved) {
-        applyTheme(saved);
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        applyTheme("dark");
-    } else {
-        applyTheme("light");
-    }
+    applyTheme(saved || "light");
     toggle.addEventListener("click", () => {
         const current = document.documentElement.getAttribute("data-theme");
         applyTheme(current === "dark" ? "light" : "dark");
