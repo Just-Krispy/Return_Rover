@@ -134,8 +134,8 @@ body {
 
 .mascot-container {
     position: relative;
-    width: 180px;
-    height: 180px;
+    width: 240px;
+    height: 240px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -185,8 +185,8 @@ body {
 }
 
 .logo {
-    width: 160px;
-    height: 160px;
+    width: 220px;
+    height: 220px;
     object-fit: contain;
     filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.1));
     animation: float 5s ease-in-out infinite;
