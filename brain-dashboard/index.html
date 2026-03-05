@@ -667,6 +667,170 @@
         ::-webkit-scrollbar-thumb { background: var(--border-accent); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
 
+        /* ---- CARD FADE-IN ANIMATION ---- */
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .card, .stat-card {
+            opacity: 0;
+            animation: cardFadeIn 0.5s ease forwards;
+        }
+        .stats-row .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stats-row .stat-card:nth-child(2) { animation-delay: 0.12s; }
+        .stats-row .stat-card:nth-child(3) { animation-delay: 0.19s; }
+        .stats-row .stat-card:nth-child(4) { animation-delay: 0.26s; }
+        .grid-2 .card:nth-child(1) { animation-delay: 0.30s; }
+        .grid-2 .card:nth-child(2) { animation-delay: 0.36s; }
+        .card[style*="margin-bottom"] { animation-delay: 0.42s; }
+
+        /* ---- SPARKLINE CHART ---- */
+        .sparkline-container {
+            margin-top: 14px;
+            position: relative;
+            height: 48px;
+        }
+        .sparkline-container canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .sparkline-label {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        /* ---- CHAT SESSION ---- */
+        .chat-session-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+        .chat-session-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        .chat-turn-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--accent-indigo);
+            font-weight: 600;
+        }
+        .chat-turn-indicator .turn-count {
+            background: rgba(129,140,248,0.15);
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 10px;
+        }
+        .btn-new-chat {
+            background: transparent;
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .btn-new-chat:hover {
+            border-color: var(--accent-indigo);
+            color: var(--accent-indigo);
+        }
+
+        /* ---- LAST UPDATED TICKER ---- */
+        .last-updated-ticker {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---- PULSING STATUS DOTS ---- */
+        @keyframes pulse-status {
+            0%, 100% { box-shadow: 0 0 6px rgba(74,222,128,0.4); }
+            50% { box-shadow: 0 0 12px rgba(74,222,128,0.7); }
+        }
+        .status-dot.up {
+            animation: pulse-status 2.5s ease-in-out infinite;
+        }
+
+        /* ---- HEALTH PILLS GRID ---- */
+        .health-pills {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 10px;
+        }
+        .health-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--bg-inset);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            transition: border-color 0.15s ease;
+        }
+        .health-pill:hover {
+            border-color: var(--border-accent);
+        }
+        .health-pill .pill-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .health-pill .pill-dot.up {
+            background: var(--accent-green);
+            box-shadow: 0 0 8px rgba(74,222,128,0.5);
+            animation: pulse-status 2.5s ease-in-out infinite;
+        }
+        .health-pill .pill-dot.down {
+            background: var(--accent-red);
+            box-shadow: 0 0 8px rgba(248,113,113,0.5);
+        }
+        .health-pill .pill-dot.unknown {
+            background: var(--text-tertiary);
+        }
+        .health-pill .pill-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .health-pill .pill-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .health-pill .pill-port {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+        }
+        .health-pill .pill-status-label {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .health-pill .pill-status-label.up { color: var(--accent-green); }
+        .health-pill .pill-status-label.down { color: var(--accent-red); }
+        .health-pill .pill-status-label.unknown { color: var(--text-tertiary); }
+
         /* ---- LOADING SPINNER ---- */
         .spinner {
             display: inline-block;
@@ -722,6 +886,7 @@
                 <span class="dot"></span>
                 <span id="modeLabel">DEMO</span>
             </span>
+            <span id="lastUpdatedTicker" class="last-updated-ticker">Updated just now</span>
             <span id="refreshInfo" class="refresh-info">--</span>
             <button class="btn-refresh" onclick="refreshAll()" title="Refresh now">&#8635; Refresh</button>
         </div>
@@ -736,6 +901,10 @@
             </div>
             <div class="stat-value" id="statNotes">--</div>
             <div class="stat-sub" id="statNotesSub"></div>
+            <div class="sparkline-container">
+                <canvas id="sparklineCanvas"></canvas>
+                <div class="sparkline-label">7-day vault growth</div>
+            </div>
         </div>
         <div class="card stat-card stat-card--cyan">
             <div class="stat-card__header">
@@ -787,6 +956,15 @@
         <!-- ASK THE VAULT -->
         <div class="card">
             <div class="card-title"><i data-lucide="message-square" class="icon"></i> Ask the Vault</div>
+            <div class="chat-session-bar">
+                <div class="chat-session-info">
+                    <span class="chat-turn-indicator">
+                        <i data-lucide="message-circle" style="width:12px;height:12px"></i>
+                        Turn <span class="turn-count" id="chatTurnCount">0</span>
+                    </span>
+                </div>
+                <button class="btn-new-chat" onclick="resetChatSession()" title="Start a fresh conversation">New Chat</button>
+            </div>
             <div class="ask-form">
                 <input type="text" class="ask-input" id="askInput" placeholder="Ask your second brain anything..." onkeydown="if(event.key==='Enter')askVault()">
                 <button class="btn-primary" id="askBtn" onclick="askVault()">Ask</button>
@@ -839,7 +1017,7 @@
         <!-- SYSTEM HEALTH -->
         <div class="card">
             <div class="card-title"><i data-lucide="heart-pulse" class="icon"></i> System Health</div>
-            <div class="health-grid" id="healthGrid"></div>
+            <div class="health-pills" id="healthGrid"></div>
         </div>
 
         <!-- AUTOMATION STATUS -->
@@ -864,6 +1042,28 @@ const FETCH_TIMEOUT = 3000;
 
 let isLive = false;
 let refreshTimer = null;
+let lastRefreshTimestamp = Date.now();
+let lastUpdatedInterval = null;
+
+// Chat session support
+let chatSessionId = generateSessionId();
+let chatTurnCount = 0;
+
+function generateSessionId() {
+    return 'sess_' + Math.random().toString(36).substr(2, 12) + '_' + Date.now().toString(36);
+}
+
+function resetChatSession() {
+    chatSessionId = generateSessionId();
+    chatTurnCount = 0;
+    document.getElementById('chatTurnCount').textContent = '0';
+    document.getElementById('askResult').innerHTML = '<div class="demo-notice">New conversation started. Ask your second brain anything.</div>';
+    document.getElementById('askInput').value = '';
+    document.getElementById('askInput').focus();
+}
+
+// Demo sparkline data (7 data points representing last 7 days of vault note counts)
+const DEMO_SPARKLINE = [31, 35, 38, 41, 43, 46, 49];
 
 // =============================================
 //  DEMO DATA
@@ -980,6 +1180,22 @@ function setMode(live) {
 
 function updateRefreshTime() {
     document.getElementById('refreshInfo').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    lastRefreshTimestamp = Date.now();
+    updateLastUpdatedTicker();
+}
+
+function updateLastUpdatedTicker() {
+    const el = document.getElementById('lastUpdatedTicker');
+    if (!el) return;
+    const seconds = Math.floor((Date.now() - lastRefreshTimestamp) / 1000);
+    if (seconds < 5) el.textContent = 'Updated just now';
+    else if (seconds < 60) el.textContent = `Updated ${seconds}s ago`;
+    else { const mins = Math.floor(seconds / 60); el.textContent = `Updated ${mins}m ago`; }
+}
+
+function startLastUpdatedTicker() {
+    if (lastUpdatedInterval) clearInterval(lastUpdatedInterval);
+    lastUpdatedInterval = setInterval(updateLastUpdatedTicker, 1000);
 }
 
 function escapeHtml(str) {
@@ -1085,11 +1301,15 @@ function renderHealth(services) {
     container.innerHTML = '';
     services.forEach(svc => {
         const el = document.createElement('div');
-        el.className = 'health-row';
+        el.className = 'health-pill';
+        const statusLabel = svc.status === 'up' ? 'UP' : svc.status === 'down' ? 'DOWN' : '???';
         el.innerHTML = `
-            <span class="svc-name">${svc.name}</span>
-            <span class="svc-port">:${svc.port}</span>
-            <span class="status-dot ${svc.status}"></span>
+            <span class="pill-dot ${svc.status}"></span>
+            <div class="pill-info">
+                <span class="pill-name">${svc.name}</span>
+                <span class="pill-port">:${svc.port}</span>
+            </div>
+            <span class="pill-status-label ${svc.status}">${statusLabel}</span>
         `;
         container.appendChild(el);
     });
@@ -1132,13 +1352,17 @@ async function askVault() {
     const q = input.value.trim();
     if (!q) return;
 
+    chatTurnCount++;
+    document.getElementById('chatTurnCount').textContent = chatTurnCount;
+
     if (!isLive) {
-        // Demo mode: show a demo response
-        const demo = DEMO.chatHistory[0];
+        // Demo mode: cycle through demo responses
+        const demo = DEMO.chatHistory[(chatTurnCount - 1) % DEMO.chatHistory.length];
         resultDiv.innerHTML = `
             <div class="answer">${escapeHtml(demo.a)}</div>
             <div class="sources">Sources: ${demo.sources.map(s => `<span>${escapeHtml(s)}</span>`).join('')}</div>
         `;
+        input.value = '';
         return;
     }
 
@@ -1146,7 +1370,7 @@ async function askVault() {
     resultDiv.innerHTML = '<span class="spinner"></span> Thinking...';
 
     try {
-        const data = await apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/vault-chat?q=${encodeURIComponent(q)}`);
+        const data = await apiFetch(`${TAILSCALE_BASE}:${CHAT_PORT}/vault-chat?q=${encodeURIComponent(q)}&session=${encodeURIComponent(chatSessionId)}`);
         if (data && data.answer) {
             resultDiv.innerHTML = `
                 <div class="answer">${escapeHtml(data.answer)}</div>
@@ -1159,6 +1383,7 @@ async function askVault() {
         resultDiv.innerHTML = `<div class="demo-notice" style="color:var(--accent-red)">Error: ${escapeHtml(err.message)}</div>`;
     }
     btn.disabled = false;
+    input.value = '';
 }
 
 // =============================================
@@ -1272,6 +1497,98 @@ async function fetchLiveData() {
 }
 
 // =============================================
+//  SPARKLINE CHART
+// =============================================
+function renderSparkline(dataPoints) {
+    const canvas = document.getElementById('sparklineCanvas');
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    const W = container.clientWidth;
+    const H = 48;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    if (!dataPoints || dataPoints.length < 2) return;
+
+    const min = Math.min(...dataPoints) * 0.9;
+    const max = Math.max(...dataPoints) * 1.05;
+    const range = max - min || 1;
+    const padX = 4;
+    const padY = 4;
+    const plotW = W - padX * 2;
+    const plotH = H - padY * 2;
+
+    const points = dataPoints.map((v, i) => ({
+        x: padX + (i / (dataPoints.length - 1)) * plotW,
+        y: padY + plotH - ((v - min) / range) * plotH
+    }));
+
+    // Area fill
+    const gradient = ctx.createLinearGradient(0, padY, 0, H);
+    gradient.addColorStop(0, 'rgba(129,140,248,0.25)');
+    gradient.addColorStop(1, 'rgba(129,140,248,0.02)');
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, H);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length - 1].x, H);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        const cp1x = (points[i-1].x + points[i].x) / 2;
+        ctx.bezierCurveTo(cp1x, points[i-1].y, cp1x, points[i].y, points[i].x, points[i].y);
+    }
+    ctx.strokeStyle = '#818cf8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // End dot
+    const last = points[points.length - 1];
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#818cf8';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(129,140,248,0.3)';
+    ctx.fill();
+}
+
+// =============================================
+//  KEYBOARD SHORTCUTS
+// =============================================
+function initKeyboardShortcuts() {
+    // Ctrl+Enter in capture textarea sends capture
+    document.getElementById('captureUrl').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            captureBookmark();
+        }
+    });
+    document.getElementById('captureTitle').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            captureBookmark();
+        }
+    });
+    document.getElementById('captureTags').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            captureBookmark();
+        }
+    });
+}
+
+// =============================================
 //  MAIN RENDER
 // =============================================
 async function renderAll(data) {
@@ -1280,6 +1597,7 @@ async function renderAll(data) {
     renderActivity(data.activity);
     renderHealth(data.services);
     renderWorkflows(data.workflows);
+    renderSparkline(data._sparklineData || DEMO_SPARKLINE);
     updateRefreshTime();
 }
 
@@ -1493,6 +1811,12 @@ function initGraph(data) {
 (async function init() {
     // Initialize Lucide icons
     lucide.createIcons();
+
+    // Start the "last updated" live ticker
+    startLastUpdatedTicker();
+
+    // Keyboard shortcuts
+    initKeyboardShortcuts();
 
     // Render demo data immediately for fast first paint
     renderAll(DEMO);
