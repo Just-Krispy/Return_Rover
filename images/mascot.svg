@@ -1,26 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" fill="none">
   <defs>
-    <radialGradient id="furShade" cx="40%" cy="30%" r="65%">
-      <stop offset="0%" stop-color="#FDE68A"/>
-      <stop offset="60%" stop-color="#FBBF24"/>
-      <stop offset="100%" stop-color="#D97706"/>
-    </radialGradient>
-    <radialGradient id="furLight" cx="45%" cy="25%" r="55%">
-      <stop offset="0%" stop-color="#FEF3C7"/>
-      <stop offset="100%" stop-color="#FDE68A"/>
-    </radialGradient>
-    <radialGradient id="bellyShade" cx="50%" cy="30%" r="60%">
-      <stop offset="0%" stop-color="#FFFBEB"/>
-      <stop offset="100%" stop-color="#FEF3C7"/>
-    </radialGradient>
-    <radialGradient id="eyeGrad" cx="35%" cy="30%" r="50%">
-      <stop offset="0%" stop-color="#7C3AED"/>
-      <stop offset="100%" stop-color="#1E1B4B"/>
-    </radialGradient>
-    <radialGradient id="noseShine" cx="35%" cy="25%" r="50%">
-      <stop offset="0%" stop-color="#4B5563"/>
-      <stop offset="100%" stop-color="#111827"/>
-    </radialGradient>
     <linearGradient id="envBody" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3B82F6"/>
       <stop offset="100%" stop-color="#6366F1"/>
@@ -30,132 +9,109 @@
       <stop offset="50%" stop-color="#6366F1"/>
       <stop offset="100%" stop-color="#3B82F6"/>
     </linearGradient>
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
-      <feOffset dx="0" dy="2"/>
-      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
   </defs>
 
-  <!-- === TAIL (behind body, wagging up) === -->
-  <path d="M150 148 C160 130, 168 118, 164 105 C161 96, 155 98, 156 106 C157 112, 154 120, 150 128"
-        stroke="#FBBF24" stroke-width="9" fill="none" stroke-linecap="round"/>
-  <ellipse cx="163" cy="102" rx="5" ry="4" fill="#FDE68A" opacity="0.6"/>
+  <!-- ======= TAIL (behind body) ======= -->
+  <path d="M148 160 C158 142, 166 128, 162 116"
+        stroke="#C8A46E" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M148 160 C158 142, 166 128, 162 116"
+        stroke="#DABB87" stroke-width="6" fill="none" stroke-linecap="round"/>
 
-  <!-- === BODY (golden retriever coloring) === -->
-  <ellipse cx="100" cy="160" rx="42" ry="34" fill="url(#furShade)"/>
-  <!-- Chest/belly (lighter) -->
-  <ellipse cx="100" cy="166" rx="26" ry="22" fill="url(#bellyShade)" opacity="0.85"/>
+  <!-- ======= BODY ======= -->
+  <ellipse cx="100" cy="170" rx="44" ry="36" fill="#C8A46E"/>
+  <ellipse cx="100" cy="174" rx="30" ry="24" fill="#DABB87"/>
 
-  <!-- === BACK LEGS === -->
-  <ellipse cx="70" cy="188" rx="16" ry="12" fill="#E5A50A"/>
-  <ellipse cx="130" cy="188" rx="16" ry="12" fill="#E5A50A"/>
-  <!-- Back paws -->
-  <ellipse cx="70" cy="194" rx="11" ry="6" fill="#FBBF24"/>
-  <ellipse cx="130" cy="194" rx="11" ry="6" fill="#FBBF24"/>
+  <!-- ======= BACK PAWS ======= -->
+  <ellipse cx="68" cy="200" rx="14" ry="10" fill="#C8A46E"/>
+  <ellipse cx="132" cy="200" rx="14" ry="10" fill="#C8A46E"/>
 
-  <!-- === FRONT LEGS (in front, holding envelope) === -->
-  <!-- Left front leg -->
-  <path d="M72 168 C68 178, 66 190, 70 198" stroke="#FBBF24" stroke-width="16" fill="none" stroke-linecap="round"/>
-  <ellipse cx="70" cy="200" rx="11" ry="7" fill="#FDE68A"/>
-  <!-- Right front leg -->
-  <path d="M128 168 C132 178, 134 190, 130 198" stroke="#FBBF24" stroke-width="16" fill="none" stroke-linecap="round"/>
-  <ellipse cx="130" cy="200" rx="11" ry="7" fill="#FDE68A"/>
+  <!-- ======= FRONT LEGS ======= -->
+  <rect x="74" y="180" width="16" height="30" rx="8" fill="#C8A46E"/>
+  <rect x="110" y="180" width="16" height="30" rx="8" fill="#C8A46E"/>
+  <!-- Front paws -->
+  <ellipse cx="82" cy="212" rx="12" ry="7" fill="#DABB87"/>
+  <ellipse cx="118" cy="212" rx="12" ry="7" fill="#DABB87"/>
 
-  <!-- === ENVELOPE (held between paws) === -->
-  <g transform="translate(62, 172)" filter="url(#softShadow)">
-    <rect x="0" y="0" width="76" height="46" rx="5" fill="url(#envBody)"/>
-    <path d="M0 5 L38 28 L76 5" fill="#60A5FA" opacity="0.85"/>
-    <path d="M0 5 L38 28 L76 5" stroke="#4338CA" stroke-width="0.5" fill="none" opacity="0.3"/>
-    <line x1="20" y1="34" x2="56" y2="34" stroke="white" stroke-width="2" opacity="0.2" stroke-linecap="round"/>
-    <line x1="24" y1="39" x2="52" y2="39" stroke="white" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
+  <!-- ======= ENVELOPE (in mouth) ======= -->
+  <g transform="translate(60, 110) rotate(-5)">
+    <rect x="0" y="0" width="80" height="48" rx="4" fill="url(#envBody)"/>
+    <path d="M0 5 L40 28 L80 5" fill="#60A5FA" opacity="0.8"/>
+    <path d="M0 5 L40 28 L80 5" stroke="#4338CA" stroke-width="0.5" fill="none" opacity="0.3"/>
+    <line x1="20" y1="36" x2="60" y2="36" stroke="white" stroke-width="2" opacity="0.2" stroke-linecap="round"/>
     <!-- Heart seal -->
-    <path d="M35 14 C35 10, 38 8, 40 12 C42 8, 45 10, 45 14 C45 19, 40 22, 40 22 C40 22, 35 19, 35 14Z" fill="#F472B6"/>
+    <path d="M37 13 C37 9, 40 7, 42 11 C44 7, 47 9, 47 13 C47 18, 42 21, 42 21 C42 21, 37 18, 37 13Z" fill="#F472B6"/>
   </g>
 
-  <!-- === LEFT EAR (long, floppy, drooping DOWN like a retriever) === -->
-  <path d="M62 62 C54 56, 38 52, 28 62 C18 72, 20 95, 30 108 C38 118, 50 115, 56 100 C60 90, 62 78, 62 68"
-        fill="#D97706"/>
-  <path d="M60 66 C54 60, 42 58, 36 66 C28 76, 30 94, 38 104 C44 112, 50 108, 54 96 C56 88, 58 78, 58 70"
-        fill="#E5A50A" opacity="0.7"/>
+  <!-- ======= LEFT EAR (long, floppy, hanging WAY down) ======= -->
+  <ellipse cx="52" cy="82" rx="20" ry="46" transform="rotate(15, 52, 82)" fill="#B08D57"/>
+  <ellipse cx="52" cy="82" rx="14" ry="40" transform="rotate(15, 52, 82)" fill="#C8A46E" opacity="0.6"/>
 
-  <!-- === RIGHT EAR (long, floppy, drooping DOWN) === -->
-  <path d="M138 62 C146 56, 162 52, 172 62 C182 72, 180 95, 170 108 C162 118, 150 115, 144 100 C140 90, 138 78, 138 68"
-        fill="#D97706"/>
-  <path d="M140 66 C146 60, 158 58, 164 66 C172 76, 170 94, 162 104 C156 112, 150 108, 146 96 C144 88, 142 78, 142 70"
-        fill="#E5A50A" opacity="0.7"/>
+  <!-- ======= RIGHT EAR (long, floppy, hanging WAY down) ======= -->
+  <ellipse cx="148" cy="82" rx="20" ry="46" transform="rotate(-15, 148, 82)" fill="#B08D57"/>
+  <ellipse cx="148" cy="82" rx="14" ry="40" transform="rotate(-15, 148, 82)" fill="#C8A46E" opacity="0.6"/>
 
-  <!-- === HEAD (big, round — golden fur) === -->
-  <circle cx="100" cy="82" r="52" fill="url(#furShade)"/>
+  <!-- ======= HEAD (big round circle) ======= -->
+  <circle cx="100" cy="72" r="52" fill="#C8A46E"/>
+  <!-- Lighter face center -->
+  <circle cx="100" cy="76" r="38" fill="#DABB87" opacity="0.6"/>
 
-  <!-- Lighter face area (like a real golden retriever) -->
-  <ellipse cx="100" cy="90" rx="36" ry="30" fill="url(#furLight)" opacity="0.7"/>
+  <!-- ======= MUZZLE (big, obvious, rounded bump) ======= -->
+  <ellipse cx="100" cy="96" rx="26" ry="20" fill="#E8D5B0"/>
+  <ellipse cx="100" cy="98" rx="22" ry="16" fill="#F0E4CC"/>
 
-  <!-- === SNOUT / MUZZLE (protruding, dog-like!) === -->
-  <ellipse cx="100" cy="102" rx="22" ry="16" fill="#FEF3C7"/>
-  <ellipse cx="100" cy="104" rx="18" ry="13" fill="#FFFBEB" opacity="0.8"/>
+  <!-- ======= NOSE (big, black, shiny — tip of muzzle) ======= -->
+  <ellipse cx="100" cy="90" rx="10" ry="8" fill="#2D2D2D"/>
+  <ellipse cx="100" cy="90" rx="10" ry="8" fill="#1A1A1A"/>
+  <!-- Nose shine -->
+  <ellipse cx="96" cy="87" rx="4" ry="3" fill="white" opacity="0.3"/>
 
-  <!-- Cheek blush -->
-  <ellipse cx="64" cy="92" rx="9" ry="5" fill="#FCA5A5" opacity="0.25"/>
-  <ellipse cx="136" cy="92" rx="9" ry="5" fill="#FCA5A5" opacity="0.25"/>
-
-  <!-- === EYES (huge, expressive — Pixar style) === -->
+  <!-- ======= EYES (big, round, Pixar sparkle) ======= -->
   <!-- Left eye -->
-  <ellipse cx="80" cy="78" rx="15" ry="16" fill="white"/>
-  <ellipse cx="80" cy="78" rx="15" ry="16" stroke="#D4A017" stroke-width="0.8" fill="none" opacity="0.3"/>
-  <circle cx="82" cy="80" r="9" fill="url(#eyeGrad)"/>
-  <circle cx="82" cy="80" r="5.5" fill="#1E1B4B"/>
-  <!-- Pixar double-highlight -->
-  <circle cx="86" cy="75" r="4" fill="white" opacity="0.95"/>
-  <circle cx="78" cy="83" r="2" fill="white" opacity="0.45"/>
+  <circle cx="80" cy="68" r="14" fill="white"/>
+  <circle cx="82" cy="70" r="9" fill="#4A3728"/>
+  <circle cx="82" cy="70" r="5" fill="#1A1A1A"/>
+  <circle cx="86" cy="66" r="4.5" fill="white" opacity="0.9"/>
+  <circle cx="79" cy="73" r="2" fill="white" opacity="0.4"/>
 
   <!-- Right eye -->
-  <ellipse cx="120" cy="78" rx="15" ry="16" fill="white"/>
-  <ellipse cx="120" cy="78" rx="15" ry="16" stroke="#D4A017" stroke-width="0.8" fill="none" opacity="0.3"/>
-  <circle cx="118" cy="80" r="9" fill="url(#eyeGrad)"/>
-  <circle cx="118" cy="80" r="5.5" fill="#1E1B4B"/>
-  <!-- Pixar double-highlight -->
-  <circle cx="122" cy="75" r="4" fill="white" opacity="0.95"/>
-  <circle cx="114" cy="83" r="2" fill="white" opacity="0.45"/>
+  <circle cx="120" cy="68" r="14" fill="white"/>
+  <circle cx="118" cy="70" r="9" fill="#4A3728"/>
+  <circle cx="118" cy="70" r="5" fill="#1A1A1A"/>
+  <circle cx="122" cy="66" r="4.5" fill="white" opacity="0.9"/>
+  <circle cx="115" cy="73" r="2" fill="white" opacity="0.4"/>
 
-  <!-- Eyebrows (soft, friendly arches) -->
-  <path d="M66 64 Q76 56 90 62" stroke="#B8860B" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
-  <path d="M134 64 Q124 56 110 62" stroke="#B8860B" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <!-- Eyebrows -->
+  <path d="M64 54 Q74 48 88 54" stroke="#A07C50" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M136 54 Q126 48 112 54" stroke="#A07C50" stroke-width="3" fill="none" stroke-linecap="round"/>
 
-  <!-- === NOSE (big, round, shiny — at end of snout) === -->
-  <ellipse cx="100" cy="98" rx="9" ry="7" fill="url(#noseShine)"/>
-  <ellipse cx="97" cy="96" rx="3.5" ry="2.5" fill="white" opacity="0.35"/>
-  <!-- Nostrils -->
-  <ellipse cx="96" cy="100" rx="2" ry="1.2" fill="#000" opacity="0.3"/>
-  <ellipse cx="104" cy="100" rx="2" ry="1.2" fill="#000" opacity="0.3"/>
+  <!-- ======= MOUTH (big happy smile under muzzle) ======= -->
+  <path d="M82 102 Q90 112 100 104 Q110 112 118 102"
+        stroke="#A07C50" stroke-width="2" fill="none" stroke-linecap="round"/>
 
-  <!-- Mouth (W shape — happy dog smile) -->
-  <path d="M88 106 Q94 114 100 106 Q106 114 112 106" stroke="#B8860B" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <!-- Tongue (hanging out, happy pup) -->
+  <ellipse cx="100" cy="112" rx="8" ry="10" fill="#F9A8D4"/>
+  <ellipse cx="100" cy="110" rx="6" ry="6" fill="#FDA4AF"/>
+  <line x1="100" y1="106" x2="100" y2="118" stroke="#F472B6" stroke-width="0.8" opacity="0.3"/>
 
-  <!-- Tongue (hanging out one side — classic dog!) -->
-  <path d="M104 108 C106 112, 108 120, 106 124 C104 126, 100 126, 99 122 C98 118, 100 112, 102 108"
-        fill="#FDA4AF" opacity="0.85"/>
-  <path d="M103 112 C104 116, 104 120, 103 122" stroke="#F9A8D4" stroke-width="0.8" fill="none" opacity="0.4"/>
+  <!-- Cheek puffs -->
+  <ellipse cx="62" cy="86" rx="8" ry="5" fill="#F9A8D4" opacity="0.2"/>
+  <ellipse cx="138" cy="86" rx="8" ry="5" fill="#F9A8D4" opacity="0.2"/>
 
-  <!-- === COLLAR (thick, with buckle detail) === -->
-  <path d="M56 126 Q100 144 144 126" stroke="url(#collarGrad)" stroke-width="8" fill="none" stroke-linecap="round"/>
-  <!-- Collar stitching -->
-  <path d="M62 128 Q100 142 138 128" stroke="white" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.15" stroke-dasharray="3 4"/>
+  <!-- ======= COLLAR ======= -->
+  <path d="M54 120 Q100 140 146 120" stroke="url(#collarGrad)" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M58 122 Q100 138 142 122" stroke="white" stroke-width="1" fill="none" opacity="0.15" stroke-dasharray="3 4"/>
 
-  <!-- Collar tag (gold, hanging) -->
-  <g transform="translate(93, 138)">
-    <!-- Tag ring -->
-    <circle cx="7" cy="0" r="3" stroke="#4338CA" stroke-width="2" fill="none"/>
-    <!-- Tag body -->
-    <path d="M0 3 L3 0 L11 0 L14 3 L14 14 Q7 18 0 14 Z" fill="#FBBF24"/>
-    <path d="M1 4 L3.5 1.5 L10.5 1.5 L13 4 L13 13 Q7 16.5 1 13 Z" fill="#F59E0B"/>
-    <text x="7" y="11" text-anchor="middle" font-size="7.5" font-weight="800" fill="white" font-family="Arial, sans-serif">R</text>
+  <!-- Tag -->
+  <g transform="translate(92, 134)">
+    <circle cx="8" cy="0" r="3" stroke="#4338CA" stroke-width="2" fill="none"/>
+    <circle cx="8" cy="8" r="9" fill="#FBBF24"/>
+    <circle cx="8" cy="8" r="7" fill="#F59E0B"/>
+    <text x="8" y="12" text-anchor="middle" font-size="9" font-weight="800" fill="white" font-family="Arial, sans-serif">R</text>
   </g>
 
-  <!-- === FOREHEAD TUFT (fluffy fur on top) === -->
-  <path d="M85 38 C88 30, 95 28, 100 32 C105 28, 112 30, 115 38"
-        stroke="#FBBF24" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
-  <path d="M90 36 C94 30, 100 29, 100 34 C100 29, 106 30, 110 36"
-        fill="#FDE68A" opacity="0.4"/>
+  <!-- ======= WHISKER DOTS ======= -->
+  <circle cx="72" cy="96" r="1.2" fill="#A07C50" opacity="0.4"/>
+  <circle cx="68" cy="92" r="1.2" fill="#A07C50" opacity="0.4"/>
+  <circle cx="128" cy="96" r="1.2" fill="#A07C50" opacity="0.4"/>
+  <circle cx="132" cy="92" r="1.2" fill="#A07C50" opacity="0.4"/>
 </svg>
