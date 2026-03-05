@@ -1,140 +1,161 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230" fill="none">
   <defs>
-    <radialGradient id="headShade" cx="45%" cy="35%" r="55%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E2E8F0"/>
+    <radialGradient id="furShade" cx="40%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="60%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
     </radialGradient>
-    <radialGradient id="bodyShade" cx="45%" cy="30%" r="60%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E8ECF1"/>
+    <radialGradient id="furLight" cx="45%" cy="25%" r="55%">
+      <stop offset="0%" stop-color="#FEF3C7"/>
+      <stop offset="100%" stop-color="#FDE68A"/>
     </radialGradient>
-    <radialGradient id="eyeShine" cx="35%" cy="30%" r="50%">
+    <radialGradient id="bellyShade" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FFFBEB"/>
+      <stop offset="100%" stop-color="#FEF3C7"/>
+    </radialGradient>
+    <radialGradient id="eyeGrad" cx="35%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </radialGradient>
+    <radialGradient id="noseShine" cx="35%" cy="25%" r="50%">
       <stop offset="0%" stop-color="#4B5563"/>
       <stop offset="100%" stop-color="#111827"/>
     </radialGradient>
-    <linearGradient id="earGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FBBF24"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
-    </linearGradient>
-    <linearGradient id="earGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FBBF24"/>
-      <stop offset="100%" stop-color="#F59E0B"/>
-    </linearGradient>
     <linearGradient id="envBody" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3B82F6"/>
       <stop offset="100%" stop-color="#6366F1"/>
     </linearGradient>
     <linearGradient id="collarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
     </linearGradient>
     <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
       <feOffset dx="0" dy="2"/>
       <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
-  <!-- === TAIL (behind body) === -->
-  <path d="M148 140 C162 128, 172 125, 170 112 C168 104, 160 102, 158 110"
-        stroke="#F59E0B" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.9"/>
+  <!-- === TAIL (behind body, wagging up) === -->
+  <path d="M150 148 C160 130, 168 118, 164 105 C161 96, 155 98, 156 106 C157 112, 154 120, 150 128"
+        stroke="#FBBF24" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <ellipse cx="163" cy="102" rx="5" ry="4" fill="#FDE68A" opacity="0.6"/>
 
-  <!-- === BODY (small, compact — Pixar style) === -->
-  <ellipse cx="100" cy="152" rx="38" ry="32" fill="url(#bodyShade)"/>
-  <!-- Belly -->
-  <ellipse cx="100" cy="157" rx="22" ry="18" fill="#FEF3C7" opacity="0.5"/>
+  <!-- === BODY (golden retriever coloring) === -->
+  <ellipse cx="100" cy="160" rx="42" ry="34" fill="url(#furShade)"/>
+  <!-- Chest/belly (lighter) -->
+  <ellipse cx="100" cy="166" rx="26" ry="22" fill="url(#bellyShade)" opacity="0.85"/>
 
-  <!-- === LEGS === -->
-  <!-- Back left -->
-  <ellipse cx="74" cy="180" rx="14" ry="11" fill="url(#bodyShade)"/>
-  <ellipse cx="74" cy="184" rx="8" ry="5" fill="#FBBF24" opacity="0.3"/>
-  <!-- Back right -->
-  <ellipse cx="126" cy="180" rx="14" ry="11" fill="url(#bodyShade)"/>
-  <ellipse cx="126" cy="184" rx="8" ry="5" fill="#FBBF24" opacity="0.3"/>
-  <!-- Front left paw -->
-  <ellipse cx="78" cy="186" rx="10" ry="7" fill="#F8FAFC"/>
-  <ellipse cx="78" cy="188" rx="5" ry="3" fill="#FDE68A" opacity="0.5"/>
-  <!-- Front right paw -->
-  <ellipse cx="122" cy="186" rx="10" ry="7" fill="#F8FAFC"/>
-  <ellipse cx="122" cy="188" rx="5" ry="3" fill="#FDE68A" opacity="0.5"/>
+  <!-- === BACK LEGS === -->
+  <ellipse cx="70" cy="188" rx="16" ry="12" fill="#E5A50A"/>
+  <ellipse cx="130" cy="188" rx="16" ry="12" fill="#E5A50A"/>
+  <!-- Back paws -->
+  <ellipse cx="70" cy="194" rx="11" ry="6" fill="#FBBF24"/>
+  <ellipse cx="130" cy="194" rx="11" ry="6" fill="#FBBF24"/>
 
-  <!-- === ENVELOPE (held in front) === -->
-  <g transform="translate(64, 148)" filter="url(#softShadow)">
-    <rect x="0" y="0" width="72" height="44" rx="5" fill="url(#envBody)"/>
-    <path d="M0 4 L36 26 L72 4" fill="#60A5FA" opacity="0.9"/>
-    <path d="M0 4 L36 26 L72 4" stroke="#4F46E5" stroke-width="0.5" fill="none" opacity="0.3"/>
-    <line x1="18" y1="32" x2="54" y2="32" stroke="white" stroke-width="2" opacity="0.25" stroke-linecap="round"/>
-    <line x1="22" y1="37" x2="50" y2="37" stroke="white" stroke-width="1.5" opacity="0.15" stroke-linecap="round"/>
+  <!-- === FRONT LEGS (in front, holding envelope) === -->
+  <!-- Left front leg -->
+  <path d="M72 168 C68 178, 66 190, 70 198" stroke="#FBBF24" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <ellipse cx="70" cy="200" rx="11" ry="7" fill="#FDE68A"/>
+  <!-- Right front leg -->
+  <path d="M128 168 C132 178, 134 190, 130 198" stroke="#FBBF24" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <ellipse cx="130" cy="200" rx="11" ry="7" fill="#FDE68A"/>
+
+  <!-- === ENVELOPE (held between paws) === -->
+  <g transform="translate(62, 172)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="76" height="46" rx="5" fill="url(#envBody)"/>
+    <path d="M0 5 L38 28 L76 5" fill="#60A5FA" opacity="0.85"/>
+    <path d="M0 5 L38 28 L76 5" stroke="#4338CA" stroke-width="0.5" fill="none" opacity="0.3"/>
+    <line x1="20" y1="34" x2="56" y2="34" stroke="white" stroke-width="2" opacity="0.2" stroke-linecap="round"/>
+    <line x1="24" y1="39" x2="52" y2="39" stroke="white" stroke-width="1.5" opacity="0.12" stroke-linecap="round"/>
     <!-- Heart seal -->
-    <path d="M33 15 C33 11.5, 36 9.5, 38 13 C40 9.5, 43 11.5, 43 15 C43 19.5, 38 23, 38 23 C38 23, 33 19.5, 33 15Z" fill="#F472B6"/>
+    <path d="M35 14 C35 10, 38 8, 40 12 C42 8, 45 10, 45 14 C45 19, 40 22, 40 22 C40 22, 35 19, 35 14Z" fill="#F472B6"/>
   </g>
 
-  <!-- === LEFT EAR (big, floppy — hangs down) === -->
-  <path d="M60 68 C42 38, 18 48, 28 78 C32 90, 46 96, 58 86" fill="url(#earGrad)"/>
-  <path d="M56 72 C44 50, 30 56, 36 76 C38 84, 46 88, 54 82" fill="#FDE68A" opacity="0.4"/>
+  <!-- === LEFT EAR (long, floppy, drooping DOWN like a retriever) === -->
+  <path d="M62 62 C54 56, 38 52, 28 62 C18 72, 20 95, 30 108 C38 118, 50 115, 56 100 C60 90, 62 78, 62 68"
+        fill="#D97706"/>
+  <path d="M60 66 C54 60, 42 58, 36 66 C28 76, 30 94, 38 104 C44 112, 50 108, 54 96 C56 88, 58 78, 58 70"
+        fill="#E5A50A" opacity="0.7"/>
 
-  <!-- === RIGHT EAR (big, floppy — hangs down) === -->
-  <path d="M140 68 C158 38, 182 48, 172 78 C168 90, 154 96, 142 86" fill="url(#earGrad2)"/>
-  <path d="M144 72 C156 50, 170 56, 164 76 C162 84, 154 88, 146 82" fill="#FDE68A" opacity="0.4"/>
+  <!-- === RIGHT EAR (long, floppy, drooping DOWN) === -->
+  <path d="M138 62 C146 56, 162 52, 172 62 C182 72, 180 95, 170 108 C162 118, 150 115, 144 100 C140 90, 138 78, 138 68"
+        fill="#D97706"/>
+  <path d="M140 66 C146 60, 158 58, 164 66 C172 76, 170 94, 162 104 C156 112, 150 108, 146 96 C144 88, 142 78, 142 70"
+        fill="#E5A50A" opacity="0.7"/>
 
-  <!-- === HEAD (oversized — Pixar ratio) === -->
-  <circle cx="100" cy="80" r="52" fill="url(#headShade)"/>
+  <!-- === HEAD (big, round — golden fur) === -->
+  <circle cx="100" cy="82" r="52" fill="url(#furShade)"/>
 
-  <!-- Forehead spot -->
-  <path d="M72 55 C78 38, 115 35, 125 50 C130 58, 122 70, 100 66 C82 63, 68 62, 72 55Z"
-        fill="#FBBF24" opacity="0.35"/>
+  <!-- Lighter face area (like a real golden retriever) -->
+  <ellipse cx="100" cy="90" rx="36" ry="30" fill="url(#furLight)" opacity="0.7"/>
+
+  <!-- === SNOUT / MUZZLE (protruding, dog-like!) === -->
+  <ellipse cx="100" cy="102" rx="22" ry="16" fill="#FEF3C7"/>
+  <ellipse cx="100" cy="104" rx="18" ry="13" fill="#FFFBEB" opacity="0.8"/>
 
   <!-- Cheek blush -->
-  <ellipse cx="62" cy="90" rx="10" ry="6" fill="#FCA5A5" opacity="0.2"/>
-  <ellipse cx="138" cy="90" rx="10" ry="6" fill="#FCA5A5" opacity="0.2"/>
+  <ellipse cx="64" cy="92" rx="9" ry="5" fill="#FCA5A5" opacity="0.25"/>
+  <ellipse cx="136" cy="92" rx="9" ry="5" fill="#FCA5A5" opacity="0.25"/>
 
-  <!-- === EYES (huge, glossy — Pixar style) === -->
-  <!-- Left eye white -->
-  <ellipse cx="82" cy="78" rx="16" ry="17" fill="white"/>
-  <ellipse cx="82" cy="78" rx="16" ry="17" stroke="#E2E8F0" stroke-width="0.5" fill="none"/>
-  <!-- Left iris -->
-  <circle cx="84" cy="80" r="10" fill="url(#eyeShine)"/>
-  <!-- Left pupil -->
-  <circle cx="84" cy="80" r="6" fill="#111827"/>
-  <!-- Left eye highlights -->
-  <circle cx="88" cy="75" r="4" fill="white" opacity="0.95"/>
-  <circle cx="80" cy="84" r="2" fill="white" opacity="0.5"/>
+  <!-- === EYES (huge, expressive — Pixar style) === -->
+  <!-- Left eye -->
+  <ellipse cx="80" cy="78" rx="15" ry="16" fill="white"/>
+  <ellipse cx="80" cy="78" rx="15" ry="16" stroke="#D4A017" stroke-width="0.8" fill="none" opacity="0.3"/>
+  <circle cx="82" cy="80" r="9" fill="url(#eyeGrad)"/>
+  <circle cx="82" cy="80" r="5.5" fill="#1E1B4B"/>
+  <!-- Pixar double-highlight -->
+  <circle cx="86" cy="75" r="4" fill="white" opacity="0.95"/>
+  <circle cx="78" cy="83" r="2" fill="white" opacity="0.45"/>
 
-  <!-- Right eye white -->
-  <ellipse cx="118" cy="78" rx="16" ry="17" fill="white"/>
-  <ellipse cx="118" cy="78" rx="16" ry="17" stroke="#E2E8F0" stroke-width="0.5" fill="none"/>
-  <!-- Right iris -->
-  <circle cx="116" cy="80" r="10" fill="url(#eyeShine)"/>
-  <!-- Right pupil -->
-  <circle cx="116" cy="80" r="6" fill="#111827"/>
-  <!-- Right eye highlights -->
-  <circle cx="120" cy="75" r="4" fill="white" opacity="0.95"/>
-  <circle cx="112" cy="84" r="2" fill="white" opacity="0.5"/>
+  <!-- Right eye -->
+  <ellipse cx="120" cy="78" rx="15" ry="16" fill="white"/>
+  <ellipse cx="120" cy="78" rx="15" ry="16" stroke="#D4A017" stroke-width="0.8" fill="none" opacity="0.3"/>
+  <circle cx="118" cy="80" r="9" fill="url(#eyeGrad)"/>
+  <circle cx="118" cy="80" r="5.5" fill="#1E1B4B"/>
+  <!-- Pixar double-highlight -->
+  <circle cx="122" cy="75" r="4" fill="white" opacity="0.95"/>
+  <circle cx="114" cy="83" r="2" fill="white" opacity="0.45"/>
 
-  <!-- Eyebrows (expressive) -->
-  <path d="M68 62 Q78 56 90 60" stroke="#94A3B8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M132 62 Q122 56 110 60" stroke="#94A3B8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Eyebrows (soft, friendly arches) -->
+  <path d="M66 64 Q76 56 90 62" stroke="#B8860B" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M134 64 Q124 56 110 62" stroke="#B8860B" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.6"/>
 
-  <!-- === NOSE (big, shiny) === -->
-  <ellipse cx="100" cy="98" rx="8" ry="6" fill="#1E293B"/>
-  <ellipse cx="102" cy="96" rx="3" ry="2" fill="white" opacity="0.45"/>
+  <!-- === NOSE (big, round, shiny — at end of snout) === -->
+  <ellipse cx="100" cy="98" rx="9" ry="7" fill="url(#noseShine)"/>
+  <ellipse cx="97" cy="96" rx="3.5" ry="2.5" fill="white" opacity="0.35"/>
+  <!-- Nostrils -->
+  <ellipse cx="96" cy="100" rx="2" ry="1.2" fill="#000" opacity="0.3"/>
+  <ellipse cx="104" cy="100" rx="2" ry="1.2" fill="#000" opacity="0.3"/>
 
-  <!-- Mouth -->
-  <path d="M92 104 Q96 110 100 104 Q104 110 108 104" stroke="#94A3B8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <!-- Mouth (W shape — happy dog smile) -->
+  <path d="M88 106 Q94 114 100 106 Q106 114 112 106" stroke="#B8860B" stroke-width="1.8" fill="none" stroke-linecap="round" opacity="0.5"/>
 
-  <!-- Tongue -->
-  <ellipse cx="100" cy="110" rx="5" ry="6" fill="#FDA4AF" opacity="0.85"/>
-  <ellipse cx="100" cy="108" rx="3" ry="3" fill="#FCA5A5" opacity="0.4"/>
+  <!-- Tongue (hanging out one side — classic dog!) -->
+  <path d="M104 108 C106 112, 108 120, 106 124 C104 126, 100 126, 99 122 C98 118, 100 112, 102 108"
+        fill="#FDA4AF" opacity="0.85"/>
+  <path d="M103 112 C104 116, 104 120, 103 122" stroke="#F9A8D4" stroke-width="0.8" fill="none" opacity="0.4"/>
 
-  <!-- === COLLAR === -->
-  <path d="M60 122 Q100 136 140 122" stroke="url(#collarGrad)" stroke-width="6" fill="none" stroke-linecap="round"/>
-  <!-- Collar tag -->
-  <g transform="translate(93, 130)">
-    <circle cx="7" cy="7" r="8" fill="#FBBF24"/>
-    <circle cx="7" cy="7" r="6" fill="#F59E0B"/>
-    <text x="7" y="10" text-anchor="middle" font-size="8" font-weight="800" fill="white" font-family="Arial, sans-serif">R</text>
+  <!-- === COLLAR (thick, with buckle detail) === -->
+  <path d="M56 126 Q100 144 144 126" stroke="url(#collarGrad)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <!-- Collar stitching -->
+  <path d="M62 128 Q100 142 138 128" stroke="white" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.15" stroke-dasharray="3 4"/>
+
+  <!-- Collar tag (gold, hanging) -->
+  <g transform="translate(93, 138)">
     <!-- Tag ring -->
-    <circle cx="7" cy="-1" r="2.5" stroke="#D97706" stroke-width="1.5" fill="none"/>
+    <circle cx="7" cy="0" r="3" stroke="#4338CA" stroke-width="2" fill="none"/>
+    <!-- Tag body -->
+    <path d="M0 3 L3 0 L11 0 L14 3 L14 14 Q7 18 0 14 Z" fill="#FBBF24"/>
+    <path d="M1 4 L3.5 1.5 L10.5 1.5 L13 4 L13 13 Q7 16.5 1 13 Z" fill="#F59E0B"/>
+    <text x="7" y="11" text-anchor="middle" font-size="7.5" font-weight="800" fill="white" font-family="Arial, sans-serif">R</text>
   </g>
+
+  <!-- === FOREHEAD TUFT (fluffy fur on top) === -->
+  <path d="M85 38 C88 30, 95 28, 100 32 C105 28, 112 30, 115 38"
+        stroke="#FBBF24" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.5"/>
+  <path d="M90 36 C94 30, 100 29, 100 34 C100 29, 106 30, 110 36"
+        fill="#FDE68A" opacity="0.4"/>
 </svg>

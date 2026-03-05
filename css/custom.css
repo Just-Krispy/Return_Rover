@@ -240,11 +240,14 @@ h1 {
     display: flex;
     gap: 8px;
     justify-content: center;
+    width: 100%;
 }
 
 .pill {
+    flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 5px;
     padding: 6px 14px;
     border-radius: 100px;
@@ -480,7 +483,13 @@ h1 {
     align-items: flex-start;
     justify-content: center;
     width: 100%;
-    padding: 8px 0;
+    padding: 14px 20px;
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition), border-color var(--transition);
 }
 
 .step {
