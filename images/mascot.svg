@@ -1,111 +1,140 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
-  <!-- Body -->
-  <ellipse cx="100" cy="130" rx="52" ry="48" fill="#F8FAFC"/>
-  <ellipse cx="100" cy="130" rx="52" ry="48" fill="url(#bodyGrad)" opacity="0.15"/>
-
-  <!-- Belly spot -->
-  <ellipse cx="100" cy="138" rx="28" ry="24" fill="#EFF6FF"/>
-
-  <!-- Left ear (floppy) -->
-  <path d="M62 72 C45 50, 30 65, 42 88 C48 96, 56 95, 62 88Z" fill="#93C5FD"/>
-  <path d="M62 72 C45 50, 30 65, 42 88 C48 96, 56 95, 62 88Z" fill="url(#earGrad)" opacity="0.4"/>
-
-  <!-- Right ear (floppy) -->
-  <path d="M138 72 C155 50, 170 65, 158 88 C152 96, 144 95, 138 88Z" fill="#93C5FD"/>
-  <path d="M138 72 C155 50, 170 65, 158 88 C152 96, 144 95, 138 88Z" fill="url(#earGrad2)" opacity="0.4"/>
-
-  <!-- Head -->
-  <circle cx="100" cy="82" r="40" fill="#F8FAFC"/>
-  <circle cx="100" cy="82" r="40" fill="url(#headGrad)" opacity="0.1"/>
-
-  <!-- Head spot (brown/blue patch) -->
-  <path d="M75 62 C80 48, 110 45, 120 58 C125 65, 118 75, 100 72 C85 70, 72 68, 75 62Z" fill="#93C5FD" opacity="0.5"/>
-
-  <!-- Eyes -->
-  <circle cx="86" cy="78" r="6" fill="#1E293B"/>
-  <circle cx="114" cy="78" r="6" fill="#1E293B"/>
-  <!-- Eye highlights -->
-  <circle cx="88" cy="76" r="2.5" fill="white" opacity="0.9"/>
-  <circle cx="116" cy="76" r="2.5" fill="white" opacity="0.9"/>
-
-  <!-- Nose -->
-  <ellipse cx="100" cy="90" rx="5" ry="4" fill="#1E293B"/>
-  <!-- Nose shine -->
-  <ellipse cx="101.5" cy="89" rx="1.5" ry="1" fill="white" opacity="0.5"/>
-
-  <!-- Mouth -->
-  <path d="M95 94 Q100 100 105 94" stroke="#64748B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-
-  <!-- Tongue -->
-  <ellipse cx="100" cy="99" rx="4" ry="5" fill="#F9A8D4" opacity="0.8"/>
-
-  <!-- Left arm holding envelope -->
-  <path d="M60 120 C50 115, 42 125, 48 135 L58 138" stroke="#F8FAFC" stroke-width="12" stroke-linecap="round" fill="none"/>
-  <path d="M60 120 C50 115, 42 125, 48 135 L58 138" stroke="url(#armGrad)" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.1"/>
-
-  <!-- Right arm holding envelope -->
-  <path d="M140 120 C150 115, 158 125, 152 135 L142 138" stroke="#F8FAFC" stroke-width="12" stroke-linecap="round" fill="none"/>
-
-  <!-- Envelope -->
-  <g transform="translate(68, 118)">
-    <!-- Envelope body -->
-    <rect x="0" y="8" width="64" height="40" rx="4" fill="#3B82F6"/>
-    <rect x="0" y="8" width="64" height="40" rx="4" fill="url(#envGrad)" opacity="0.3"/>
-    <!-- Envelope flap -->
-    <path d="M0 12 L32 32 L64 12" fill="#60A5FA"/>
-    <path d="M0 12 L32 32 L64 12" stroke="#3B82F6" stroke-width="0.5" fill="#60A5FA"/>
-    <!-- Envelope lines -->
-    <line x1="16" y1="36" x2="48" y2="36" stroke="white" stroke-width="1.5" opacity="0.3" stroke-linecap="round"/>
-    <line x1="20" y1="41" x2="44" y2="41" stroke="white" stroke-width="1.5" opacity="0.2" stroke-linecap="round"/>
-    <!-- Heart seal -->
-    <path d="M29 22 C29 19, 32 17, 34 20 C36 17, 39 19, 39 22 C39 26, 34 29, 34 29 C34 29, 29 26, 29 22Z" fill="#F472B6" opacity="0.9"/>
-  </g>
-
-  <!-- Left leg -->
-  <ellipse cx="80" cy="172" rx="14" ry="10" fill="#F8FAFC"/>
-  <!-- Left paw pad -->
-  <ellipse cx="80" cy="175" rx="6" ry="4" fill="#DBEAFE"/>
-
-  <!-- Right leg -->
-  <ellipse cx="120" cy="172" rx="14" ry="10" fill="#F8FAFC"/>
-  <!-- Right paw pad -->
-  <ellipse cx="120" cy="175" rx="6" ry="4" fill="#DBEAFE"/>
-
-  <!-- Tail -->
-  <path d="M148 125 C158 115, 168 118, 165 108 C163 102, 158 100, 155 105" stroke="#93C5FD" stroke-width="8" fill="none" stroke-linecap="round"/>
-
-  <!-- Collar -->
-  <path d="M68 108 Q100 118 132 108" stroke="#3B82F6" stroke-width="4" fill="none" stroke-linecap="round"/>
-  <!-- Collar tag -->
-  <circle cx="100" cy="115" r="5" fill="#FBBF24"/>
-  <circle cx="100" cy="115" r="3" fill="#F59E0B"/>
-  <text x="100" y="117" text-anchor="middle" font-size="5" font-weight="bold" fill="white">R</text>
-
-  <!-- Gradients -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220" fill="none">
   <defs>
-    <linearGradient id="bodyGrad" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
-    </linearGradient>
-    <linearGradient id="headGrad" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#transparent"/>
-    </linearGradient>
+    <radialGradient id="headShade" cx="45%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </radialGradient>
+    <radialGradient id="bodyShade" cx="45%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E8ECF1"/>
+    </radialGradient>
+    <radialGradient id="eyeShine" cx="35%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#4B5563"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </radialGradient>
     <linearGradient id="earGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
     </linearGradient>
     <linearGradient id="earGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <linearGradient id="envBody" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
     </linearGradient>
-    <linearGradient id="envGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#60A5FA"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
-    </linearGradient>
-    <linearGradient id="armGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+    <linearGradient id="collarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
     </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="2"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
+
+  <!-- === TAIL (behind body) === -->
+  <path d="M148 140 C162 128, 172 125, 170 112 C168 104, 160 102, 158 110"
+        stroke="#F59E0B" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- === BODY (small, compact — Pixar style) === -->
+  <ellipse cx="100" cy="152" rx="38" ry="32" fill="url(#bodyShade)"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="157" rx="22" ry="18" fill="#FEF3C7" opacity="0.5"/>
+
+  <!-- === LEGS === -->
+  <!-- Back left -->
+  <ellipse cx="74" cy="180" rx="14" ry="11" fill="url(#bodyShade)"/>
+  <ellipse cx="74" cy="184" rx="8" ry="5" fill="#FBBF24" opacity="0.3"/>
+  <!-- Back right -->
+  <ellipse cx="126" cy="180" rx="14" ry="11" fill="url(#bodyShade)"/>
+  <ellipse cx="126" cy="184" rx="8" ry="5" fill="#FBBF24" opacity="0.3"/>
+  <!-- Front left paw -->
+  <ellipse cx="78" cy="186" rx="10" ry="7" fill="#F8FAFC"/>
+  <ellipse cx="78" cy="188" rx="5" ry="3" fill="#FDE68A" opacity="0.5"/>
+  <!-- Front right paw -->
+  <ellipse cx="122" cy="186" rx="10" ry="7" fill="#F8FAFC"/>
+  <ellipse cx="122" cy="188" rx="5" ry="3" fill="#FDE68A" opacity="0.5"/>
+
+  <!-- === ENVELOPE (held in front) === -->
+  <g transform="translate(64, 148)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="72" height="44" rx="5" fill="url(#envBody)"/>
+    <path d="M0 4 L36 26 L72 4" fill="#60A5FA" opacity="0.9"/>
+    <path d="M0 4 L36 26 L72 4" stroke="#4F46E5" stroke-width="0.5" fill="none" opacity="0.3"/>
+    <line x1="18" y1="32" x2="54" y2="32" stroke="white" stroke-width="2" opacity="0.25" stroke-linecap="round"/>
+    <line x1="22" y1="37" x2="50" y2="37" stroke="white" stroke-width="1.5" opacity="0.15" stroke-linecap="round"/>
+    <!-- Heart seal -->
+    <path d="M33 15 C33 11.5, 36 9.5, 38 13 C40 9.5, 43 11.5, 43 15 C43 19.5, 38 23, 38 23 C38 23, 33 19.5, 33 15Z" fill="#F472B6"/>
+  </g>
+
+  <!-- === LEFT EAR (big, floppy — hangs down) === -->
+  <path d="M60 68 C42 38, 18 48, 28 78 C32 90, 46 96, 58 86" fill="url(#earGrad)"/>
+  <path d="M56 72 C44 50, 30 56, 36 76 C38 84, 46 88, 54 82" fill="#FDE68A" opacity="0.4"/>
+
+  <!-- === RIGHT EAR (big, floppy — hangs down) === -->
+  <path d="M140 68 C158 38, 182 48, 172 78 C168 90, 154 96, 142 86" fill="url(#earGrad2)"/>
+  <path d="M144 72 C156 50, 170 56, 164 76 C162 84, 154 88, 146 82" fill="#FDE68A" opacity="0.4"/>
+
+  <!-- === HEAD (oversized — Pixar ratio) === -->
+  <circle cx="100" cy="80" r="52" fill="url(#headShade)"/>
+
+  <!-- Forehead spot -->
+  <path d="M72 55 C78 38, 115 35, 125 50 C130 58, 122 70, 100 66 C82 63, 68 62, 72 55Z"
+        fill="#FBBF24" opacity="0.35"/>
+
+  <!-- Cheek blush -->
+  <ellipse cx="62" cy="90" rx="10" ry="6" fill="#FCA5A5" opacity="0.2"/>
+  <ellipse cx="138" cy="90" rx="10" ry="6" fill="#FCA5A5" opacity="0.2"/>
+
+  <!-- === EYES (huge, glossy — Pixar style) === -->
+  <!-- Left eye white -->
+  <ellipse cx="82" cy="78" rx="16" ry="17" fill="white"/>
+  <ellipse cx="82" cy="78" rx="16" ry="17" stroke="#E2E8F0" stroke-width="0.5" fill="none"/>
+  <!-- Left iris -->
+  <circle cx="84" cy="80" r="10" fill="url(#eyeShine)"/>
+  <!-- Left pupil -->
+  <circle cx="84" cy="80" r="6" fill="#111827"/>
+  <!-- Left eye highlights -->
+  <circle cx="88" cy="75" r="4" fill="white" opacity="0.95"/>
+  <circle cx="80" cy="84" r="2" fill="white" opacity="0.5"/>
+
+  <!-- Right eye white -->
+  <ellipse cx="118" cy="78" rx="16" ry="17" fill="white"/>
+  <ellipse cx="118" cy="78" rx="16" ry="17" stroke="#E2E8F0" stroke-width="0.5" fill="none"/>
+  <!-- Right iris -->
+  <circle cx="116" cy="80" r="10" fill="url(#eyeShine)"/>
+  <!-- Right pupil -->
+  <circle cx="116" cy="80" r="6" fill="#111827"/>
+  <!-- Right eye highlights -->
+  <circle cx="120" cy="75" r="4" fill="white" opacity="0.95"/>
+  <circle cx="112" cy="84" r="2" fill="white" opacity="0.5"/>
+
+  <!-- Eyebrows (expressive) -->
+  <path d="M68 62 Q78 56 90 60" stroke="#94A3B8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M132 62 Q122 56 110 60" stroke="#94A3B8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- === NOSE (big, shiny) === -->
+  <ellipse cx="100" cy="98" rx="8" ry="6" fill="#1E293B"/>
+  <ellipse cx="102" cy="96" rx="3" ry="2" fill="white" opacity="0.45"/>
+
+  <!-- Mouth -->
+  <path d="M92 104 Q96 110 100 104 Q104 110 108 104" stroke="#94A3B8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+
+  <!-- Tongue -->
+  <ellipse cx="100" cy="110" rx="5" ry="6" fill="#FDA4AF" opacity="0.85"/>
+  <ellipse cx="100" cy="108" rx="3" ry="3" fill="#FCA5A5" opacity="0.4"/>
+
+  <!-- === COLLAR === -->
+  <path d="M60 122 Q100 136 140 122" stroke="url(#collarGrad)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <!-- Collar tag -->
+  <g transform="translate(93, 130)">
+    <circle cx="7" cy="7" r="8" fill="#FBBF24"/>
+    <circle cx="7" cy="7" r="6" fill="#F59E0B"/>
+    <text x="7" y="10" text-anchor="middle" font-size="8" font-weight="800" fill="white" font-family="Arial, sans-serif">R</text>
+    <!-- Tag ring -->
+    <circle cx="7" cy="-1" r="2.5" stroke="#D97706" stroke-width="1.5" fill="none"/>
+  </g>
 </svg>

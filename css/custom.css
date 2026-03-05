@@ -473,70 +473,94 @@ h1 {
 }
 
 /* =====================
-   PROGRESS BAR
+   PROGRESS STEPPER
    ===================== */
 #progress-bar {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
     width: 100%;
+    padding: 8px 0;
 }
 
 .step {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.step-dot {
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 4px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    color: var(--text-muted);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
     background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-xs);
+    border: 2px solid var(--border-strong);
     transition: all var(--transition);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    white-space: nowrap;
+    position: relative;
 }
 
 .step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: var(--border-strong);
-    color: var(--text-muted);
-    font-size: 0.62rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    flex-shrink: 0;
-    transition: all var(--transition);
+    color: var(--text-muted);
+    transition: color var(--transition);
 }
 
-.step.active {
-    color: var(--accent);
+.step-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    transition: color var(--transition);
+}
+
+.step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--border-strong);
+    margin-top: 14px;
+    min-width: 24px;
+    transition: background var(--transition);
+}
+
+/* Active step */
+.step.active .step-dot {
     border-color: var(--accent);
     background: var(--accent-soft);
+    box-shadow: 0 0 12px var(--accent-glow);
 }
 
 .step.active .step-num {
-    background: var(--accent);
-    color: #fff;
+    color: var(--accent);
 }
 
-.step.done {
-    color: var(--success);
+.step.active .step-label {
+    color: var(--accent);
+}
+
+/* Completed step */
+.step.done .step-dot {
     border-color: var(--success);
-    background: var(--success-soft);
+    background: var(--success);
 }
 
 .step.done .step-num {
-    background: var(--success);
     color: #fff;
+}
+
+.step.done .step-label {
+    color: var(--success);
+}
+
+/* Completed connector line */
+.step.done + .step-line {
+    background: var(--success);
 }
 
 /* =====================
@@ -684,16 +708,22 @@ footer {
         padding: 14px;
     }
 
-    .step {
-        font-size: 0.6rem;
-        padding: 8px 2px;
-        gap: 4px;
+    .step-dot {
+        width: 26px;
+        height: 26px;
     }
 
     .step-num {
-        width: 16px;
-        height: 16px;
-        font-size: 0.55rem;
+        font-size: 0.6rem;
+    }
+
+    .step-label {
+        font-size: 0.58rem;
+    }
+
+    .step-line {
+        margin-top: 12px;
+        min-width: 16px;
     }
 
     .stat strong {
