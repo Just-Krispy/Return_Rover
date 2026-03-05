@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Body -->
+  <ellipse cx="100" cy="130" rx="52" ry="48" fill="#F8FAFC"/>
+  <ellipse cx="100" cy="130" rx="52" ry="48" fill="url(#bodyGrad)" opacity="0.15"/>
+
+  <!-- Belly spot -->
+  <ellipse cx="100" cy="138" rx="28" ry="24" fill="#EFF6FF"/>
+
+  <!-- Left ear (floppy) -->
+  <path d="M62 72 C45 50, 30 65, 42 88 C48 96, 56 95, 62 88Z" fill="#93C5FD"/>
+  <path d="M62 72 C45 50, 30 65, 42 88 C48 96, 56 95, 62 88Z" fill="url(#earGrad)" opacity="0.4"/>
+
+  <!-- Right ear (floppy) -->
+  <path d="M138 72 C155 50, 170 65, 158 88 C152 96, 144 95, 138 88Z" fill="#93C5FD"/>
+  <path d="M138 72 C155 50, 170 65, 158 88 C152 96, 144 95, 138 88Z" fill="url(#earGrad2)" opacity="0.4"/>
+
+  <!-- Head -->
+  <circle cx="100" cy="82" r="40" fill="#F8FAFC"/>
+  <circle cx="100" cy="82" r="40" fill="url(#headGrad)" opacity="0.1"/>
+
+  <!-- Head spot (brown/blue patch) -->
+  <path d="M75 62 C80 48, 110 45, 120 58 C125 65, 118 75, 100 72 C85 70, 72 68, 75 62Z" fill="#93C5FD" opacity="0.5"/>
+
+  <!-- Eyes -->
+  <circle cx="86" cy="78" r="6" fill="#1E293B"/>
+  <circle cx="114" cy="78" r="6" fill="#1E293B"/>
+  <!-- Eye highlights -->
+  <circle cx="88" cy="76" r="2.5" fill="white" opacity="0.9"/>
+  <circle cx="116" cy="76" r="2.5" fill="white" opacity="0.9"/>
+
+  <!-- Nose -->
+  <ellipse cx="100" cy="90" rx="5" ry="4" fill="#1E293B"/>
+  <!-- Nose shine -->
+  <ellipse cx="101.5" cy="89" rx="1.5" ry="1" fill="white" opacity="0.5"/>
+
+  <!-- Mouth -->
+  <path d="M95 94 Q100 100 105 94" stroke="#64748B" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- Tongue -->
+  <ellipse cx="100" cy="99" rx="4" ry="5" fill="#F9A8D4" opacity="0.8"/>
+
+  <!-- Left arm holding envelope -->
+  <path d="M60 120 C50 115, 42 125, 48 135 L58 138" stroke="#F8FAFC" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <path d="M60 120 C50 115, 42 125, 48 135 L58 138" stroke="url(#armGrad)" stroke-width="12" stroke-linecap="round" fill="none" opacity="0.1"/>
+
+  <!-- Right arm holding envelope -->
+  <path d="M140 120 C150 115, 158 125, 152 135 L142 138" stroke="#F8FAFC" stroke-width="12" stroke-linecap="round" fill="none"/>
+
+  <!-- Envelope -->
+  <g transform="translate(68, 118)">
+    <!-- Envelope body -->
+    <rect x="0" y="8" width="64" height="40" rx="4" fill="#3B82F6"/>
+    <rect x="0" y="8" width="64" height="40" rx="4" fill="url(#envGrad)" opacity="0.3"/>
+    <!-- Envelope flap -->
+    <path d="M0 12 L32 32 L64 12" fill="#60A5FA"/>
+    <path d="M0 12 L32 32 L64 12" stroke="#3B82F6" stroke-width="0.5" fill="#60A5FA"/>
+    <!-- Envelope lines -->
+    <line x1="16" y1="36" x2="48" y2="36" stroke="white" stroke-width="1.5" opacity="0.3" stroke-linecap="round"/>
+    <line x1="20" y1="41" x2="44" y2="41" stroke="white" stroke-width="1.5" opacity="0.2" stroke-linecap="round"/>
+    <!-- Heart seal -->
+    <path d="M29 22 C29 19, 32 17, 34 20 C36 17, 39 19, 39 22 C39 26, 34 29, 34 29 C34 29, 29 26, 29 22Z" fill="#F472B6" opacity="0.9"/>
+  </g>
+
+  <!-- Left leg -->
+  <ellipse cx="80" cy="172" rx="14" ry="10" fill="#F8FAFC"/>
+  <!-- Left paw pad -->
+  <ellipse cx="80" cy="175" rx="6" ry="4" fill="#DBEAFE"/>
+
+  <!-- Right leg -->
+  <ellipse cx="120" cy="172" rx="14" ry="10" fill="#F8FAFC"/>
+  <!-- Right paw pad -->
+  <ellipse cx="120" cy="175" rx="6" ry="4" fill="#DBEAFE"/>
+
+  <!-- Tail -->
+  <path d="M148 125 C158 115, 168 118, 165 108 C163 102, 158 100, 155 105" stroke="#93C5FD" stroke-width="8" fill="none" stroke-linecap="round"/>
+
+  <!-- Collar -->
+  <path d="M68 108 Q100 118 132 108" stroke="#3B82F6" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <!-- Collar tag -->
+  <circle cx="100" cy="115" r="5" fill="#FBBF24"/>
+  <circle cx="100" cy="115" r="3" fill="#F59E0B"/>
+  <text x="100" y="117" text-anchor="middle" font-size="5" font-weight="bold" fill="white">R</text>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="bodyGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="headGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#transparent"/>
+    </linearGradient>
+    <linearGradient id="earGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="earGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="envGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="armGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>
