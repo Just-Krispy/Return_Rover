@@ -2840,8 +2840,9 @@ async function renderAll(data) {
     renderVault(data.vaultStructure);
     renderActivity(data.activity);
     renderHealth(data.services);
-    renderWorkflows(data.workflows);
+    renderWorkflows(data.workflows, data._workflowCount, data._n8nStatus);
     renderSparkline(data._sparklineData || DEMO_SPARKLINE);
+    if (data._tagCloud) renderTagCloud(data._tagCloud, data._uniqueTags);
     if (data.health) renderHealthGauges(data.health);
     // Chat history
     chatHistoryData = data.chatHistory || [];
