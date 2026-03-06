@@ -870,7 +870,7 @@
             font-size: 13px;
             pointer-events: none;
             z-index: 10;
-            max-width: 280px;
+            max-width: 320px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(99,102,241,0.08);
         }
         .graph-tooltip strong { color: #e2e8f0; }
@@ -886,6 +886,10 @@
             font-size: 10px;
             margin: 1px 2px;
         }
+        .graph-tooltip .tt-neighbors { margin-top: 6px; font-size: 11px; color: #94a3b8; }
+        .graph-tooltip .tt-neighbor { color: #a5b4fc; }
+        .graph-tooltip .tt-mini-graph { margin-top: 8px; border-radius: 6px; background: rgba(0,0,0,0.3); }
+        .graph-tooltip .tt-community { font-size: 10px; color: #818cf8; margin-top: 2px; font-style: italic; }
         .graph-stats-label {
             font-size: 11px;
             color: var(--text-tertiary);
@@ -2083,7 +2087,6 @@
             <div class="floating-search-wrap">
                 <i data-lucide="search" class="floating-search-icon" style="width:16px;height:16px"></i>
                 <input type="text" class="floating-search-input" id="floatingSearchInput" placeholder="Search your vault..." aria-label="Search vault" autocomplete="off">
-                <span class="floating-search-kbd">/</span>
             </div>
         </div>
     </div>
