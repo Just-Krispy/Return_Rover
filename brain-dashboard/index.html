@@ -1237,6 +1237,24 @@
             background: rgba(251,191,36,0.1);
             color: var(--accent-amber);
         }
+        .vertical-row .vr-action {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: var(--accent-blue);
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            font-weight: 600;
+            opacity: 0.85;
+            transition: opacity 0.15s;
+        }
+        .vertical-row .vr-action:hover { opacity: 1; }
+        .vertical-row .vr-action.queued {
+            background: var(--accent-green);
+            cursor: default;
+            opacity: 0.7;
+        }
         .research-gaps {
             margin-top: 12px;
             padding: 12px;
@@ -3276,7 +3294,8 @@ function initGraph(data) {
                 tooltip.innerHTML = `<strong>${nd.id}</strong>
                     <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
                     <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
-                    ${tags ? '<div class="tt-tags">' + tags + '</div>' : ''}`;
+                    ${tags ? '<div class="tt-tags">' + tags + '</div>' : ''}
+                    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Click to zoom &middot; Double-click to preview</div>`;
                 // Highlight connected edges
                 lineMeshes.forEach(l => {
                     const le = l.userData;
@@ -3328,6 +3347,11 @@ function initGraph(data) {
             targetLookAt.set(hoveredNode.x, hoveredNode.y, hoveredNode.z);
             targetDist = 80;
             autoRotate = false;
+        }
+    });
+    canvas.addEventListener('dblclick', (e) => {
+        if (hoveredNode && hoveredNode.file) {
+            openNotePreview(hoveredNode.file, hoveredNode.id);
         }
     });
     canvas.addEventListener('wheel', (e) => {
@@ -3774,7 +3798,10 @@ async function loadResearchPipeline() {
             vList.innerHTML = Object.entries(d.verticals_list).map(([name, covered]) =>
                 `<div class="vertical-row">
                     <span class="vr-name">${name}</span>
-                    <span class="vr-status ${covered ? 'covered' : 'gap'}">${covered ? 'COVERED' : 'GAP'}</span>
+                    <span style="display:flex;gap:6px;align-items:center">
+                        ${!covered ? `<button class="vr-action" onclick="queueVerticalResearch('${name}', this)">Queue</button>` : ''}
+                        <span class="vr-status ${covered ? 'covered' : 'gap'}">${covered ? 'COVERED' : 'GAP'}</span>
+                    </span>
                 </div>`
             ).join('');
         }
@@ -3790,8 +3817,11 @@ async function loadResearchPipeline() {
                 "Shelter Tech": "ShelterLuv, PetPoint, Pawlytics platforms",
                 "Vet Partnerships": "Clinic software integrations, AVMA trends",
             };
-            gapsEl.innerHTML = '<strong>Research needed:</strong><br>' +
-                d.gaps.map(g => `• <strong>${g}</strong> — ${suggestions[g] || 'Queue research'}`).join('<br>');
+            gapsEl.innerHTML = '<strong>Research needed:</strong>' +
+                d.gaps.map(g => `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+                    <span>• <strong>${g}</strong> — <span style="font-size:12px;color:var(--text-tertiary)">${suggestions[g] || 'Queue research'}</span></span>
+                    <button class="vr-action" onclick="queueVerticalResearch('${g}', this)" style="flex-shrink:0;margin-left:8px">Queue</button>
+                </div>`).join('');
         } else if (gapsEl) {
             gapsEl.innerHTML = '<strong style="color:var(--accent-green)">All verticals covered!</strong>';
         }
@@ -3806,6 +3836,41 @@ async function loadResearchPipeline() {
             }
         }
     } catch(e) { /* keep placeholder */ }
+}
+
+async function queueVerticalResearch(vertical, btn) {
+    if (btn.classList.contains('queued')) return;
+    btn.textContent = '...';
+    btn.disabled = true;
+    const suggestions = {
+        "AI Matching": "Research computer vision for pet identification, facial recognition algorithms for animals, breed detection ML models",
+        "Business Model": "Research SaaS pricing models for pet services, shelter budget constraints, freemium vs paid analysis",
+        "Competitors": "Research PetFinder, PawBoost, Finding Rover, Petco Love Lost — features, pricing, market share, gaps",
+        "Pet Recovery": "Research microchip registries, GPS collar technology, lost pet social networks, Amber Alert for pets",
+        "Shelter Tech": "Research ShelterLuv, PetPoint, Pawlytics — features, integrations, API capabilities, adoption rates",
+        "Vet Partnerships": "Research veterinary clinic software integrations, AVMA industry trends, clinic partnership models",
+    };
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/notes/braindump`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: `PawsitiveID Research — ${vertical}`,
+                content: `## Research Queue: ${vertical}\n\n${suggestions[vertical] || 'Deep-dive research needed for this vertical.'}\n\n### Key Questions\n- What solutions exist today?\n- What are the gaps and opportunities?\n- How does this integrate with PawsitiveID?\n\n### Sources to Explore\n- [ ] YouTube deep-dive (queue via /yt-research)\n- [ ] Academic papers\n- [ ] Industry reports\n- [ ] Competitor analysis`,
+                tags: ['pawsitiveid', 'research', vertical.toLowerCase().replace(/\s+/g, '-')]
+            })
+        });
+        if (resp.ok) {
+            btn.textContent = 'Queued';
+            btn.classList.add('queued');
+        } else {
+            btn.textContent = 'Error';
+            setTimeout(() => { btn.textContent = 'Queue'; btn.disabled = false; }, 2000);
+        }
+    } catch(e) {
+        btn.textContent = 'Offline';
+        setTimeout(() => { btn.textContent = 'Queue'; btn.disabled = false; }, 2000);
+    }
 }
 
 async function loadTagExplorer() {
