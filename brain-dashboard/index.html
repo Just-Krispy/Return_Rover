@@ -2241,6 +2241,7 @@ function renderActivity(items) {
     items.forEach(item => {
         const el = document.createElement('div');
         el.className = 'activity-item';
+        el.style.cursor = 'pointer';
         const ago = timeAgo(new Date(item.ts));
         el.innerHTML = `
             <div class="activity-icon ${item.type}"><i data-lucide="${icons[item.type] || 'circle'}"></i></div>
@@ -2249,9 +2250,39 @@ function renderActivity(items) {
                 <div class="activity-time">${ago}</div>
             </div>
         `;
+        el.addEventListener('click', () => handleActivityClick(item));
         container.appendChild(el);
     });
     lucide.createIcons();
+}
+
+function handleActivityClick(item) {
+    if (item.type === 'ingest') {
+        const match = item.text.match(/<strong>(.+?)<\/strong>/);
+        const noteName = match ? match[1] : 'Note';
+        const filePath = item.file || (noteName + '.md');
+        openNotePreview(filePath, noteName);
+    } else if (item.type === 'chat') {
+        // Extract question from 'Answered: "question"'
+        const match = item.text.match(/Answered: "(.+?)(?:\.\.\.)?"/);
+        if (match) {
+            const q = match[1];
+            document.getElementById('askInput').value = q;
+            document.getElementById('askInput').focus();
+        }
+    } else if (item.type === 'capture') {
+        // Extract bookmark name
+        const match = item.text.match(/<strong>(.+?)<\/strong>/);
+        if (match) {
+            openNotePreview('Inbox/' + match[1] + '.md', match[1]);
+        }
+    } else if (item.type === 'search') {
+        const match = item.text.match(/<strong>(.+?)<\/strong>/);
+        if (match) {
+            document.getElementById('searchInput').value = match[1];
+            document.getElementById('searchInput').focus();
+        }
+    }
 }
 
 function renderHealth(services) {
@@ -2447,6 +2478,8 @@ async function fetchLiveData() {
                     sources: (h.sources || []).map(s => typeof s === 'string' ? s : s.file),
                     ts: h.timestamp
                 }));
+                // Update last_question timestamp
+                data.chatStats.last_question = hist[0].timestamp;
                 // Build activity feed from real chat history
                 data.activity = hist.map(h => ({
                     type: 'chat',
@@ -2474,18 +2507,24 @@ async function fetchLiveData() {
             });
         }
 
-        // Vault Growth → sparkline data
+        // Vault Growth → sparkline data + "ingested today" count
         if (vaultGrowth.status === 'fulfilled' && vaultGrowth.value && vaultGrowth.value.daily) {
-            data._sparklineData = vaultGrowth.value.daily.map(d => d.count);
-            data.ingestStats = { ...data.ingestStats, total_ingested: vaultGrowth.value.total_notes };
+            const daily = vaultGrowth.value.daily;
+            data._sparklineData = daily.map(d => d.count);
+            const todayCount = daily.length >= 2 ? daily[daily.length - 1].count - daily[daily.length - 2].count : 0;
+            data.ingestStats = { ...data.ingestStats, total_ingested: vaultGrowth.value.total_notes, today: Math.max(0, todayCount) };
         }
 
-        // Vault Activity → activity feed (merge with chat history activity)
+        // Vault Activity → activity feed + derive today's bookmark count
         if (vaultActivity.status === 'fulfilled' && vaultActivity.value && vaultActivity.value.events) {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const capturedToday = vaultActivity.value.events.filter(e => e.type === 'capture' && e.timestamp.startsWith(todayStr)).length;
+            if (capturedToday > 0) data.bookmarkStats = { ...data.bookmarkStats, today: capturedToday };
             const liveActivity = vaultActivity.value.events.map(e => ({
                 type: e.type,
                 text: e.text,
-                ts: e.timestamp
+                ts: e.timestamp,
+                ...(e.file && { file: e.file })
             }));
             // Merge with any chat-history-derived activity, deduplicate by timestamp
             const seen = new Set(liveActivity.map(a => a.ts));
