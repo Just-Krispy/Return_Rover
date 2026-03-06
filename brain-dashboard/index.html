@@ -114,6 +114,7 @@
             margin-bottom: 40px;
             padding-bottom: 24px;
             border-bottom: 1px solid var(--border-subtle);
+            position: relative;
         }
         .header-left {
             display: flex;
@@ -155,6 +156,10 @@
             margin-top: 1px;
         }
         .header-right {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
             display: flex;
             align-items: center;
             gap: 16px;
@@ -1660,7 +1665,7 @@
             .grid-2 { grid-template-columns: 1fr; }
             .dashboard { padding: 24px 16px 60px; }
             .header { flex-direction: column; align-items: flex-start; }
-            .header-right { flex-wrap: wrap; }
+            .header-right { position: static; transform: none; flex-wrap: wrap; }
             .header h1 { font-size: 20px; }
             .stat-value { font-size: 28px; }
             .graph-container { height: 400px; }
@@ -3620,6 +3625,46 @@ const DEMO_GRAPH = {
 let g3 = {}; // all Three.js state in one object
 let hoveredNode = null;
 
+// ---- SOUND EFFECTS (Web Audio API - tiny synth bloops) ----
+const SFX = (() => {
+    let ctx = null;
+    function getCtx() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        return ctx;
+    }
+    function play(freq, type, dur, vol) {
+        try {
+            const c = getCtx();
+            const osc = c.createOscillator();
+            const gain = c.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, c.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.5, c.currentTime + dur * 0.3);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.8, c.currentTime + dur);
+            gain.gain.setValueAtTime(vol || 0.08, c.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+            osc.connect(gain).connect(c.destination);
+            osc.start(); osc.stop(c.currentTime + dur);
+        } catch(e) {}
+    }
+    return {
+        bloop() { play(580, 'sine', 0.12, 0.06); },
+        pop() { play(880, 'sine', 0.08, 0.07); },
+        ding() { play(1200, 'triangle', 0.2, 0.05); },
+        whoosh() { play(200, 'sawtooth', 0.3, 0.03); },
+        sparkle() {
+            play(1400, 'sine', 0.1, 0.04);
+            setTimeout(() => play(1800, 'sine', 0.1, 0.03), 50);
+            setTimeout(() => play(2200, 'sine', 0.15, 0.02), 100);
+        },
+        party() {
+            [440, 554, 659, 880, 1109].forEach((f, i) => {
+                setTimeout(() => play(f, 'square', 0.15, 0.04), i * 60);
+            });
+        }
+    };
+})();
+
 // ---- PLAYFUL COLORS (bright, cheerful) ----
 const PLAYFUL_COLORS = [
     '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bff',
@@ -4035,25 +4080,33 @@ function initGraph(data) {
         starMat.opacity = 0.5 + Math.sin(time * 0.5) * 0.2;
     }
 
-    // Bounce a node (called on click)
+    // Bounce a node (called on click) — satisfying spring physics
     function bounceNode(nd) {
-        nd._bounceVel = 8;
-        nd._wiggle = 2;
+        nd._bounceVel = 12;
+        nd._wiggle = 3;
+        nd._scaleTarget = 1.5;
+        setTimeout(() => { nd._scaleTarget = 1; }, 200);
     }
 
     // Shake ALL nodes (party mode / easter egg)
     function shakeAllNodes() {
-        nodes3d.forEach(n => {
-            n._bounceVel = 5 + Math.random() * 10;
-            n._wiggle = 2 + Math.random() * 3;
+        nodes3d.forEach((n, i) => {
+            setTimeout(() => {
+                n._bounceVel = 8 + Math.random() * 14;
+                n._wiggle = 3 + Math.random() * 4;
+                n._scaleTarget = 1.4;
+                setTimeout(() => { n._scaleTarget = 1; }, 300);
+            }, i * 30); // staggered wave effect
         });
-        // Big sparkle burst in center
+        // Big sparkle burst everywhere
         if (sparkleCtx) {
             const cx = sparkleCanvas.width / 2;
             const cy = sparkleCanvas.height / 2;
-            spawnSparkles(cx, cy, 60, sparkleCtx);
-            for (let i = 0; i < 5; i++) {
-                spawnSparkles(cx + (Math.random()-0.5) * 300, cy + (Math.random()-0.5) * 200, 20, sparkleCtx);
+            spawnSparkles(cx, cy, 80, sparkleCtx);
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    spawnSparkles(cx + (Math.random()-0.5) * 400, cy + (Math.random()-0.5) * 300, 30, sparkleCtx);
+                }, i * 50);
             }
         }
     }
@@ -4086,6 +4139,7 @@ function initGraph(data) {
             const tooltip = document.getElementById('graphTooltip');
             if (hits.length > 0) {
                 const nd = hits[0].object.userData;
+                if (hoveredNode !== nd) SFX.bloop(); // sound on new hover
                 hoveredNode = nd;
                 canvas.style.cursor = 'pointer';
                 // Pop scale on hover
@@ -4098,7 +4152,7 @@ function initGraph(data) {
                     <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
                     <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
                     ${tags ? '<div class="tt-tags">' + tags + '</div>' : ''}
-                    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Click to bounce ✨ Double-click to preview</div>`;
+                    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Click to bounce ✨ Double-click for surprise 🌈</div>`;
                 // Highlight connected edges
                 lineMeshes.forEach(l => {
                     const le = l.userData;
@@ -4154,6 +4208,7 @@ function initGraph(data) {
         if (hoveredNode) {
             // Bounce the node!
             bounceNode(hoveredNode);
+            SFX.sparkle();
             // Sparkles at click position
             const rect = canvas.getBoundingClientRect();
             if (sparkleCtx) {
@@ -4168,12 +4223,16 @@ function initGraph(data) {
             if (clickCount[hoveredNode.id] >= 5) {
                 clickCount[hoveredNode.id] = 0;
                 shakeAllNodes(); // Party mode!
+                SFX.party();
             }
-            // Bounce neighbors too (chain reaction)
+            // Bounce neighbors too (chain reaction with rising pitch)
+            let ni = 0;
             hoveredNode._neighbors.forEach(nid => {
                 const neighbor = nodes3d.find(n => n.id === nid);
                 if (neighbor) {
-                    setTimeout(() => bounceNode(neighbor), 100 + Math.random() * 200);
+                    const delay = 100 + ni * 80;
+                    setTimeout(() => { bounceNode(neighbor); SFX.pop(); }, delay);
+                    ni++;
                 }
             });
         }
@@ -4181,6 +4240,28 @@ function initGraph(data) {
     canvas.addEventListener('dblclick', (e) => {
         if (hoveredNode && hoveredNode.file) {
             openNotePreview(hoveredNode.file, hoveredNode.id);
+        } else if (hoveredNode) {
+            // Easter egg: rainbow spin on double-click!
+            SFX.ding();
+            const mesh = nodeMeshes.find(m => m.userData.id === hoveredNode.id);
+            if (mesh) {
+                let spins = 0;
+                const spinInterval = setInterval(() => {
+                    mesh.material.color.setHSL((spins * 0.05) % 1, 1, 0.6);
+                    mesh.material.emissive.setHSL((spins * 0.05) % 1, 1, 0.4);
+                    mesh.rotation.y += 0.3;
+                    spins++;
+                    if (spins > 30) {
+                        clearInterval(spinInterval);
+                        mesh.material.color.set(hoveredNode.color);
+                        mesh.material.emissive.set(hoveredNode.color);
+                        mesh.rotation.y = 0;
+                    }
+                }, 30);
+            }
+            // Big sparkle burst
+            const rect = canvas.getBoundingClientRect();
+            if (sparkleCtx) spawnSparkles(e.clientX - rect.left, e.clientY - rect.top, 40, sparkleCtx);
         }
     });
     canvas.addEventListener('wheel', (e) => {
@@ -4346,7 +4427,7 @@ function graphReset() {
 }
 
 function graphShakeAll() {
-    if (g3ShakeAll) g3ShakeAll();
+    if (g3ShakeAll) { g3ShakeAll(); SFX.party(); }
 }
 
 // =============================================
