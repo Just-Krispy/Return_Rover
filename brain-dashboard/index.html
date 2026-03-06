@@ -1955,13 +1955,16 @@ async function fetchLiveData() {
     const data = JSON.parse(JSON.stringify(DEMO)); // Start with demo as base
 
     try {
-        const [health, ragStats, chatStats, chatHistory, bmStats, graphData] = await Promise.allSettled([
+        const [health, ragStats, chatStats, chatHistory, bmStats, graphData, vaultGrowth, vaultActivity, vaultNotesList] = await Promise.allSettled([
             apiFetch(`${API_GATEWAY}/api/health`),
             apiFetch(`${API_GATEWAY}/api/rag/stats`),
             apiFetch(`${API_GATEWAY}/api/chat/stats`),
             apiFetch(`${API_GATEWAY}/api/chat/history?n=10`),
             apiFetch(`${API_GATEWAY}/api/bookmarks/stats`),
-            apiFetch(`${API_GATEWAY}/api/graph/graph`)
+            apiFetch(`${API_GATEWAY}/api/graph/graph`),
+            apiFetch(`${API_GATEWAY}/api/stats/growth?days=7`),
+            apiFetch(`${API_GATEWAY}/api/stats/activity?n=20`),
+            apiFetch(`${API_GATEWAY}/api/notes/list?folder=all`)
         ]);
 
         // Health: {"gateway":"running","disk":"17%","memory":"12%","load":"0.06","n8n":"Up 15 minutes"}
@@ -2030,12 +2033,51 @@ async function fetchLiveData() {
             });
         }
 
+        // Vault Growth → sparkline data
+        if (vaultGrowth.status === 'fulfilled' && vaultGrowth.value && vaultGrowth.value.daily) {
+            data._sparklineData = vaultGrowth.value.daily.map(d => d.count);
+            data.ingestStats = { ...data.ingestStats, total_ingested: vaultGrowth.value.total_notes };
+        }
+
+        // Vault Activity → activity feed (merge with chat history activity)
+        if (vaultActivity.status === 'fulfilled' && vaultActivity.value && vaultActivity.value.events) {
+            const liveActivity = vaultActivity.value.events.map(e => ({
+                type: e.type,
+                text: e.text,
+                ts: e.timestamp
+            }));
+            // Merge with any chat-history-derived activity, deduplicate by timestamp
+            const seen = new Set(liveActivity.map(a => a.ts));
+            const merged = [...liveActivity];
+            (data.activity || []).forEach(a => {
+                if (!seen.has(a.ts)) merged.push(a);
+            });
+            merged.sort((a, b) => b.ts.localeCompare(a.ts));
+            data.activity = merged.slice(0, 20);
+        }
+
+        // Vault Notes list → real folder counts
+        if (vaultNotesList.status === 'fulfilled' && vaultNotesList.value && vaultNotesList.value.notes) {
+            const folderCounts = {};
+            vaultNotesList.value.notes.forEach(n => {
+                const folder = n.file.split('/')[0] || 'root';
+                folderCounts[folder] = (folderCounts[folder] || 0) + 1;
+            });
+            Object.keys(data.vaultStructure).forEach(f => {
+                if (folderCounts[f] !== undefined) {
+                    data.vaultStructure[f].count = folderCounts[f];
+                }
+            });
+        }
+
         // Build live service health by checking what data we got back
         data.services = [
             { name: 'vault-search', port: 9878, status: ragStats.status === 'fulfilled' && ragStats.value ? 'up' : 'down' },
             { name: 'vault-chat', port: 9879, status: chatStats.status === 'fulfilled' && chatStats.value ? 'up' : 'down' },
             { name: 'bookmark-capture', port: 9880, status: bmStats.status === 'fulfilled' && bmStats.value ? 'up' : 'down' },
             { name: 'knowledge-graph', port: 9881, status: graphData.status === 'fulfilled' && graphData.value ? 'up' : 'down' },
+            { name: 'vault-notes', port: 9882, status: vaultNotesList.status === 'fulfilled' && vaultNotesList.value ? 'up' : 'down' },
+            { name: 'vault-stats', port: 9883, status: vaultGrowth.status === 'fulfilled' && vaultGrowth.value ? 'up' : 'down' },
             { name: 'health-endpoint', port: 9876, status: health.status === 'fulfilled' && health.value ? 'up' : 'down' }
         ];
 
