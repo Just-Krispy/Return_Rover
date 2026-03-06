@@ -834,6 +834,101 @@
             display: inline-block;
         }
 
+        /* ---- GRAPH HERO + FULLSCREEN ---- */
+        .graph-hero-card {
+            border: 1px solid rgba(99,102,241,0.15);
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(99,102,241,0.03) 100%);
+        }
+        .graph-expand-btn {
+            margin-left: auto;
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.25);
+            color: var(--accent-indigo);
+            border-radius: var(--radius-sm);
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .graph-expand-btn:hover {
+            background: rgba(99,102,241,0.2);
+            border-color: var(--accent-indigo);
+        }
+        .graph-fullscreen-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: #07090f;
+            display: flex;
+            flex-direction: column;
+        }
+        .graph-fullscreen-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(12,16,28,0.95);
+            border-bottom: 1px solid rgba(99,102,241,0.15);
+            z-index: 10;
+        }
+        .graph-fullscreen-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .graph-fullscreen-controls {
+            display: flex;
+            gap: 6px;
+        }
+        .graph-close-btn {
+            width: 34px;
+            height: 34px;
+            font-size: 18px;
+            background: rgba(248,113,113,0.1);
+            border-color: rgba(248,113,113,0.3);
+            color: #f87171;
+        }
+        .graph-close-btn:hover {
+            background: rgba(248,113,113,0.25);
+            border-color: #f87171;
+            color: #fff;
+        }
+        .graph-fullscreen-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        .graph-fullscreen-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            cursor: grab;
+        }
+        .graph-fullscreen-container canvas:active { cursor: grabbing; }
+        .graph-fullscreen-legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 10px 20px;
+            background: rgba(12,16,28,0.95);
+            border-top: 1px solid rgba(99,102,241,0.15);
+        }
+        .graph-fullscreen-modal .graph-tooltip {
+            z-index: 10001;
+        }
+        [data-theme="light"] .graph-fullscreen-modal { background: #e2e8f0; }
+        [data-theme="light"] .graph-fullscreen-header { background: rgba(255,255,255,0.95); border-color: var(--border-default); }
+        [data-theme="light"] .graph-fullscreen-title { color: #0f172a; }
+        [data-theme="light"] .graph-fullscreen-legend { background: rgba(255,255,255,0.95); border-color: var(--border-default); }
+
         /* ---- TAG EXPLORER ---- */
         .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
         .tag-pill {
@@ -1648,6 +1743,51 @@
         </div>
     </div>
 
+    <!-- KNOWLEDGE GRAPH 3D (hero position) -->
+    <div class="card graph-hero-card" style="margin-bottom: 20px;">
+        <div class="card-title">
+            <i data-lucide="network" class="icon"></i> Knowledge Graph
+            <span id="graphStats" class="graph-stats-label"></span>
+            <button class="graph-expand-btn" onclick="openGraphFullscreen()" title="Expand to fullscreen">
+                <i data-lucide="maximize-2" style="width:14px;height:14px"></i>
+            </button>
+        </div>
+        <div id="graphContainer" class="graph-container">
+            <div id="graphTooltip" class="graph-tooltip"></div>
+            <div class="graph-controls">
+                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
+                <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
+            </div>
+        </div>
+        <div class="graph-legend" id="graphLegend">
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#818cf8"></span> Resources</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#22d3ee"></span> Areas</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span> Projects</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bfa"></span> Galaxy</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#f87171"></span> Inbox</span>
+            <span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click to expand &middot; drag to orbit &middot; scroll to zoom</span>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN GRAPH MODAL -->
+    <div id="graphFullscreenModal" class="graph-fullscreen-modal" style="display:none">
+        <div class="graph-fullscreen-header">
+            <div class="graph-fullscreen-title">
+                <i data-lucide="network" style="width:20px;height:20px"></i>
+                Knowledge Graph
+                <span id="graphFullscreenStats" class="graph-stats-label"></span>
+            </div>
+            <div class="graph-fullscreen-controls">
+                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
+                <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
+                <button class="graph-btn graph-close-btn" onclick="closeGraphFullscreen()" title="Exit fullscreen (ESC)">&#10005;</button>
+            </div>
+        </div>
+        <div id="graphFullscreenContainer" class="graph-fullscreen-container"></div>
+        <div class="graph-fullscreen-legend" id="graphFullscreenLegend"></div>
+        <div id="graphFullscreenTooltip" class="graph-tooltip"></div>
+    </div>
+
     <!-- ROW: VAULT STRUCTURE + ACTIVITY -->
     <div class="grid-2">
         <!-- VAULT STRUCTURE -->
@@ -1777,29 +1917,6 @@
             <div style="color:var(--text-tertiary);font-size:13px;padding:12px;text-align:center">
                 Ask questions above to build your history.
             </div>
-        </div>
-    </div>
-
-    <!-- KNOWLEDGE GRAPH 3D -->
-    <div class="card" style="margin-bottom: 20px;">
-        <div class="card-title">
-            <i data-lucide="network" class="icon"></i> Knowledge Graph
-            <span id="graphStats" class="graph-stats-label"></span>
-        </div>
-        <div id="graphContainer" class="graph-container">
-            <div id="graphTooltip" class="graph-tooltip"></div>
-            <div class="graph-controls">
-                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
-                <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
-            </div>
-        </div>
-        <div class="graph-legend" id="graphLegend">
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#818cf8"></span> Resources</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#22d3ee"></span> Areas</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span> Projects</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bfa"></span> Galaxy</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#f87171"></span> Inbox</span>
-            <span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">drag to orbit &middot; scroll to zoom &middot; click node to focus</span>
         </div>
     </div>
 
@@ -3128,6 +3245,7 @@ const DEMO_GRAPH = {
 };
 
 let g3 = {}; // all Three.js state in one object
+let hoveredNode = null;
 
 function initGraph(data) {
     const graph = data || DEMO_GRAPH;
@@ -3338,7 +3456,7 @@ function initGraph(data) {
     let currentLookAt = new THREE.Vector3(0, 0, 0);
     let autoRotate = true;
     let isDragging = false, lastMouse = {x:0,y:0};
-    let hoveredNode = null;
+    hoveredNode = null;
 
     function updateCamera() {
         // Smooth interpolation (Google Earth feel)
@@ -3597,6 +3715,111 @@ function toggleGraphFilter(el, group) {
     localStorage.setItem('brain-graph-hidden', JSON.stringify([...graphHiddenGroups]));
     if (g3._applyFilter) g3._applyFilter(graphHiddenGroups);
 }
+
+// =============================================
+//  FULLSCREEN GRAPH
+// =============================================
+let graphFullscreenActive = false;
+let graphFullscreenRenderer = null;
+
+function openGraphFullscreen() {
+    const modal = document.getElementById('graphFullscreenModal');
+    modal.style.display = 'flex';
+    graphFullscreenActive = true;
+    document.body.style.overflow = 'hidden';
+
+    // Copy legend
+    const legend = document.getElementById('graphLegend');
+    const fsLegend = document.getElementById('graphFullscreenLegend');
+    fsLegend.innerHTML = legend.innerHTML;
+
+    // Copy stats
+    const stats = document.getElementById('graphStats');
+    const fsStats = document.getElementById('graphFullscreenStats');
+    fsStats.textContent = stats.textContent;
+
+    // Move canvas to fullscreen container
+    const container = document.getElementById('graphContainer');
+    const fsContainer = document.getElementById('graphFullscreenContainer');
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+        fsContainer.appendChild(canvas);
+        // Move tooltip too
+        const tooltip = document.getElementById('graphTooltip');
+        fsContainer.appendChild(tooltip);
+    }
+
+    // Resize renderer to fill screen
+    if (g3.renderer && g3.camera) {
+        const w = fsContainer.clientWidth;
+        const h = fsContainer.clientHeight;
+        g3.renderer.setSize(w, h);
+        g3.camera.aspect = w / h;
+        g3.camera.updateProjectionMatrix();
+    }
+}
+
+function closeGraphFullscreen() {
+    const modal = document.getElementById('graphFullscreenModal');
+    modal.style.display = 'none';
+    graphFullscreenActive = false;
+    document.body.style.overflow = '';
+
+    // Move canvas back to inline container
+    const container = document.getElementById('graphContainer');
+    const fsContainer = document.getElementById('graphFullscreenContainer');
+    const canvas = fsContainer.querySelector('canvas');
+    if (canvas) {
+        container.insertBefore(canvas, container.firstChild);
+        // Move tooltip back
+        const tooltip = document.getElementById('graphTooltip');
+        container.appendChild(tooltip);
+    }
+
+    // Resize renderer back to inline
+    if (g3.renderer && g3.camera) {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        g3.renderer.setSize(w, h);
+        g3.camera.aspect = w / h;
+        g3.camera.updateProjectionMatrix();
+    }
+}
+
+// ESC to close fullscreen
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && graphFullscreenActive) {
+        closeGraphFullscreen();
+    }
+});
+
+// Handle resize in fullscreen mode
+window.addEventListener('resize', () => {
+    if (graphFullscreenActive && g3.renderer && g3.camera) {
+        const fsContainer = document.getElementById('graphFullscreenContainer');
+        const w = fsContainer.clientWidth;
+        const h = fsContainer.clientHeight;
+        g3.renderer.setSize(w, h);
+        g3.camera.aspect = w / h;
+        g3.camera.updateProjectionMatrix();
+    }
+});
+
+// Double-click graph container to expand
+document.addEventListener('DOMContentLoaded', () => {
+    const graphCard = document.querySelector('.graph-hero-card');
+    if (graphCard) {
+        graphCard.addEventListener('dblclick', (e) => {
+            // Only expand if not clicking a control button or tooltip
+            if (!e.target.closest('.graph-btn') && !e.target.closest('.graph-legend-item') && !e.target.closest('.graph-expand-btn')) {
+                // Check if we double-clicked on a node (hoveredNode) - if so, let the node handler work
+                if (!hoveredNode) {
+                    openGraphFullscreen();
+                }
+            }
+        });
+    }
+});
 
 // =============================================
 //  VAULT SEARCH (RAG)
