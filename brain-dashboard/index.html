@@ -18,6 +18,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -2031,7 +2037,6 @@
         </div>
         <div class="header-right">
             <span id="modeBadge" class="mode-badge demo">
-                <span class="dot"></span>
                 <span id="modeLabel">DEMO</span>
             </span>
             <span id="healthScoreBadge" class="mode-badge demo" style="display:none;font-size:11px;padding:3px 10px" title="Vault health score">
@@ -3826,6 +3831,20 @@ function initGraph(data) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.insertBefore(renderer.domElement, container.firstChild);
 
+    // -- Post-processing: Bloom --
+    let composer, bloomPass;
+    if (typeof THREE.EffectComposer !== 'undefined') {
+        composer = new THREE.EffectComposer(renderer);
+        composer.addPass(new THREE.RenderPass(scene, camera));
+        bloomPass = new THREE.UnrealBloomPass(
+            new THREE.Vector2(W, H),
+            0.8,   // strength
+            0.4,   // radius
+            0.25   // threshold
+        );
+        composer.addPass(bloomPass);
+    }
+
     // -- Lights (brighter, more colorful) --
     scene.add(new THREE.AmbientLight(0x445577, 0.8));
     const pointLight = new THREE.PointLight(0xa78bfa, 1.0, 800);
@@ -4320,7 +4339,8 @@ function initGraph(data) {
         if (sparkleCtx && sparkles.length > 0) {
             updateSparkles(sparkleCtx, sparkleCanvas.width, sparkleCanvas.height);
         }
-        renderer.render(scene, camera);
+        if (composer) composer.render();
+        else renderer.render(scene, camera);
     }
     animate();
 
@@ -4330,6 +4350,7 @@ function initGraph(data) {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
+        if (composer) composer.setSize(w, h);
         if (sparkleCanvas) {
             sparkleCanvas.width = w;
             sparkleCanvas.height = h;
@@ -4356,7 +4377,7 @@ function initGraph(data) {
     if (hudClusters) hudClusters.textContent = (graph.communities || []).length || '—';
 
     // Store state
-    g3 = { renderer, scene, camera, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
+    g3 = { renderer, scene, camera, composer, bloomPass, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
         nodeMeshes, lineMeshes, nodes3d, edges3d,
         _setAutoRotate(v) { autoRotate = v; },
         _getAutoRotate() { return autoRotate; },
@@ -4653,6 +4674,7 @@ function openGraphFullscreen() {
         const w = fsContainer.clientWidth;
         const h = fsContainer.clientHeight;
         g3.renderer.setSize(w, h);
+        if (g3.composer) g3.composer.setSize(w, h);
         g3.camera.aspect = w / h;
         g3.camera.updateProjectionMatrix();
     }
@@ -4680,6 +4702,7 @@ function closeGraphFullscreen() {
         const w = container.clientWidth;
         const h = container.clientHeight;
         g3.renderer.setSize(w, h);
+        if (g3.composer) g3.composer.setSize(w, h);
         g3.camera.aspect = w / h;
         g3.camera.updateProjectionMatrix();
     }
@@ -4699,6 +4722,7 @@ window.addEventListener('resize', () => {
         const w = fsContainer.clientWidth;
         const h = fsContainer.clientHeight;
         g3.renderer.setSize(w, h);
+        if (g3.composer) g3.composer.setSize(w, h);
         g3.camera.aspect = w / h;
         g3.camera.updateProjectionMatrix();
     }
