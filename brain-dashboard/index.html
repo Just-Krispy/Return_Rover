@@ -361,6 +361,72 @@
         }
         .vault-detail-panel li:last-child { border: none; }
 
+        /* ---- NOTE PREVIEW PANEL ---- */
+        .note-preview-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+        }
+        .note-preview-overlay.open { opacity: 1; pointer-events: auto; }
+        .note-preview-panel {
+            position: fixed; top: 0; right: 0; width: min(520px, 90vw); height: 100vh;
+            background: var(--bg-surface); border-left: 1px solid var(--border-default);
+            box-shadow: -8px 0 32px rgba(0,0,0,0.3); z-index: 1001;
+            transform: translateX(100%); transition: transform 0.25s ease;
+            display: flex; flex-direction: column;
+        }
+        .note-preview-panel.open { transform: translateX(0); }
+        .note-preview-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0;
+        }
+        .note-preview-title {
+            font-size: 15px; font-weight: 600; color: var(--text-primary);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 12px;
+        }
+        .note-preview-meta {
+            display: flex; gap: 8px; padding: 10px 20px; font-size: 12px;
+            color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);
+            flex-shrink: 0; flex-wrap: wrap;
+        }
+        .note-preview-meta .meta-tag {
+            background: var(--bg-inset); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm); padding: 2px 8px; font-size: 11px;
+        }
+        .note-preview-body {
+            flex: 1; overflow-y: auto; padding: 20px;
+            font-size: 14px; line-height: 1.7; color: var(--text-secondary);
+        }
+        .note-preview-body h1, .note-preview-body h2, .note-preview-body h3 {
+            color: var(--text-primary); margin: 20px 0 8px;
+        }
+        .note-preview-body h1 { font-size: 20px; }
+        .note-preview-body h2 { font-size: 17px; }
+        .note-preview-body h3 { font-size: 15px; }
+        .note-preview-body strong { color: var(--text-primary); }
+        .note-preview-body code {
+            background: var(--bg-inset); border: 1px solid var(--border-subtle);
+            border-radius: 3px; padding: 1px 5px; font-size: 13px;
+        }
+        .note-preview-body pre {
+            background: var(--bg-inset); border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm); padding: 12px; overflow-x: auto; margin: 12px 0;
+        }
+        .note-preview-body pre code { border: none; padding: 0; background: none; }
+        .note-preview-body blockquote {
+            border-left: 3px solid var(--accent-indigo); margin: 12px 0;
+            padding: 4px 16px; color: var(--text-tertiary);
+        }
+        .note-preview-body hr { border: none; border-top: 1px solid var(--border-subtle); margin: 16px 0; }
+        .note-preview-body ul, .note-preview-body ol { padding-left: 24px; margin: 8px 0; }
+        .note-preview-body li { margin: 4px 0; }
+        .note-preview-body a { color: var(--accent-indigo); text-decoration: none; }
+        .note-preview-close {
+            background: none; border: 1px solid var(--border-default); color: var(--text-secondary);
+            border-radius: var(--radius-sm); width: 28px; height: 28px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+        }
+        .note-preview-close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
         /* ---- ACTIVITY FEED ---- */
         .activity-list {
             display: flex;
@@ -1047,6 +1113,85 @@
             background: rgba(99,102,241,0.15);
         }
 
+        /* ---- RESEARCH PIPELINE ---- */
+        .research-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .research-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .research-stat {
+            background: var(--bg-inset);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--border-subtle);
+        }
+        .research-stat .rs-val {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .research-stat .rs-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+        }
+        .vertical-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .vertical-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: var(--bg-inset);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            font-size: 13px;
+        }
+        .vertical-row .vr-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .vertical-row .vr-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .vertical-row .vr-status.covered {
+            background: rgba(74,222,128,0.1);
+            color: var(--accent-green);
+        }
+        .vertical-row .vr-status.gap {
+            background: rgba(251,191,36,0.1);
+            color: var(--accent-amber);
+        }
+        .research-gaps {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(251,191,36,0.05);
+            border: 1px solid rgba(251,191,36,0.15);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .research-gaps strong {
+            color: var(--accent-amber);
+        }
+        @media (max-width: 768px) {
+            .research-grid { grid-template-columns: 1fr; }
+            .research-stats { grid-template-columns: repeat(2, 1fr); }
+        }
+
         /* ---- THEME TOGGLE ---- */
         .theme-toggle {
             background: var(--bg-surface);
@@ -1311,6 +1456,35 @@
         </div>
         <div id="searchResults" class="search-results">
             <div class="search-empty">Search across 200+ vault notes using semantic RAG search.</div>
+        </div>
+    </div>
+
+    <!-- RESEARCH PIPELINE -->
+    <div class="card full-width">
+        <div class="card-title"><i data-lucide="flask-conical" class="icon"></i> PawsitiveID Research Pipeline</div>
+        <div class="research-stats" id="researchStats">
+            <div class="research-stat"><div class="rs-val" id="rsNotes">--</div><div class="rs-label">Research Notes</div></div>
+            <div class="research-stat"><div class="rs-val" id="rsJobs">--</div><div class="rs-label">NotebookLM Jobs</div></div>
+            <div class="research-stat"><div class="rs-val" id="rsCoverage">--</div><div class="rs-label">Verticals Covered</div></div>
+            <div class="research-stat"><div class="rs-val" id="rsDigests">--</div><div class="rs-label">Digests</div></div>
+        </div>
+        <div class="research-grid">
+            <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Vertical Coverage</div>
+                <div class="vertical-list" id="verticalList">
+                    <div style="color:var(--text-tertiary);font-size:12px;padding:8px">Loading...</div>
+                </div>
+            </div>
+            <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Research Gaps</div>
+                <div id="researchGaps" class="research-gaps">
+                    <strong>Analyzing coverage...</strong>
+                </div>
+                <div style="margin-top:12px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Latest Digest</div>
+                <div id="researchDigestInfo" style="font-size:13px;color:var(--text-secondary);padding:8px 12px;background:var(--bg-inset);border-radius:var(--radius-sm);border:1px solid var(--border-subtle)">
+                    No digests yet
+                </div>
+            </div>
         </div>
     </div>
 
@@ -2869,6 +3043,59 @@ function renderHealthGauges(healthData) {
 // =============================================
 //  TAG EXPLORER + VAULT QUALITY
 // =============================================
+// =============================================
+//  PAWSITIVEID RESEARCH PIPELINE
+// =============================================
+async function loadResearchPipeline() {
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/health/pawsitiveid-research`, {signal: AbortSignal.timeout(8000)});
+        const d = await resp.json();
+
+        document.getElementById('rsNotes').textContent = d.research_notes || 0;
+        document.getElementById('rsJobs').textContent = d.notebooklm_jobs || 0;
+        document.getElementById('rsCoverage').textContent = `${d.verticals_covered || 0}/${d.verticals_total || 6}`;
+        document.getElementById('rsDigests').textContent = d.digests || 0;
+
+        // Vertical list
+        const vList = document.getElementById('verticalList');
+        if (vList && d.verticals_list) {
+            vList.innerHTML = Object.entries(d.verticals_list).map(([name, covered]) =>
+                `<div class="vertical-row">
+                    <span class="vr-name">${name}</span>
+                    <span class="vr-status ${covered ? 'covered' : 'gap'}">${covered ? 'COVERED' : 'GAP'}</span>
+                </div>`
+            ).join('');
+        }
+
+        // Gaps + recommendations
+        const gapsEl = document.getElementById('researchGaps');
+        if (gapsEl && d.gaps && d.gaps.length > 0) {
+            const suggestions = {
+                "AI Matching": "Computer vision for pet ID, facial recognition for animals",
+                "Business Model": "SaaS pricing for pet services, shelter budget analysis",
+                "Competitors": "PetFinder, PawBoost, Finding Rover, Petco Love Lost",
+                "Pet Recovery": "Microchip registries, GPS collar tech, lost pet networks",
+                "Shelter Tech": "ShelterLuv, PetPoint, Pawlytics platforms",
+                "Vet Partnerships": "Clinic software integrations, AVMA trends",
+            };
+            gapsEl.innerHTML = '<strong>Research needed:</strong><br>' +
+                d.gaps.map(g => `• <strong>${g}</strong> — ${suggestions[g] || 'Queue research'}`).join('<br>');
+        } else if (gapsEl) {
+            gapsEl.innerHTML = '<strong style="color:var(--accent-green)">All verticals covered!</strong>';
+        }
+
+        // Latest digest
+        const digestEl = document.getElementById('researchDigestInfo');
+        if (digestEl) {
+            if (d.latest_digest) {
+                digestEl.textContent = `Latest: ${d.latest_digest} (${d.digests} total)`;
+            } else {
+                digestEl.textContent = 'First digest generates at 9 PM UTC';
+            }
+        }
+    } catch(e) { /* keep placeholder */ }
+}
+
 async function loadTagExplorer() {
     try {
         const resp = await fetch(`${API_GATEWAY}/api/health/vault-tags`, {signal: AbortSignal.timeout(8000)});
@@ -2969,7 +3196,8 @@ async function loadVaultQuality() {
                 }
             }
         } catch(e) { /* keep demo graph */ }
-        // Load tag explorer and quality panels in parallel
+        // Load research pipeline, tag explorer, and quality panels in parallel
+        loadResearchPipeline();
         loadTagExplorer();
         loadVaultQuality();
         startAutoRefresh();
