@@ -82,6 +82,14 @@
             width: 36px;
             height: 36px;
             color: var(--accent-indigo);
+            filter: drop-shadow(0 0 6px rgba(99,102,241,0.4));
+            animation: brainPulse 3s ease-in-out infinite;
+        }
+        @keyframes brainPulse {
+            0%, 100% { filter: drop-shadow(0 0 4px rgba(99,102,241,0.3)); color: var(--accent-indigo); }
+            30% { filter: drop-shadow(0 0 12px rgba(139,92,246,0.6)); color: #a78bfa; }
+            50% { filter: drop-shadow(0 0 6px rgba(99,102,241,0.3)); color: var(--accent-indigo); }
+            75% { filter: drop-shadow(0 0 10px rgba(99,102,241,0.5)); color: #93a0f8; }
         }
         .header-brand {
             display: flex;
