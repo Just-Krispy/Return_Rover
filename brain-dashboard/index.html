@@ -258,6 +258,21 @@
             color: var(--text-tertiary);
             margin-top: 6px;
         }
+        .btn-reindex {
+            margin-top: 8px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 500;
+            background: var(--bg-inset);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-reindex:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+        .btn-reindex:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-reindex.running { color: var(--accent-cyan); border-color: var(--accent-cyan); }
 
         /* ---- GRID LAYOUT ---- */
         .grid-2 {
@@ -1539,6 +1554,7 @@
             </div>
             <div class="stat-value" id="statChunks">--</div>
             <div class="stat-sub">RAG search index</div>
+            <button class="btn-reindex" id="reindexBtn" onclick="triggerReindex()" title="Rebuild the RAG search index"><i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex</button>
         </div>
         <div class="card stat-card stat-card--amber">
             <div class="stat-card__header">
@@ -2179,11 +2195,6 @@ async function openNotePreview(filePath, displayName) {
     } catch (err) {
         body.innerHTML = `<div style="color:var(--accent-red);padding:20px;">Error: ${escapeHtml(err.message)}</div>`;
     }
-}
-
-function closeNotePreview() {
-    document.getElementById('notePreviewOverlay').classList.remove('open');
-    document.getElementById('notePreviewPanel').classList.remove('open');
 }
 
 function renderMarkdownBasic(md) {
@@ -3395,6 +3406,45 @@ function openNotePreview(filePath) {
 function closeNotePreview() {
     document.getElementById('notePreviewPanel').classList.remove('open');
     setTimeout(() => document.getElementById('notePreviewOverlay').classList.remove('open'), 250);
+}
+
+async function triggerReindex() {
+    const btn = document.getElementById('reindexBtn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.classList.add('running');
+    btn.innerHTML = '<i data-lucide="loader" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;animation:spin 1s linear infinite"></i>Reindexing...';
+    lucide.createIcons();
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/rag/index?force=true`, { signal: AbortSignal.timeout(60000) });
+        const data = await resp.json();
+        btn.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Done!';
+        btn.style.color = 'var(--accent-green)';
+        btn.style.borderColor = 'var(--accent-green)';
+        lucide.createIcons();
+        // Update chunks count
+        if (data.total_chunks) document.getElementById('statChunks').textContent = data.total_chunks;
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            lucide.createIcons();
+        }, 3000);
+    } catch (err) {
+        btn.innerHTML = '<i data-lucide="alert-circle" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Failed';
+        btn.style.color = 'var(--accent-red)';
+        lucide.createIcons();
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            lucide.createIcons();
+        }, 3000);
+    }
 }
 
 // =============================================
