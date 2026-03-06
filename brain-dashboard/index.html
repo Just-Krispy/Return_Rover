@@ -1644,6 +1644,17 @@
     </div>
 </div>
 
+<!-- NOTE PREVIEW PANEL -->
+<div class="note-preview-overlay" id="notePreviewOverlay" onclick="closeNotePreview()"></div>
+<div class="note-preview-panel" id="notePreviewPanel">
+    <div class="note-preview-header">
+        <span class="note-preview-title" id="notePreviewTitle">--</span>
+        <button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
+    </div>
+    <div class="note-preview-meta" id="notePreviewMeta"></div>
+    <div class="note-preview-body" id="notePreviewBody"></div>
+</div>
+
 <script>
 // =============================================
 //  CONFIGURATION
@@ -1936,10 +1947,8 @@ function showVaultDetail(folder, data) {
             li.style.cursor = 'pointer';
             li.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Copy note name on click
-                navigator.clipboard.writeText(li.textContent).catch(() => {});
-                li.style.color = 'var(--accent-green)';
-                setTimeout(() => { li.style.color = ''; }, 600);
+                const noteName = typeof n === 'string' ? n : n.id || n;
+                openNotePreview(folder + '/' + noteName, noteName);
             });
             list.appendChild(li);
         });
@@ -1958,6 +1967,88 @@ function showVaultDetail(folder, data) {
         list.appendChild(li);
     }
     panel.classList.add('open');
+}
+
+// =============================================
+//  NOTE PREVIEW
+// =============================================
+async function openNotePreview(filePath, displayName) {
+    const overlay = document.getElementById('notePreviewOverlay');
+    const panel = document.getElementById('notePreviewPanel');
+    const title = document.getElementById('notePreviewTitle');
+    const meta = document.getElementById('notePreviewMeta');
+    const body = document.getElementById('notePreviewBody');
+
+    title.textContent = displayName || filePath;
+    meta.innerHTML = '';
+    body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text-tertiary);font-size:13px;">Loading note...</div>';
+
+    overlay.classList.add('open');
+    panel.classList.add('open');
+
+    try {
+        // Ensure .md extension
+        const file = filePath.endsWith('.md') ? filePath : filePath + '.md';
+        const data = await apiFetch(`${API_GATEWAY}/api/notes/content?file=${encodeURIComponent(file)}`);
+        if (!data || data.error) {
+            body.innerHTML = `<div style="color:var(--accent-red);padding:20px;">${escapeHtml(data?.error || 'Failed to load note')}</div>`;
+            return;
+        }
+
+        title.textContent = data.title || displayName;
+
+        // Meta tags
+        const metaParts = [];
+        if (data.word_count) metaParts.push(`${data.word_count} words`);
+        if (data.modified) metaParts.push(`Modified: ${data.modified}`);
+        if (data.tags && data.tags.length > 0) {
+            data.tags.forEach(t => metaParts.push(`<span class="meta-tag">#${escapeHtml(t)}</span>`));
+        }
+        meta.innerHTML = metaParts.join(' &middot; ');
+
+        // Render content (strip frontmatter)
+        let content = data.content || '';
+        content = content.replace(/^---[\s\S]*?---\s*\n?/, '');
+        body.innerHTML = renderMarkdownBasic(content);
+
+    } catch (err) {
+        body.innerHTML = `<div style="color:var(--accent-red);padding:20px;">Error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function closeNotePreview() {
+    document.getElementById('notePreviewOverlay').classList.remove('open');
+    document.getElementById('notePreviewPanel').classList.remove('open');
+}
+
+function renderMarkdownBasic(md) {
+    let html = escapeHtml(md);
+    // Code blocks (fenced)
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+    // Headers
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    // Bold and italic
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Blockquotes
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+    // Horizontal rules
+    html = html.replace(/^---$/gm, '<hr>');
+    // Unordered lists
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    // Line breaks (double newline = paragraph)
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = '<p>' + html + '</p>';
+    // Clean up empty paragraphs
+    html = html.replace(/<p>\s*<\/p>/g, '');
+    return html;
 }
 
 function renderActivity(items) {
@@ -2359,6 +2450,7 @@ function initKeyboardShortcuts() {
                 break;
             case 'Escape':
                 closeKbOverlay();
+                closeNotePreview();
                 break;
             case '/':
                 e.preventDefault();
