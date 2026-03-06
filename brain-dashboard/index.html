@@ -1576,6 +1576,10 @@
                 <span class="dot"></span>
                 <span id="modeLabel">DEMO</span>
             </span>
+            <span id="healthScoreBadge" class="mode-badge demo" style="display:none;font-size:11px;padding:3px 10px" title="Vault health score">
+                <span class="dot" style="background:var(--accent-green)"></span>
+                <span id="healthScoreLabel">--</span>
+            </span>
             <span id="lastUpdatedTicker" class="last-updated-ticker">Updated just now</span>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle">&#9789;</button>
             <span id="refreshInfo" class="refresh-info">--</span>
@@ -2726,6 +2730,7 @@ async function fetchLiveData() {
         if (vaultTags.status === 'fulfilled' && vaultTags.value && vaultTags.value.top_tags) {
             data._tagCloud = vaultTags.value.top_tags;
             data._uniqueTags = vaultTags.value.unique_tags;
+            data._tagCoverage = vaultTags.value.notes_with_tags / Math.max(1, vaultTags.value.total_notes);
         }
 
         // Build live service health by checking what data we got back
@@ -2912,6 +2917,7 @@ async function renderAll(data) {
     renderSparkline(data._sparklineData || DEMO_SPARKLINE);
     if (data._tagCloud) renderTagCloud(data._tagCloud, data._uniqueTags);
     if (data.health) renderHealthGauges(data.health);
+    renderHealthScore(data);
     // Chat history
     chatHistoryData = data.chatHistory || [];
     renderChatHistory(chatHistoryData);
@@ -3573,9 +3579,36 @@ function renderHealthGauges(healthData) {
     }
 }
 
-// =============================================
-//  TAG EXPLORER + VAULT QUALITY
-// =============================================
+function renderHealthScore(data) {
+    const badge = document.getElementById('healthScoreBadge');
+    const label = document.getElementById('healthScoreLabel');
+    if (!badge || !label || !isLive) return;
+
+    let score = 0, factors = 0;
+
+    if (data.services) {
+        const up = data.services.filter(s => s.status === 'up').length;
+        score += (up / Math.max(1, data.services.length)) * 100;
+        factors++;
+    }
+    if (data.health && data.health.status === 'ok') { score += 100; factors++; }
+    else if (data.health) { score += 30; factors++; }
+    if (data._tagCoverage !== undefined) { score += data._tagCoverage * 100; factors++; }
+    if (data.health && data.health.disk) {
+        score += Math.max(0, 100 - (parseFloat(data.health.disk) || 0));
+        factors++;
+    }
+
+    const avg = factors > 0 ? Math.round(score / factors) : 0;
+    badge.style.display = 'inline-flex';
+    label.textContent = `Health: ${avg}%`;
+    const dot = badge.querySelector('.dot');
+    if (avg >= 80) { dot.style.background = 'var(--accent-green)'; badge.style.borderColor = 'rgba(52,211,153,0.3)'; }
+    else if (avg >= 50) { dot.style.background = 'var(--accent-amber)'; badge.style.borderColor = 'rgba(251,191,36,0.3)'; }
+    else { dot.style.background = 'var(--accent-red)'; badge.style.borderColor = 'rgba(248,113,113,0.3)'; }
+    badge.title = `Vault health: ${avg}% \u2014 Services: ${data.services ? data.services.filter(s=>s.status==='up').length + '/' + data.services.length : '?'} up`;
+}
+
 // =============================================
 //  CHAT HISTORY
 // =============================================
