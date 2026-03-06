@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -609,30 +610,48 @@
             color: var(--accent-red);
         }
 
-        /* ---- KNOWLEDGE GRAPH ---- */
+        /* ---- KNOWLEDGE GRAPH 3D ---- */
         .graph-container {
             width: 100%;
-            height: 450px;
+            height: 520px;
             position: relative;
             border-radius: var(--radius-md);
-            background: var(--bg-inset);
+            background: #07090f;
+            overflow: hidden;
         }
         .graph-container canvas {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: var(--radius-md);
+            cursor: grab;
         }
+        .graph-container canvas:active { cursor: grabbing; }
         .graph-tooltip {
             display: none;
             position: absolute;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-md);
-            padding: 10px 14px;
+            background: rgba(12,16,28,0.94);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 10px;
+            padding: 12px 16px;
             font-size: 13px;
             pointer-events: none;
             z-index: 10;
-            max-width: 250px;
-            box-shadow: var(--shadow-lg);
+            max-width: 280px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(99,102,241,0.08);
+        }
+        .graph-tooltip strong { color: #e2e8f0; }
+        .graph-tooltip .tt-folder { font-size: 11px; margin-top: 2px; }
+        .graph-tooltip .tt-meta { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+        .graph-tooltip .tt-tags { margin-top: 6px; }
+        .graph-tooltip .tt-tag {
+            display: inline-block;
+            background: rgba(99,102,241,0.12);
+            color: #818cf8;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 10px;
+            margin: 1px 2px;
         }
         .graph-stats-label {
             font-size: 11px;
@@ -940,11 +959,7 @@
 
         /* ---- GRAPH INTERACTION ---- */
         .graph-container canvas {
-            cursor: grab;
             touch-action: none;
-        }
-        .graph-container canvas.grabbing {
-            cursor: grabbing;
         }
         .graph-controls {
             position: absolute;
@@ -955,23 +970,25 @@
             z-index: 5;
         }
         .graph-btn {
-            width: 28px;
-            height: 28px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-default);
+            width: 30px;
+            height: 30px;
+            background: rgba(12,16,28,0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(99,102,241,0.2);
             border-radius: var(--radius-sm);
-            color: var(--text-secondary);
+            color: rgba(148,163,184,0.8);
             font-size: 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: border-color 0.15s ease, color 0.15s ease;
+            transition: all 0.2s ease;
             font-family: inherit;
         }
         .graph-btn:hover {
-            border-color: var(--border-accent);
-            color: var(--text-primary);
+            border-color: rgba(99,102,241,0.5);
+            color: #fff;
+            background: rgba(99,102,241,0.15);
         }
 
         /* ---- LOADING SPINNER ---- */
@@ -997,8 +1014,7 @@
             .header { flex-direction: column; align-items: flex-start; }
             .header h1 { font-size: 20px; }
             .stat-value { font-size: 28px; }
-            .graph-container { height: 350px; }
-            .graph-tooltip { font-size: 12px; padding: 8px 10px; max-width: 200px; }
+            .graph-container { height: 400px; }
             .health-gauges { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .search-form { flex-direction: column; }
         }
@@ -1151,27 +1167,26 @@
         </div>
     </div>
 
-    <!-- KNOWLEDGE GRAPH -->
+    <!-- KNOWLEDGE GRAPH 3D -->
     <div class="card" style="margin-bottom: 20px;">
         <div class="card-title">
             <i data-lucide="network" class="icon"></i> Knowledge Graph
             <span id="graphStats" class="graph-stats-label"></span>
         </div>
         <div id="graphContainer" class="graph-container">
-            <canvas id="graphCanvas"></canvas>
             <div id="graphTooltip" class="graph-tooltip"></div>
             <div class="graph-controls">
-                <button class="graph-btn" onclick="graphZoom(1.2)" title="Zoom in">+</button>
-                <button class="graph-btn" onclick="graphZoom(0.8)" title="Zoom out">&minus;</button>
-                <button class="graph-btn" onclick="graphReset()" title="Reset view">&#8634;</button>
+                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
+                <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
             </div>
         </div>
         <div class="graph-legend">
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:var(--accent-indigo)"></span> Resources</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:var(--accent-cyan)"></span> Areas</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:var(--accent-amber)"></span> Projects</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:var(--accent-purple)"></span> Galaxy</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:var(--accent-red)"></span> Inbox</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#818cf8"></span> Resources</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#22d3ee"></span> Areas</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span> Projects</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bfa"></span> Galaxy</span>
+            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#f87171"></span> Inbox</span>
+            <span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">drag to orbit &middot; scroll to zoom &middot; click node to focus</span>
         </div>
     </div>
 
@@ -1858,7 +1873,7 @@ function startAutoRefresh() {
 }
 
 // =============================================
-//  KNOWLEDGE GRAPH
+//  KNOWLEDGE GRAPH — 3D (Three.js, Google Earth style)
 // =============================================
 const GRAPH_COLORS = {
     Resources: '#818cf8', Areas: '#22d3ee', Projects: '#fbbf24',
@@ -1867,390 +1882,416 @@ const GRAPH_COLORS = {
 
 const DEMO_GRAPH = {
     nodes: [
-        {id:'Lex Fridman 490',folder:'Resources',word_count:450,connections:5},
-        {id:'Lex Fridman 491',folder:'Resources',word_count:380,connections:4},
-        {id:'Lex Fridman 489',folder:'Resources',word_count:320,connections:3},
-        {id:'Huberman - Dopamine',folder:'Resources',word_count:520,connections:4},
-        {id:'Huberman - Play',folder:'Resources',word_count:410,connections:3},
-        {id:'Huberman - Light',folder:'Resources',word_count:350,connections:3},
-        {id:'Stratechery - Xbox',folder:'Resources',word_count:280,connections:2},
-        {id:'Stratechery - Attention',folder:'Resources',word_count:310,connections:2},
-        {id:'GPT-5.4',folder:'Resources',word_count:200,connections:3},
-        {id:'GitHub Security',folder:'Resources',word_count:180,connections:2},
-        {id:'Wikipedia Hack',folder:'Resources',word_count:190,connections:2},
-        {id:'Anthropic Supply Chain',folder:'Resources',word_count:220,connections:3},
-        {id:'Jido Framework',folder:'Resources',word_count:170,connections:2},
-        {id:'Intel - Capital',folder:'Resources',word_count:300,connections:1},
-        {id:'YT - Second Brain',folder:'Resources',word_count:250,connections:3},
-        {id:'YT - Obsidian',folder:'Resources',word_count:220,connections:3},
-        {id:'Liv Stats Card',folder:'Areas',word_count:707,connections:2},
-        {id:'Archer Summary',folder:'Areas',word_count:127,connections:2},
-        {id:'Vault Report',folder:'Areas',word_count:180,connections:3},
-        {id:'Weekly Synthesis',folder:'Inbox',word_count:600,connections:8},
-        {id:'Learning Report',folder:'Inbox',word_count:300,connections:2},
+        {id:'Lex Fridman 490',folder:'Resources',word_count:450,connections:5,tags:['podcast','ai']},
+        {id:'Lex Fridman 491',folder:'Resources',word_count:380,connections:4,tags:['podcast','ai']},
+        {id:'Huberman - Dopamine',folder:'Resources',word_count:520,connections:4,tags:['podcast','neuroscience']},
+        {id:'Huberman - Play',folder:'Resources',word_count:410,connections:3,tags:['podcast','neuroscience']},
+        {id:'GPT-5.4',folder:'Resources',word_count:200,connections:3,tags:['ai','research']},
+        {id:'GitHub Security',folder:'Resources',word_count:180,connections:2,tags:['cybersecurity']},
+        {id:'Wikipedia Hack',folder:'Resources',word_count:190,connections:2,tags:['cybersecurity']},
+        {id:'Anthropic Supply Chain',folder:'Resources',word_count:220,connections:3,tags:['ai','security']},
+        {id:'YT - Second Brain',folder:'Resources',word_count:250,connections:3,tags:['productivity']},
+        {id:'YT - Obsidian',folder:'Resources',word_count:220,connections:3,tags:['productivity']},
+        {id:'Liv Stats Card',folder:'Areas',word_count:707,connections:2,tags:['education']},
+        {id:'Archer Summary',folder:'Areas',word_count:127,connections:2,tags:['infrastructure']},
+        {id:'Vault Report',folder:'Areas',word_count:180,connections:3,tags:['infrastructure']},
+        {id:'Weekly Synthesis',folder:'Inbox',word_count:600,connections:8,tags:['synthesis']},
+        {id:'Learning Report',folder:'Inbox',word_count:300,connections:2,tags:['education']},
     ],
     edges: [
-        {source:'Lex Fridman 490',target:'Lex Fridman 491',weight:3},{source:'Lex Fridman 490',target:'GPT-5.4',weight:2},
-        {source:'Lex Fridman 491',target:'YT - Second Brain',weight:2},{source:'Lex Fridman 489',target:'Lex Fridman 490',weight:3},
-        {source:'Huberman - Dopamine',target:'Huberman - Play',weight:3},{source:'Huberman - Dopamine',target:'Huberman - Light',weight:2},
-        {source:'Huberman - Play',target:'Huberman - Light',weight:2},{source:'Stratechery - Xbox',target:'Stratechery - Attention',weight:3},
-        {source:'GPT-5.4',target:'Anthropic Supply Chain',weight:2},{source:'GPT-5.4',target:'Jido Framework',weight:1},
-        {source:'GitHub Security',target:'Wikipedia Hack',weight:2},{source:'Anthropic Supply Chain',target:'Intel - Capital',weight:1},
-        {source:'YT - Second Brain',target:'YT - Obsidian',weight:3},{source:'YT - Second Brain',target:'Vault Report',weight:1},
-        {source:'YT - Obsidian',target:'Archer Summary',weight:1},{source:'Weekly Synthesis',target:'Vault Report',weight:2},
-        {source:'Weekly Synthesis',target:'Lex Fridman 490',weight:1},{source:'Weekly Synthesis',target:'Huberman - Dopamine',weight:1},
-        {source:'Weekly Synthesis',target:'GPT-5.4',weight:1},{source:'Liv Stats Card',target:'Learning Report',weight:2},
-        {source:'Archer Summary',target:'Vault Report',weight:2},{source:'Weekly Synthesis',target:'YT - Second Brain',weight:1},
+        {source:'Lex Fridman 490',target:'Lex Fridman 491',weight:3,type:'shared_tags'},
+        {source:'Lex Fridman 490',target:'GPT-5.4',weight:2,type:'shared_tags'},
+        {source:'Huberman - Dopamine',target:'Huberman - Play',weight:3,type:'shared_tags'},
+        {source:'GPT-5.4',target:'Anthropic Supply Chain',weight:2,type:'shared_tags'},
+        {source:'GitHub Security',target:'Wikipedia Hack',weight:2,type:'shared_tags'},
+        {source:'YT - Second Brain',target:'YT - Obsidian',weight:3,type:'wikilink'},
+        {source:'YT - Second Brain',target:'Vault Report',weight:1,type:'mention'},
+        {source:'Weekly Synthesis',target:'Vault Report',weight:2,type:'wikilink'},
+        {source:'Weekly Synthesis',target:'Lex Fridman 490',weight:1,type:'wikilink'},
+        {source:'Weekly Synthesis',target:'Huberman - Dopamine',weight:1,type:'wikilink'},
+        {source:'Weekly Synthesis',target:'GPT-5.4',weight:1,type:'semantic'},
+        {source:'Liv Stats Card',target:'Learning Report',weight:2,type:'shared_tags'},
+        {source:'Archer Summary',target:'Vault Report',weight:2,type:'wikilink'},
     ],
-    stats: {total_nodes:49,total_edges:640,avg_connections:26.1,orphan_nodes:1,most_connected:'Weekly Synthesis'}
+    stats: {total_nodes:15,total_edges:13,orphan_nodes:0}
 };
 
-let graphNodes = [], graphEdges = [], graphAnim = null;
-let graphZoomLevel = 1, graphPanX = 0, graphPanY = 0;
-let graphSelectedNode = null, graphDragNode = null;
-let graphW = 0, graphH = 0, graphCtx = null, graphCanvas = null;
+let g3 = {}; // all Three.js state in one object
 
 function initGraph(data) {
     const graph = data || DEMO_GRAPH;
-    graphCanvas = document.getElementById('graphCanvas');
-    if (!graphCanvas) return;
-    graphCtx = graphCanvas.getContext('2d');
     const container = document.getElementById('graphContainer');
-    graphW = container.clientWidth;
-    graphH = container.clientHeight;
-    graphCanvas.width = graphW * 2;
-    graphCanvas.height = graphH * 2;
-    graphCanvas.style.width = graphW + 'px';
-    graphCanvas.style.height = graphH + 'px';
-    graphCtx.scale(2, 2);
+    if (!container || typeof THREE === 'undefined') return;
 
-    // Reset view
-    graphZoomLevel = 1;
-    graphPanX = 0;
-    graphPanY = 0;
-    graphSelectedNode = null;
-
+    // Stats label
     const stats = graph.stats || {};
     document.getElementById('graphStats').textContent =
-        `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges · ${stats.orphan_nodes || 0} orphans`;
+        `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges`;
 
-    graphNodes = graph.nodes.map((n, i) => {
-        const angle = (i / graph.nodes.length) * Math.PI * 2;
-        const r = 120 + Math.random() * 60;
-        return {
-            ...n, x: graphW/2 + Math.cos(angle) * r + (Math.random()-0.5)*80,
-            y: graphH/2 + Math.sin(angle) * r + (Math.random()-0.5)*80,
-            vx: 0, vy: 0,
-            radius: Math.max(4, Math.min(12, (n.word_count || 200) / 80)),
-            color: GRAPH_COLORS[n.folder] || '#a1a1aa'
+    // Clean up previous
+    if (g3.renderer) {
+        g3.renderer.dispose();
+        g3.renderer.domElement.remove();
+        cancelAnimationFrame(g3.rafId);
+    }
+
+    const W = container.clientWidth;
+    const H = container.clientHeight;
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x07090f);
+    scene.fog = new THREE.FogExp2(0x07090f, 0.0018);
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(50, W / H, 1, 2000);
+    camera.position.set(0, 60, 280);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.insertBefore(renderer.domElement, container.firstChild);
+
+    // -- Lights --
+    scene.add(new THREE.AmbientLight(0x334155, 0.6));
+    const pointLight = new THREE.PointLight(0x818cf8, 0.8, 600);
+    pointLight.position.set(0, 100, 100);
+    scene.add(pointLight);
+
+    // -- Starfield --
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = new Float32Array(800 * 3);
+    for (let i = 0; i < 800; i++) {
+        starPos[i*3]     = (Math.random() - 0.5) * 1400;
+        starPos[i*3 + 1] = (Math.random() - 0.5) * 1400;
+        starPos[i*3 + 2] = (Math.random() - 0.5) * 1400;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+        color: 0x1e293b, size: 1.2, transparent: true, opacity: 0.6
+    })));
+
+    // -- Layout: 3D force simulation (pre-computed) --
+    const nodeMap = {};
+    const nodes3d = graph.nodes.map((n, i) => {
+        // Spherical initial placement
+        const phi = Math.acos(1 - 2 * (i + 0.5) / graph.nodes.length);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+        const r = 80 + Math.random() * 30;
+        const pos = {
+            x: r * Math.sin(phi) * Math.cos(theta),
+            y: r * Math.sin(phi) * Math.sin(theta) * 0.6,
+            z: r * Math.cos(phi),
+            vx: 0, vy: 0, vz: 0
         };
+        const nd = { ...n, ...pos, color: GRAPH_COLORS[n.folder] || GRAPH_COLORS.root,
+            radius: Math.max(1.5, Math.min(5, (n.connections || 1) * 0.35)) };
+        nodeMap[n.id] = nd;
+        return nd;
     });
 
-    const nodeMap = {};
-    graphNodes.forEach(n => nodeMap[n.id] = n);
-    graphEdges = graph.edges.filter(e => nodeMap[e.source] && nodeMap[e.target]).map(e => ({
-        source: nodeMap[e.source], target: nodeMap[e.target], weight: e.weight || 1
+    const edges3d = graph.edges.filter(e => nodeMap[e.source] && nodeMap[e.target]).map(e => ({
+        source: nodeMap[e.source], target: nodeMap[e.target],
+        weight: e.weight || 1, type: e.type || 'shared_tags'
     }));
 
-    // Build adjacency for highlight
-    graphNodes.forEach(n => n._neighbors = new Set());
-    graphEdges.forEach(e => {
-        e.source._neighbors.add(e.target.id);
-        e.target._neighbors.add(e.source.id);
-    });
+    // Build adjacency
+    nodes3d.forEach(n => n._neighbors = new Set());
+    edges3d.forEach(e => { e.source._neighbors.add(e.target.id); e.target._neighbors.add(e.source.id); });
 
-    let tick = 0;
-    function simulate() {
-        tick++;
-        const alpha = Math.max(0.001, 0.3 * Math.pow(0.99, tick));
-        for (let i = 0; i < graphNodes.length; i++) {
-            if (graphNodes[i] === graphDragNode) continue;
-            for (let j = i+1; j < graphNodes.length; j++) {
-                if (graphNodes[j] === graphDragNode) continue;
-                const a = graphNodes[i], b = graphNodes[j];
-                let dx = b.x - a.x, dy = b.y - a.y;
-                let dist = Math.sqrt(dx*dx + dy*dy) || 1;
-                let force = -800 / (dist * dist);
-                let fx = (dx / dist) * force * alpha, fy = (dy / dist) * force * alpha;
-                a.vx -= fx; a.vy -= fy; b.vx += fx; b.vy += fy;
+    // Run 3D force layout (200 ticks, no rendering — like pre-baking positions)
+    for (let tick = 0; tick < 200; tick++) {
+        const alpha = 0.3 * Math.pow(0.985, tick);
+        if (alpha < 0.001) break;
+        // Repulsion
+        for (let i = 0; i < nodes3d.length; i++) {
+            for (let j = i+1; j < nodes3d.length; j++) {
+                const a = nodes3d[i], b = nodes3d[j];
+                let dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
+                let dist = Math.sqrt(dx*dx+dy*dy+dz*dz) || 1;
+                let f = -600 / (dist*dist) * alpha;
+                let fx = dx/dist*f, fy = dy/dist*f, fz = dz/dist*f;
+                a.vx -= fx; a.vy -= fy; a.vz -= fz;
+                b.vx += fx; b.vy += fy; b.vz += fz;
             }
         }
-        graphEdges.forEach(e => {
-            if (e.source === graphDragNode || e.target === graphDragNode) return;
-            let dx = e.target.x - e.source.x, dy = e.target.y - e.source.y;
-            let dist = Math.sqrt(dx*dx + dy*dy) || 1;
-            let force = (dist - 60) * 0.01 * alpha * e.weight;
-            let fx = (dx / dist) * force, fy = (dy / dist) * force;
-            e.source.vx += fx; e.source.vy += fy;
-            e.target.vx -= fx; e.target.vy -= fy;
+        // Attraction along edges
+        edges3d.forEach(e => {
+            let dx = e.target.x-e.source.x, dy = e.target.y-e.source.y, dz = e.target.z-e.source.z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz) || 1;
+            let f = (dist - 40) * 0.008 * alpha * Math.min(e.weight, 3);
+            let fx = dx/dist*f, fy = dy/dist*f, fz = dz/dist*f;
+            e.source.vx += fx; e.source.vy += fy; e.source.vz += fz;
+            e.target.vx -= fx; e.target.vy -= fy; e.target.vz -= fz;
         });
-        graphNodes.forEach(n => {
-            if (n === graphDragNode) { n.vx = 0; n.vy = 0; return; }
-            n.vx += (graphW/2 - n.x) * 0.002 * alpha;
-            n.vy += (graphH/2 - n.y) * 0.002 * alpha;
-            n.vx *= 0.8; n.vy *= 0.8;
-            n.x += n.vx; n.y += n.vy;
-            n.x = Math.max(20, Math.min(graphW-20, n.x));
-            n.y = Math.max(20, Math.min(graphH-20, n.y));
+        // Centering + damping
+        nodes3d.forEach(n => {
+            n.vx += -n.x * 0.002 * alpha; n.vy += -n.y * 0.002 * alpha; n.vz += -n.z * 0.002 * alpha;
+            n.vx *= 0.75; n.vy *= 0.75; n.vz *= 0.75;
+            n.x += n.vx; n.y += n.vy; n.z += n.vz;
         });
-        graphDraw();
-        if (tick < 300) graphAnim = requestAnimationFrame(simulate);
     }
 
-    if (graphAnim) cancelAnimationFrame(graphAnim);
-    setupGraphInteractions();
-    simulate();
-}
-
-function graphDraw() {
-    if (!graphCtx) return;
-    const ctx = graphCtx;
-    ctx.save();
-    ctx.setTransform(2, 0, 0, 2, 0, 0);
-    ctx.clearRect(0, 0, graphW, graphH);
-    ctx.translate(graphPanX, graphPanY);
-    ctx.translate(graphW/2, graphH/2);
-    ctx.scale(graphZoomLevel, graphZoomLevel);
-    ctx.translate(-graphW/2, -graphH/2);
-
-    const sel = graphSelectedNode;
-    // Draw edges
-    graphEdges.forEach(e => {
-        const highlighted = sel && (e.source.id === sel.id || e.target.id === sel.id);
-        ctx.beginPath();
-        ctx.moveTo(e.source.x, e.source.y);
-        ctx.lineTo(e.target.x, e.target.y);
-        if (sel) {
-            ctx.strokeStyle = highlighted ? `rgba(255,255,255,0.25)` : `rgba(255,255,255,0.02)`;
-            ctx.lineWidth = highlighted ? 1.5 : 0.3;
-        } else {
-            ctx.strokeStyle = `rgba(255,255,255,${0.03 + e.weight * 0.02})`;
-            ctx.lineWidth = 0.5 + e.weight * 0.3;
-        }
-        ctx.stroke();
+    // -- Create node meshes --
+    const nodeMeshes = [];
+    const glowMat = new THREE.SpriteMaterial({
+        map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
     });
-    // Draw nodes
-    graphNodes.forEach(n => {
-        const isSelected = sel && n.id === sel.id;
-        const isNeighbor = sel && sel._neighbors.has(n.id);
-        const dimmed = sel && !isSelected && !isNeighbor;
 
-        ctx.globalAlpha = dimmed ? 0.15 : 0.85;
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, isSelected ? n.radius * 1.4 : n.radius, 0, Math.PI * 2);
-        ctx.fillStyle = n.color;
-        ctx.fill();
+    nodes3d.forEach(n => {
+        const color = new THREE.Color(n.color);
+        // Sphere
+        const geo = new THREE.SphereGeometry(n.radius, 16, 12);
+        const mat = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.4, transparent: true, opacity: 0.9 });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(n.x, n.y, n.z);
+        mesh.userData = n;
+        scene.add(mesh);
+        nodeMeshes.push(mesh);
 
-        // Glow
-        ctx.globalAlpha = dimmed ? 0.05 : (isSelected ? 0.5 : 0.3);
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, (isSelected ? n.radius * 1.4 : n.radius) + 3, 0, Math.PI * 2);
-        ctx.fillStyle = n.color;
-        ctx.fill();
-
-        // Selection ring
-        if (isSelected) {
-            ctx.globalAlpha = 0.8;
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, n.radius * 1.4 + 5, 0, Math.PI * 2);
-            ctx.strokeStyle = n.color;
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-        }
-
-        ctx.globalAlpha = 1;
+        // Glow sprite
+        const glow = new THREE.Sprite(glowMat.clone());
+        glow.material.color = color;
+        glow.material.opacity = 0.25;
+        glow.scale.set(n.radius * 5, n.radius * 5, 1);
+        glow.position.copy(mesh.position);
+        scene.add(glow);
+        mesh.userData._glow = glow;
     });
-    ctx.restore();
-}
 
-function screenToGraph(sx, sy) {
-    // Convert screen coords to graph coords (accounting for zoom + pan)
-    const x = (sx - graphW/2 - graphPanX) / graphZoomLevel + graphW/2;
-    const y = (sy - graphH/2 - graphPanY) / graphZoomLevel + graphH/2;
-    return { x, y };
-}
-
-function findNodeAt(sx, sy) {
-    const { x, y } = screenToGraph(sx, sy);
-    for (const n of graphNodes) {
-        const dx = n.x - x, dy = n.y - y;
-        const hitR = (n.radius + 6) / graphZoomLevel;
-        if (dx*dx + dy*dy < hitR * hitR) return n;
-    }
-    return null;
-}
-
-function setupGraphInteractions() {
-    const canvas = graphCanvas;
-    if (!canvas) return;
-    // Remove old listeners by replacing element (clone trick not needed, we use flags)
-    let isDragging = false, isPanning = false;
-    let lastMouse = { x: 0, y: 0 };
-    let touchStartDist = 0;
-
-    canvas.onmousedown = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-        const node = findNodeAt(mx, my);
-        if (node) {
-            graphDragNode = node;
-            isDragging = true;
-            canvas.classList.add('grabbing');
-        } else {
-            isPanning = true;
-            canvas.classList.add('grabbing');
-        }
-        lastMouse = { x: e.clientX, y: e.clientY };
+    // -- Create edge lines --
+    const edgeTypeColors = {
+        wikilink: 0x60a5fa, mention: 0x34d399, semantic: 0xf472b6, shared_tags: 0x1e293b
     };
+    const lineMeshes = [];
+    edges3d.forEach(e => {
+        const geo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(e.source.x, e.source.y, e.source.z),
+            new THREE.Vector3(e.target.x, e.target.y, e.target.z)
+        ]);
+        const c = edgeTypeColors[e.type] || edgeTypeColors.shared_tags;
+        const opacity = e.type === 'shared_tags' ? 0.08 : (e.type === 'wikilink' ? 0.5 : 0.35);
+        const mat = new THREE.LineBasicMaterial({ color: c, transparent: true, opacity, depthWrite: false });
+        const line = new THREE.Line(geo, mat);
+        line.userData = e;
+        scene.add(line);
+        lineMeshes.push(line);
+    });
 
-    canvas.onmousemove = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    // -- Orbital camera controls (custom, smooth like Google Earth) --
+    let orbitTheta = 0, orbitPhi = Math.PI * 0.35, orbitDist = 280;
+    let targetTheta = orbitTheta, targetPhi = orbitPhi, targetDist = orbitDist;
+    let targetLookAt = new THREE.Vector3(0, 0, 0);
+    let currentLookAt = new THREE.Vector3(0, 0, 0);
+    let autoRotate = true;
+    let isDragging = false, lastMouse = {x:0,y:0};
+    let hoveredNode = null;
 
-        if (isDragging && graphDragNode) {
-            const { x, y } = screenToGraph(mx, my);
-            graphDragNode.x = x;
-            graphDragNode.y = y;
-            graphDragNode.vx = 0;
-            graphDragNode.vy = 0;
-            graphDraw();
-        } else if (isPanning) {
-            graphPanX += e.clientX - lastMouse.x;
-            graphPanY += e.clientY - lastMouse.y;
-            lastMouse = { x: e.clientX, y: e.clientY };
-            graphDraw();
+    function updateCamera() {
+        // Smooth interpolation (Google Earth feel)
+        orbitTheta += (targetTheta - orbitTheta) * 0.08;
+        orbitPhi += (targetPhi - orbitPhi) * 0.08;
+        orbitDist += (targetDist - orbitDist) * 0.06;
+        currentLookAt.lerp(targetLookAt, 0.06);
+        // Clamp phi
+        orbitPhi = Math.max(0.1, Math.min(Math.PI - 0.1, orbitPhi));
+        orbitDist = Math.max(40, Math.min(800, orbitDist));
+
+        camera.position.set(
+            currentLookAt.x + orbitDist * Math.sin(orbitPhi) * Math.sin(orbitTheta),
+            currentLookAt.y + orbitDist * Math.cos(orbitPhi),
+            currentLookAt.z + orbitDist * Math.sin(orbitPhi) * Math.cos(orbitTheta)
+        );
+        camera.lookAt(currentLookAt);
+    }
+
+    // Mouse/touch handlers
+    const canvas = renderer.domElement;
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastMouse = {x: e.clientX, y: e.clientY};
+        autoRotate = false;
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const dx = e.clientX - lastMouse.x;
+            const dy = e.clientY - lastMouse.y;
+            targetTheta -= dx * 0.005;
+            targetPhi += dy * 0.005;
+            lastMouse = {x: e.clientX, y: e.clientY};
         } else {
-            // Tooltip
+            // Raycast for hover tooltip
+            const rect = canvas.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                -((e.clientY - rect.top) / rect.height) * 2 + 1
+            );
+            const raycaster = new THREE.Raycaster();
+            raycaster.params.Mesh = { threshold: 2 };
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(nodeMeshes);
             const tooltip = document.getElementById('graphTooltip');
-            const found = findNodeAt(mx, my);
-            if (found) {
-                tooltip.style.display = 'block';
-                tooltip.style.left = (mx + 15) + 'px';
-                tooltip.style.top = (my - 10) + 'px';
-                tooltip.innerHTML = `<strong>${found.id}</strong><br><span style="color:${found.color}">${found.folder}</span><br>${found.word_count || '?'} words · ${found.connections || 0} links`;
+            if (hits.length > 0) {
+                const nd = hits[0].object.userData;
+                hoveredNode = nd;
                 canvas.style.cursor = 'pointer';
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
+                tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+                const tags = (nd.tags || []).slice(0, 5).map(t => `<span class="tt-tag">${t}</span>`).join('');
+                tooltip.innerHTML = `<strong>${nd.id}</strong>
+                    <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
+                    <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
+                    ${tags ? '<div class="tt-tags">' + tags + '</div>' : ''}`;
+                // Highlight connected edges
+                lineMeshes.forEach(l => {
+                    const le = l.userData;
+                    if (le.source.id === nd.id || le.target.id === nd.id) {
+                        l.material.opacity = 0.7;
+                        l.material.color.set(edgeTypeColors[le.type] || 0x60a5fa);
+                    } else {
+                        l.material.opacity = 0.02;
+                    }
+                });
+                nodeMeshes.forEach(m => {
+                    const mn = m.userData;
+                    if (mn.id === nd.id || nd._neighbors.has(mn.id)) {
+                        m.material.opacity = 1;
+                        m.material.emissiveIntensity = mn.id === nd.id ? 0.9 : 0.6;
+                        if (m.userData._glow) m.userData._glow.material.opacity = 0.45;
+                    } else {
+                        m.material.opacity = 0.15;
+                        m.material.emissiveIntensity = 0.1;
+                        if (m.userData._glow) m.userData._glow.material.opacity = 0.03;
+                    }
+                });
             } else {
-                tooltip.style.display = 'none';
+                hoveredNode = null;
                 canvas.style.cursor = 'grab';
+                tooltip.style.display = 'none';
+                // Reset all
+                lineMeshes.forEach(l => {
+                    const le = l.userData;
+                    l.material.opacity = le.type === 'shared_tags' ? 0.08 : (le.type === 'wikilink' ? 0.5 : 0.35);
+                    l.material.color.set(edgeTypeColors[le.type] || edgeTypeColors.shared_tags);
+                });
+                nodeMeshes.forEach(m => {
+                    m.material.opacity = 0.9;
+                    m.material.emissiveIntensity = 0.4;
+                    if (m.userData._glow) m.userData._glow.material.opacity = 0.25;
+                });
             }
         }
-    };
-
-    canvas.onmouseup = canvas.onmouseleave = () => {
-        if (isDragging && graphDragNode && !isPanning) {
-            // If it was a click (not a drag), toggle selection
-        }
-        graphDragNode = null;
+    });
+    canvas.addEventListener('mouseup', () => { isDragging = false; });
+    canvas.addEventListener('mouseleave', () => {
         isDragging = false;
-        isPanning = false;
-        canvas.classList.remove('grabbing');
-    };
-
-    canvas.onclick = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-        const node = findNodeAt(mx, my);
-        if (node) {
-            graphSelectedNode = (graphSelectedNode === node) ? null : node;
-        } else {
-            graphSelectedNode = null;
+        document.getElementById('graphTooltip').style.display = 'none';
+    });
+    canvas.addEventListener('click', (e) => {
+        if (hoveredNode) {
+            // Fly to node (Google Earth zoom)
+            targetLookAt.set(hoveredNode.x, hoveredNode.y, hoveredNode.z);
+            targetDist = 80;
+            autoRotate = false;
         }
-        graphDraw();
-    };
-
-    // Zoom with scroll wheel
-    canvas.onwheel = (e) => {
+    });
+    canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const factor = e.deltaY < 0 ? 1.1 : 0.9;
-        graphZoomLevel = Math.max(0.3, Math.min(4, graphZoomLevel * factor));
-        graphDraw();
-    };
+        targetDist *= e.deltaY > 0 ? 1.12 : 0.88;
+    }, { passive: false });
 
-    // Touch support for mobile
-    let touchStart = null;
-    canvas.ontouchstart = (e) => {
+    // Touch support
+    let touchStartDist = 0;
+    canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
         if (e.touches.length === 1) {
-            const t = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const mx = t.clientX - rect.left, my = t.clientY - rect.top;
-            const node = findNodeAt(mx, my);
-            if (node) {
-                graphDragNode = node;
-                isDragging = true;
-            } else {
-                isPanning = true;
-            }
-            touchStart = { x: t.clientX, y: t.clientY };
-            lastMouse = { x: t.clientX, y: t.clientY };
+            isDragging = true;
+            autoRotate = false;
+            lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
         } else if (e.touches.length === 2) {
-            // Pinch zoom
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             touchStartDist = Math.sqrt(dx*dx + dy*dy);
         }
-    };
-
-    canvas.ontouchmove = (e) => {
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
         e.preventDefault();
-        if (e.touches.length === 1) {
-            const t = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const mx = t.clientX - rect.left, my = t.clientY - rect.top;
-            if (isDragging && graphDragNode) {
-                const { x, y } = screenToGraph(mx, my);
-                graphDragNode.x = x;
-                graphDragNode.y = y;
-                graphDraw();
-            } else if (isPanning) {
-                graphPanX += t.clientX - lastMouse.x;
-                graphPanY += t.clientY - lastMouse.y;
-                graphDraw();
-            }
-            lastMouse = { x: t.clientX, y: t.clientY };
+        if (e.touches.length === 1 && isDragging) {
+            const dx = e.touches[0].clientX - lastMouse.x;
+            const dy = e.touches[0].clientY - lastMouse.y;
+            targetTheta -= dx * 0.005;
+            targetPhi += dy * 0.005;
+            lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
         } else if (e.touches.length === 2 && touchStartDist) {
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            const scale = dist / touchStartDist;
-            graphZoomLevel = Math.max(0.3, Math.min(4, graphZoomLevel * scale));
+            targetDist *= touchStartDist / dist;
             touchStartDist = dist;
-            graphDraw();
         }
-    };
+    }, { passive: false });
+    canvas.addEventListener('touchend', () => { isDragging = false; });
 
-    canvas.ontouchend = (e) => {
-        if (e.touches.length === 0) {
-            // Tap to select
-            if (touchStart && !isPanning && isDragging && graphDragNode) {
-                // Was dragging a node
-            } else if (touchStart) {
-                const rect = canvas.getBoundingClientRect();
-                const mx = touchStart.x - rect.left, my = touchStart.y - rect.top;
-                const node = findNodeAt(mx, my);
-                if (node) graphSelectedNode = (graphSelectedNode === node) ? null : node;
-                else graphSelectedNode = null;
-                graphDraw();
-            }
-            graphDragNode = null;
-            isDragging = false;
-            isPanning = false;
-            touchStart = null;
+    // -- Animation loop --
+    function animate() {
+        g3.rafId = requestAnimationFrame(animate);
+        if (autoRotate) targetTheta += 0.0015;
+        updateCamera();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize handler
+    const onResize = () => {
+        const w = container.clientWidth, h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    };
+    window.addEventListener('resize', onResize);
+
+    // Store state
+    g3 = { renderer, scene, camera, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
+        _setAutoRotate(v) { autoRotate = v; },
+        _getAutoRotate() { return autoRotate; },
+        _resetCamera() {
+            targetLookAt.set(0, 0, 0); targetDist = 280; targetPhi = Math.PI * 0.35; autoRotate = true;
+            // Reset opacities
+            lineMeshes.forEach(l => {
+                const le = l.userData;
+                l.material.opacity = le.type === 'shared_tags' ? 0.08 : (le.type === 'wikilink' ? 0.5 : 0.35);
+            });
+            nodeMeshes.forEach(m => { m.material.opacity = 0.9; m.material.emissiveIntensity = 0.4; if (m.userData._glow) m.userData._glow.material.opacity = 0.25; });
         }
     };
 }
 
-function graphZoom(factor) {
-    graphZoomLevel = Math.max(0.3, Math.min(4, graphZoomLevel * factor));
-    graphDraw();
+// Glow texture generator
+function createGlowTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.5)');
+    gradient.addColorStop(0.3, 'rgba(255,255,255,0.15)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(canvas);
+    return tex;
+}
+
+function graphToggleRotate() {
+    if (g3._getAutoRotate) {
+        const v = !g3._getAutoRotate();
+        g3._setAutoRotate(v);
+    }
 }
 
 function graphReset() {
-    graphZoomLevel = 1;
-    graphPanX = 0;
-    graphPanY = 0;
-    graphSelectedNode = null;
-    graphDraw();
+    if (g3._resetCamera) g3._resetCamera();
 }
 
 // =============================================
@@ -2362,23 +2403,21 @@ function renderHealthGauges(healthData) {
     if (live) {
         const data = await fetchLiveData();
         renderAll(data);
-        // Fetch live graph
+        // Fetch live 3D graph
         try {
-            const gResp = await fetch(`${API_GATEWAY}/api/graph/graph`, {signal: AbortSignal.timeout(8000)});
+            const gResp = await fetch(`${API_GATEWAY}/api/graph/graph`, {signal: AbortSignal.timeout(10000)});
             const gData = await gResp.json();
-            // Filter graph for performance: keep top nodes by connections, limit edges
-            if (gData.nodes && gData.nodes.length > 50) {
-                const sorted = [...gData.nodes].sort((a, b) => (b.connections || 0) - (a.connections || 0));
-                const topNodes = sorted.slice(0, 60);
-                const nodeIds = new Set(topNodes.map(n => n.id));
-                const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
-                initGraph({
-                    nodes: topNodes,
-                    edges: filteredEdges,
-                    stats: { total_nodes: gData.nodes.length, total_edges: gData.edges?.length || 0, orphan_nodes: gData.nodes.filter(n => !n.connections).length, most_connected: sorted[0]?.id || '' }
-                });
-            } else {
-                initGraph(gData);
+            if (gData.nodes && gData.nodes.length > 0) {
+                // Cap at 70 nodes for smooth 3D performance
+                if (gData.nodes.length > 70) {
+                    const sorted = [...gData.nodes].sort((a, b) => (b.connections || 0) - (a.connections || 0));
+                    const topNodes = sorted.slice(0, 70);
+                    const nodeIds = new Set(topNodes.map(n => n.id));
+                    const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+                    initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats });
+                } else {
+                    initGraph(gData);
+                }
             }
         } catch(e) { /* keep demo graph */ }
         startAutoRefresh();
