@@ -1728,6 +1728,24 @@
         </div>
     </div>
 
+    <!-- BRAINDUMP -->
+    <div class="card full-width">
+        <div class="card-title"><i data-lucide="zap" class="icon"></i> Braindump</div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="text" class="ask-input" id="braindumpTitle" placeholder="Title (auto-generated if blank)" style="flex:1">
+            <input type="text" class="ask-input" id="braindumpTags" placeholder="Tags (comma-sep)" style="flex:0.6">
+        </div>
+        <div style="display:flex;gap:8px">
+            <textarea class="ask-input" id="braindumpContent" placeholder="Dump your thought here... it'll land in the vault Inbox." style="flex:1;min-height:60px;resize:vertical;font-family:inherit"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <button class="btn-primary" id="braindumpBtn" onclick="submitBraindump()" style="background:var(--accent-green)">
+                <i data-lucide="zap" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Dump to Vault
+            </button>
+            <span class="capture-feedback" id="braindumpFeedback"></span>
+        </div>
+    </div>
+
     <!-- CHAT HISTORY -->
     <div class="card full-width">
         <div class="card-title"><i data-lucide="history" class="icon"></i> Chat History</div>
@@ -1853,6 +1871,7 @@
         <div class="kb-row"><span class="kb-action">Refresh dashboard</span><kbd>R</kbd></div>
         <div class="kb-row"><span class="kb-action">Toggle dark/light mode</span><kbd>T</kbd></div>
         <div class="kb-row"><span class="kb-action">Reset graph camera</span><kbd>G</kbd></div>
+        <div class="kb-row"><span class="kb-action">Focus braindump</span><kbd>B</kbd></div>
         <div class="kb-row"><span class="kb-action">New chat session</span><kbd>N</kbd></div>
         <div class="kb-row"><span class="kb-action">Close overlay</span><kbd>Esc</kbd></div>
     </div>
@@ -2522,6 +2541,44 @@ async function captureBookmark() {
     btn.disabled = false;
 }
 
+async function submitBraindump() {
+    const titleEl = document.getElementById('braindumpTitle');
+    const contentEl = document.getElementById('braindumpContent');
+    const tagsEl = document.getElementById('braindumpTags');
+    const btn = document.getElementById('braindumpBtn');
+    const fb = document.getElementById('braindumpFeedback');
+
+    const content = contentEl.value.trim();
+    if (!content) { fb.className = 'capture-feedback error'; fb.textContent = 'Write something first!'; return; }
+
+    btn.disabled = true;
+    fb.className = 'capture-feedback';
+    fb.textContent = 'Saving to vault...';
+
+    try {
+        const body = { content };
+        if (titleEl.value.trim()) body.title = titleEl.value.trim();
+        if (tagsEl.value.trim()) body.tags = tagsEl.value.split(',').map(t => t.trim()).filter(Boolean);
+
+        const res = await fetch(`${API_GATEWAY}/api/notes/braindump`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        fb.className = 'capture-feedback success';
+        fb.textContent = `Saved: ${data.file} (${data.word_count} words)`;
+        contentEl.value = '';
+        titleEl.value = '';
+        tagsEl.value = '';
+    } catch (err) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Failed: ' + err.message;
+    }
+    btn.disabled = false;
+}
+
 // =============================================
 //  LIVE DATA FETCHING
 // =============================================
@@ -2770,6 +2827,17 @@ function initKeyboardShortcuts() {
         });
     });
 
+    // Ctrl+Enter in braindump fields
+    ['braindumpTitle', 'braindumpTags', 'braindumpContent'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                submitBraindump();
+            }
+        });
+    });
+
     // Global keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         // Skip if user is typing in an input
@@ -2796,6 +2864,12 @@ function initKeyboardShortcuts() {
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     document.getElementById('askInput').focus();
+                }
+                break;
+            case 'b': case 'B':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    document.getElementById('braindumpContent').focus();
                 }
                 break;
             case 'r': case 'R':
