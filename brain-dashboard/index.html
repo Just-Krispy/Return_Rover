@@ -47,6 +47,23 @@
             --shadow-lg: 0 8px 24px rgba(0,0,0,0.3);
         }
 
+        /* Light theme */
+        [data-theme="light"] {
+            --bg-base: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f1f5f9;
+            --bg-inset: #f1f5f9;
+            --border-default: #e2e8f0;
+            --border-subtle: #e2e8f0;
+            --border-accent: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-base);
@@ -1030,6 +1047,129 @@
             background: rgba(99,102,241,0.15);
         }
 
+        /* ---- THEME TOGGLE ---- */
+        .theme-toggle {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            color: var(--text-secondary);
+            width: 34px;
+            height: 34px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.15s ease, color 0.15s ease;
+            font-size: 16px;
+        }
+        .theme-toggle:hover {
+            border-color: var(--border-accent);
+            color: var(--text-primary);
+        }
+
+        /* ---- LOADING SKELETONS ---- */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-inset) 25%, var(--bg-surface-hover) 50%, var(--bg-inset) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease-in-out infinite;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .skeleton-stat {
+            width: 64px;
+            height: 36px;
+        }
+        .skeleton-text {
+            width: 100%;
+            height: 14px;
+            margin: 4px 0;
+        }
+        .skeleton-bar {
+            width: 100%;
+            height: 28px;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ---- KEYBOARD SHORTCUTS OVERLAY ---- */
+        .kb-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .kb-overlay.open { display: flex; }
+        .kb-panel {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-lg);
+            padding: 28px 32px;
+            max-width: 420px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+        .kb-panel h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .kb-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 13px;
+        }
+        .kb-row:last-child { border: none; }
+        .kb-row .kb-action { color: var(--text-secondary); }
+        .kb-row kbd {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-default);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* ---- GRAPH LEGEND FILTERS ---- */
+        .graph-legend-item.filterable {
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+            user-select: none;
+        }
+        .graph-legend-item.filterable:hover { opacity: 0.8; }
+        .graph-legend-item.filterable.dimmed {
+            opacity: 0.3;
+        }
+        .graph-legend-item.filterable.dimmed .graph-legend-dot {
+            background: var(--text-tertiary) !important;
+        }
+
+        /* ---- LIGHT THEME graph overrides ---- */
+        [data-theme="light"] .graph-container { background: #e2e8f0; }
+        [data-theme="light"] .graph-tooltip {
+            background: rgba(255,255,255,0.95);
+            border-color: var(--border-default);
+        }
+        [data-theme="light"] .graph-tooltip strong { color: #0f172a; }
+        [data-theme="light"] .graph-btn {
+            background: rgba(255,255,255,0.85);
+            border-color: var(--border-default);
+            color: var(--text-secondary);
+        }
+
         /* ---- LOADING SPINNER ---- */
         .spinner {
             display: inline-block;
@@ -1051,11 +1191,16 @@
             .grid-2 { grid-template-columns: 1fr; }
             .dashboard { padding: 24px 16px 60px; }
             .header { flex-direction: column; align-items: flex-start; }
+            .header-right { flex-wrap: wrap; }
             .header h1 { font-size: 20px; }
             .stat-value { font-size: 28px; }
             .graph-container { height: 400px; }
             .health-gauges { grid-template-columns: repeat(3, 1fr); gap: 8px; }
             .search-form { flex-direction: column; }
+            .tag-stats-row { grid-template-columns: repeat(2, 1fr); }
+            .graph-legend { gap: 10px; }
+            .kb-panel { padding: 20px 24px; }
+            .vault-detail-panel { max-height: 160px; }
         }
         @media (max-width: 480px) {
             .stats-row { grid-template-columns: 1fr; }
@@ -1064,6 +1209,10 @@
             .ask-form { flex-direction: column; }
             .capture-row { flex-direction: column; }
             .graph-container { height: 300px; }
+            .tag-stats-row { grid-template-columns: repeat(2, 1fr); }
+            .health-pills { grid-template-columns: 1fr; }
+            .graph-legend-item { font-size: 11px; }
+            .vault-bar-label { width: 70px; font-size: 12px; }
         }
     </style>
 </head>
@@ -1088,6 +1237,7 @@
                 <span id="modeLabel">DEMO</span>
             </span>
             <span id="lastUpdatedTicker" class="last-updated-ticker">Updated just now</span>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle">&#9789;</button>
             <span id="refreshInfo" class="refresh-info">--</span>
             <button class="btn-refresh" onclick="refreshAll()" title="Refresh now">&#8635; Refresh</button>
         </div>
@@ -1305,6 +1455,21 @@
 
 </div>
 
+<!-- KEYBOARD SHORTCUTS OVERLAY -->
+<div class="kb-overlay" id="kbOverlay" onclick="if(event.target===this)closeKbOverlay()">
+    <div class="kb-panel">
+        <h3><i data-lucide="keyboard" style="width:18px;height:18px"></i> Keyboard Shortcuts</h3>
+        <div class="kb-row"><span class="kb-action">Show this panel</span><kbd>?</kbd></div>
+        <div class="kb-row"><span class="kb-action">Focus vault search</span><kbd>/</kbd></div>
+        <div class="kb-row"><span class="kb-action">Focus ask the vault</span><kbd>A</kbd></div>
+        <div class="kb-row"><span class="kb-action">Refresh dashboard</span><kbd>R</kbd></div>
+        <div class="kb-row"><span class="kb-action">Toggle dark/light mode</span><kbd>T</kbd></div>
+        <div class="kb-row"><span class="kb-action">Reset graph camera</span><kbd>G</kbd></div>
+        <div class="kb-row"><span class="kb-action">New chat session</span><kbd>N</kbd></div>
+        <div class="kb-row"><span class="kb-action">Close overlay</span><kbd>Esc</kbd></div>
+    </div>
+</div>
+
 <script>
 // =============================================
 //  CONFIGURATION
@@ -1332,6 +1497,54 @@ function resetChatSession() {
     document.getElementById('askResult').innerHTML = '<div class="demo-notice">New conversation started. Ask your second brain anything.</div>';
     document.getElementById('askInput').value = '';
     document.getElementById('askInput').focus();
+}
+
+// =============================================
+//  THEME TOGGLE
+// =============================================
+function getTheme() {
+    return localStorage.getItem('brain-theme') || 'dark';
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.innerHTML = theme === 'dark' ? '&#9789;' : '&#9728;';
+}
+
+function toggleTheme() {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('brain-theme', next);
+    applyTheme(next);
+    // Re-render graph with appropriate background if scene exists
+    if (g3.scene) {
+        g3.scene.background = new THREE.Color(next === 'dark' ? 0x07090f : 0xe2e8f0);
+        g3.scene.fog = new THREE.FogExp2(next === 'dark' ? 0x07090f : 0xe2e8f0, 0.0018);
+    }
+}
+
+// Apply saved theme immediately
+applyTheme(getTheme());
+
+// =============================================
+//  KEYBOARD SHORTCUTS OVERLAY
+// =============================================
+function openKbOverlay() {
+    document.getElementById('kbOverlay').classList.add('open');
+    lucide.createIcons();
+}
+function closeKbOverlay() {
+    document.getElementById('kbOverlay').classList.remove('open');
+}
+
+// =============================================
+//  LOADING SKELETONS
+// =============================================
+function showSkeletons() {
+    ['statNotes','statChunks','statQuestions','statToday'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.textContent === '--') el.innerHTML = '<span class="skeleton skeleton-stat"></span>';
+    });
 }
 
 // Demo sparkline data (7 data points representing last 7 days of vault note counts)
@@ -1517,26 +1730,58 @@ function renderVault(structure) {
     });
 }
 
+// Store graph nodes for folder drill-down
+let graphNodesCache = [];
+
 function showVaultDetail(folder, data) {
     const panel = document.getElementById('vaultDetail');
     const title = document.getElementById('vaultDetailTitle');
     const list = document.getElementById('vaultDetailList');
 
+    // Toggle: click same folder again to close
+    if (panel.classList.contains('open') && title.textContent.startsWith(folder)) {
+        panel.classList.remove('open');
+        return;
+    }
+
     title.textContent = `${folder} (${data.count} notes)`;
     list.innerHTML = '';
-    if (data.notes && data.notes.length > 0) {
-        data.notes.forEach(n => {
+
+    // Try to get real note names from cached graph data
+    const folderNotes = graphNodesCache
+        .filter(n => n.folder === folder)
+        .sort((a, b) => (b.connections || 0) - (a.connections || 0))
+        .map(n => n.id);
+
+    const notes = folderNotes.length > 0 ? folderNotes : (data.notes || []);
+
+    if (notes.length > 0) {
+        notes.slice(0, 20).forEach(n => {
             const li = document.createElement('li');
-            li.textContent = n;
+            li.textContent = typeof n === 'string' ? n : n.id || n;
+            li.style.cursor = 'pointer';
+            li.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Copy note name on click
+                navigator.clipboard.writeText(li.textContent).catch(() => {});
+                li.style.color = 'var(--accent-green)';
+                setTimeout(() => { li.style.color = ''; }, 600);
+            });
             list.appendChild(li);
         });
-        if (data.count > data.notes.length) {
+        if (data.count > 20) {
             const li = document.createElement('li');
             li.style.color = 'var(--text-tertiary)';
             li.style.fontStyle = 'italic';
-            li.textContent = `...and ${data.count - data.notes.length} more`;
+            li.textContent = `...and ${data.count - 20} more`;
             list.appendChild(li);
         }
+    } else if (data.count === 0) {
+        const li = document.createElement('li');
+        li.style.color = 'var(--text-tertiary)';
+        li.style.fontStyle = 'italic';
+        li.textContent = 'No notes in this folder';
+        list.appendChild(li);
     }
     panel.classList.add('open');
 }
@@ -1872,23 +2117,67 @@ function renderSparkline(dataPoints) {
 //  KEYBOARD SHORTCUTS
 // =============================================
 function initKeyboardShortcuts() {
-    // Ctrl+Enter in capture textarea sends capture
-    document.getElementById('captureUrl').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            captureBookmark();
-        }
+    // Ctrl+Enter in capture fields sends capture
+    ['captureUrl', 'captureTitle', 'captureTags'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                captureBookmark();
+            }
+        });
     });
-    document.getElementById('captureTitle').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            captureBookmark();
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Skip if user is typing in an input
+        const tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+            if (e.key === 'Escape') document.activeElement.blur();
+            return;
         }
-    });
-    document.getElementById('captureTags').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            captureBookmark();
+
+        switch(e.key) {
+            case '?':
+                e.preventDefault();
+                openKbOverlay();
+                break;
+            case 'Escape':
+                closeKbOverlay();
+                break;
+            case '/':
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+                break;
+            case 'a': case 'A':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    document.getElementById('askInput').focus();
+                }
+                break;
+            case 'r': case 'R':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    refreshAll();
+                }
+                break;
+            case 't': case 'T':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    toggleTheme();
+                }
+                break;
+            case 'g': case 'G':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    graphReset();
+                }
+                break;
+            case 'n': case 'N':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    resetChatSession();
+                }
+                break;
         }
     });
 }
@@ -2005,19 +2294,29 @@ function initGraph(data) {
     document.getElementById('graphStats').textContent =
         `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges · ${(graph.communities || []).length} communities`;
 
-    // Update legend with community colors if available
-    if (graph.communities && graph.communities.length > 0) {
-        const legendEl = document.getElementById('graphLegend');
-        if (legendEl) {
-            const comms = graph.communities.map((c, idx) => {
+    // Build legend with filter toggles
+    const legendEl = document.getElementById('graphLegend');
+    if (legendEl) {
+        let legendItems = '';
+        if (graph.communities && graph.communities.length > 0) {
+            legendItems = graph.communities.map((c, idx) => {
                 const color = COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length];
                 const topTag = (c.top_tags || [])[0] || '';
                 const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
-                return `<span class="graph-legend-item"><span class="graph-legend-dot" style="background:${color}"></span> ${label} (${c.size})</span>`;
+                return `<span class="graph-legend-item filterable" data-filter="${label}" onclick="toggleGraphFilter(this,'${label}')"><span class="graph-legend-dot" style="background:${color}"></span> ${label} (${c.size})</span>`;
             }).join('');
-            legendEl.innerHTML = comms +
-                '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">drag to orbit &middot; scroll to zoom &middot; click node to focus</span>';
+        } else {
+            // Fallback: folder-based legend
+            const folders = ['Resources','Areas','Projects','Galaxy','Inbox'];
+            legendItems = folders.map(f => {
+                const c = GRAPH_COLORS[f] || '#a1a1aa';
+                const count = graph.nodes.filter(n => n.folder === f).length;
+                if (count === 0) return '';
+                return `<span class="graph-legend-item filterable" data-filter="${f}" onclick="toggleGraphFilter(this,'${f}')"><span class="graph-legend-dot" style="background:${c}"></span> ${f} (${count})</span>`;
+            }).join('');
         }
+        legendEl.innerHTML = legendItems +
+            '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click legend to filter &middot; drag to orbit &middot; scroll to zoom</span>';
     }
 
     // Clean up previous
@@ -2358,18 +2657,46 @@ function initGraph(data) {
     };
     window.addEventListener('resize', onResize);
 
+    // Build community/folder label map for filtering
+    const nodeGroupMap = {};
+    if (graph.communities && graph.communities.length > 0) {
+        graph.communities.forEach((c, idx) => {
+            const topTag = (c.top_tags || [])[0] || '';
+            const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
+            (c.members || []).forEach(id => { nodeGroupMap[id] = label; });
+        });
+    }
+
     // Store state
     g3 = { renderer, scene, camera, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
         _setAutoRotate(v) { autoRotate = v; },
         _getAutoRotate() { return autoRotate; },
         _resetCamera() {
             targetLookAt.set(0, 0, 0); targetDist = 280; targetPhi = Math.PI * 0.35; autoRotate = true;
-            // Reset opacities
             lineMeshes.forEach(l => {
                 const le = l.userData;
                 l.material.opacity = le.type === 'shared_tags' ? 0.08 : (le.type === 'wikilink' ? 0.5 : 0.35);
             });
             nodeMeshes.forEach(m => { m.material.opacity = 0.9; m.material.emissiveIntensity = 0.4; if (m.userData._glow) m.userData._glow.material.opacity = 0.25; });
+        },
+        _applyFilter(hiddenGroups) {
+            nodeMeshes.forEach(m => {
+                const nd = m.userData;
+                const group = nodeGroupMap[nd.id] || nd.folder;
+                const hidden = hiddenGroups.has(group);
+                m.visible = !hidden;
+                if (m.userData._glow) m.userData._glow.visible = !hidden;
+            });
+            lineMeshes.forEach(l => {
+                const e = l.userData;
+                const sg = nodeGroupMap[e.source.id] || e.source.folder;
+                const tg = nodeGroupMap[e.target.id] || e.target.folder;
+                l.visible = !hiddenGroups.has(sg) && !hiddenGroups.has(tg);
+            });
+        },
+        _showAll() {
+            nodeMeshes.forEach(m => { m.visible = true; if (m.userData._glow) m.userData._glow.visible = true; });
+            lineMeshes.forEach(l => { l.visible = true; });
         }
     };
 }
@@ -2398,6 +2725,18 @@ function graphToggleRotate() {
 
 function graphReset() {
     if (g3._resetCamera) g3._resetCamera();
+    // Also clear all filters
+    document.querySelectorAll('.graph-legend-item.filterable.dimmed').forEach(el => el.classList.remove('dimmed'));
+    if (g3._showAll) g3._showAll();
+}
+
+// Graph filter: toggle visibility of a community/folder group
+const graphHiddenGroups = new Set();
+function toggleGraphFilter(el, group) {
+    el.classList.toggle('dimmed');
+    if (graphHiddenGroups.has(group)) graphHiddenGroups.delete(group);
+    else graphHiddenGroups.add(group);
+    if (g3._applyFilter) g3._applyFilter(graphHiddenGroups);
 }
 
 // =============================================
@@ -2550,6 +2889,9 @@ async function loadVaultQuality() {
     // Keyboard shortcuts
     initKeyboardShortcuts();
 
+    // Show loading skeletons while fetching
+    showSkeletons();
+
     // Render demo data immediately for fast first paint
     renderAll(DEMO);
     initGraph(DEMO_GRAPH);
@@ -2566,7 +2908,9 @@ async function loadVaultQuality() {
             const gResp = await fetch(`${API_GATEWAY}/api/graph/graph`, {signal: AbortSignal.timeout(10000)});
             const gData = await gResp.json();
             if (gData.nodes && gData.nodes.length > 0) {
-                // Cap at 250 nodes for smooth 3D performance (pre-baked layout handles it)
+                // Cache graph nodes for folder drill-down
+                graphNodesCache = gData.nodes;
+                // Cap at 250 nodes for smooth 3D performance
                 if (gData.nodes.length > 250) {
                     const sorted = [...gData.nodes].sort((a, b) => (b.connections || 0) - (a.connections || 0));
                     const topNodes = sorted.slice(0, 150);
@@ -2575,6 +2919,11 @@ async function loadVaultQuality() {
                     initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats, communities: gData.communities });
                 } else {
                     initGraph(gData);
+                }
+                // Update graph background if light theme
+                if (getTheme() === 'light' && g3.scene) {
+                    g3.scene.background = new THREE.Color(0xe2e8f0);
+                    g3.scene.fog = new THREE.FogExp2(0xe2e8f0, 0.0018);
                 }
             }
         } catch(e) { /* keep demo graph */ }
