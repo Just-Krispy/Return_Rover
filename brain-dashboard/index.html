@@ -2090,8 +2090,8 @@
             </div>
 
             <div class="graph-controls">
-                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
-                <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
+                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
+                <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
                 <button class="graph-btn" onclick="graphShakeAll()" title="Shake it up!" style="font-size:16px">🎉</button>
             </div>
         </div>
@@ -2119,8 +2119,8 @@
                     <button class="graph-mode-btn" data-mode="thermal" onclick="setGraphMode('thermal')" title="Thermal">Therm</button>
                     <button class="graph-mode-btn" data-mode="nightvision" onclick="setGraphMode('nightvision')" title="Night Vision">NVis</button>
                 </div>
-                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
-                <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
+                <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
+                <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
                 <button class="graph-btn graph-close-btn" onclick="closeGraphFullscreen()" title="Exit fullscreen (ESC)">&#10005;</button>
             </div>
         </div>
@@ -2193,7 +2193,7 @@
     <div class="card card--primary full-width" id="sec-search">
         <div class="card-title"><i data-lucide="search" class="icon"></i> Vault Search</div>
         <div class="search-form">
-            <input type="text" class="ask-input" id="searchInput" placeholder="Search your vault..." onkeydown="if(event.key==='Enter')searchVault()">
+            <input type="text" class="ask-input" id="searchInput" placeholder="Search your vault..." aria-label="Search vault" onkeydown="if(event.key==='Enter')searchVault()">
             <button class="btn-primary" id="searchBtn" onclick="searchVault()" style="background:var(--accent-cyan);"><i data-lucide="search" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Search</button>
         </div>
         <div id="recentSearches" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
@@ -2246,7 +2246,7 @@
                 <button class="btn-new-chat" onclick="resetChatSession()" title="Start a fresh conversation">New Chat</button>
             </div>
             <div class="ask-form">
-                <input type="text" class="ask-input" id="askInput" placeholder="Ask your second brain anything..." onkeydown="if(event.key==='Enter')askVault()">
+                <input type="text" class="ask-input" id="askInput" placeholder="Ask your second brain anything..." aria-label="Ask the vault" onkeydown="if(event.key==='Enter')askVault()">
                 <button class="btn-primary" id="askBtn" onclick="askVault()">Ask</button>
             </div>
             <div class="chat-history" id="chatHistory"></div>
@@ -3137,12 +3137,14 @@ async function captureBookmark() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         fb.className = 'capture-feedback success';
         fb.textContent = 'Captured successfully!';
+        showToast('Bookmark captured to vault', 'success');
         document.getElementById('captureUrl').value = '';
         document.getElementById('captureTitle').value = '';
         document.getElementById('captureTags').value = '';
     } catch (err) {
         fb.className = 'capture-feedback error';
         fb.textContent = 'Failed: ' + err.message;
+        showToast('Capture failed: ' + err.message, 'error');
     }
     btn.disabled = false;
 }
@@ -3175,12 +3177,14 @@ async function submitBraindump() {
         const data = await res.json();
         fb.className = 'capture-feedback success';
         fb.textContent = `Saved: ${data.file} (${data.word_count} words)`;
+        showToast('Braindump saved to vault', 'success');
         contentEl.value = '';
         titleEl.value = '';
         tagsEl.value = '';
     } catch (err) {
         fb.className = 'capture-feedback error';
         fb.textContent = 'Failed: ' + err.message;
+        showToast('Braindump failed: ' + err.message, 'error');
     }
     btn.disabled = false;
 }
@@ -3466,7 +3470,7 @@ function initKeyboardShortcuts() {
                 break;
             case '/':
                 e.preventDefault();
-                document.getElementById('searchInput').focus();
+                document.getElementById('floatingSearchInput').focus();
                 break;
             case 'a': case 'A':
                 if (!e.ctrlKey && !e.metaKey) {
@@ -4837,6 +4841,7 @@ async function triggerReindex() {
         btn.style.color = 'var(--accent-green)';
         btn.style.borderColor = 'var(--accent-green)';
         lucide.createIcons();
+        showToast(`Reindex complete — ${data.total_chunks || '?'} chunks indexed`, 'success');
         // Update chunks count
         if (data.total_chunks) document.getElementById('statChunks').textContent = data.total_chunks;
         setTimeout(() => {
@@ -5006,6 +5011,99 @@ async function loadVaultQuality() {
 }
 
 // =============================================
+//  TOAST NOTIFICATION SYSTEM
+// =============================================
+function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const icons = {
+        success: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        error: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        info: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        warning: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    };
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// =============================================
+//  SCROLL-TO-TOP + SECTION NAV
+// =============================================
+function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function initScrollObservers() {
+    const scrollBtn = document.getElementById('scrollTopBtn');
+    const sectionNav = document.getElementById('sectionNav');
+    const dots = sectionNav ? sectionNav.querySelectorAll('.section-nav-dot') : [];
+
+    // Show/hide scroll-to-top + section nav based on scroll position
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const y = window.scrollY;
+                if (scrollBtn) scrollBtn.classList.toggle('visible', y > 400);
+                if (sectionNav) sectionNav.classList.toggle('visible', y > 200);
+
+                // Floating search shadow
+                const fs = document.getElementById('floatingSearch');
+                if (fs) fs.classList.toggle('scrolled', y > 60);
+
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+
+    // Intersection observer for section nav active state
+    const sectionIds = ['sec-graph','sec-stats','sec-vault','sec-search','sec-ask','sec-braindump','sec-tags','sec-system'];
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                dots.forEach(d => d.classList.toggle('active', d.dataset.target === entry.target.id));
+            }
+        });
+    }, { rootMargin: '-20% 0px -60% 0px' });
+
+    sectionIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+    });
+}
+
+// =============================================
+//  FLOATING SEARCH (syncs with vault search)
+// =============================================
+function initFloatingSearch() {
+    const floatingInput = document.getElementById('floatingSearchInput');
+    const searchInput = document.getElementById('searchInput');
+    if (!floatingInput || !searchInput) return;
+
+    floatingInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            searchInput.value = floatingInput.value;
+            searchVault();
+            // Scroll to search results
+            const searchSection = document.getElementById('sec-search');
+            if (searchSection) searchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+
+    // Sync both inputs
+    floatingInput.addEventListener('input', () => { searchInput.value = floatingInput.value; });
+    searchInput.addEventListener('input', () => { floatingInput.value = searchInput.value; });
+}
+
+// =============================================
 //  INIT
 // =============================================
 (async function init() {
@@ -5014,6 +5112,10 @@ async function loadVaultQuality() {
 
     // Start the "last updated" live ticker
     startLastUpdatedTicker();
+
+    // Initialize UI enhancements
+    initScrollObservers();
+    initFloatingSearch();
 
     // Keyboard shortcuts
     initKeyboardShortcuts();
