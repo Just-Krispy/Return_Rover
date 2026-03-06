@@ -39,6 +39,7 @@
             --accent-red: #f87171;
             --accent-pink: #f472b6;
             --accent-purple: #a78bfa;
+            --accent-blue: #60a5fa;
             --radius-lg: 12px;
             --radius-md: 8px;
             --radius-sm: 6px;
@@ -766,7 +767,7 @@
         /* ---- KNOWLEDGE GRAPH 3D ---- */
         .graph-container {
             width: 100%;
-            height: 520px;
+            height: min(520px, 65vh);
             position: relative;
             border-radius: var(--radius-md);
             background: #07090f;
@@ -2250,15 +2251,19 @@ async function openNotePreview(filePath, displayName) {
     const meta = document.getElementById('notePreviewMeta');
     const body = document.getElementById('notePreviewBody');
 
-    title.textContent = displayName || filePath;
+    title.textContent = displayName || filePath.split('/').pop().replace('.md', '');
     meta.innerHTML = '';
-    body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text-tertiary);font-size:13px;">Loading note...</div>';
+    body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text-tertiary);font-size:13px;"><span class="spinner"></span>&nbsp;Loading note...</div>';
 
     overlay.classList.add('open');
-    panel.classList.add('open');
+    setTimeout(() => panel.classList.add('open'), 10);
+
+    if (!isLive) {
+        body.innerHTML = '<div style="color:var(--text-tertiary);padding:20px;text-align:center">Note preview requires live VPS connection.</div>';
+        return;
+    }
 
     try {
-        // Ensure .md extension
         const file = filePath.endsWith('.md') ? filePath : filePath + '.md';
         const data = await apiFetch(`${API_GATEWAY}/api/notes/content?file=${encodeURIComponent(file)}`);
         if (!data || data.error) {
@@ -2266,18 +2271,17 @@ async function openNotePreview(filePath, displayName) {
             return;
         }
 
-        title.textContent = data.title || displayName;
+        title.textContent = data.title || displayName || file.split('/').pop().replace('.md', '');
 
-        // Meta tags
         const metaParts = [];
+        if (data.folder) metaParts.push(`<span style="color:var(--accent-indigo)">${escapeHtml(data.folder)}</span>`);
         if (data.word_count) metaParts.push(`${data.word_count} words`);
-        if (data.modified) metaParts.push(`Modified: ${data.modified}`);
+        if (data.modified) metaParts.push(data.modified);
         if (data.tags && data.tags.length > 0) {
-            data.tags.forEach(t => metaParts.push(`<span class="meta-tag">#${escapeHtml(t)}</span>`));
+            metaParts.push(data.tags.map(t => `<span class="meta-tag">#${escapeHtml(t)}</span>`).join(' '));
         }
         meta.innerHTML = metaParts.join(' &middot; ');
 
-        // Render content (strip frontmatter)
         let content = data.content || '';
         content = content.replace(/^---[\s\S]*?---\s*\n?/, '');
         body.innerHTML = renderMarkdownBasic(content);
@@ -2300,19 +2304,25 @@ function renderMarkdownBasic(md) {
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
     // Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Wikilinks (safe — uses data attribute, no inline JS)
+    html = html.replace(/\[\[(.+?)\]\]/g, '<span class="wikilink" data-note="$1" style="color:var(--accent-indigo);font-weight:500;cursor:pointer;border-bottom:1px dashed var(--accent-indigo)">$1</span>');
+    // External links
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
     // Blockquotes
     html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
     // Horizontal rules
     html = html.replace(/^---$/gm, '<hr>');
+    // Checkboxes
+    html = html.replace(/^- \[x\] (.+)$/gm, '<li style="list-style:none"><input type="checkbox" checked disabled> $1</li>');
+    html = html.replace(/^- \[ \] (.+)$/gm, '<li style="list-style:none"><input type="checkbox" disabled> $1</li>');
     // Unordered lists
     html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
     html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    // Numbered lists
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
     // Line breaks (double newline = paragraph)
     html = html.replace(/\n\n/g, '</p><p>');
     html = '<p>' + html + '</p>';
-    // Clean up empty paragraphs
     html = html.replace(/<p>\s*<\/p>/g, '');
     return html;
 }
@@ -3672,73 +3682,19 @@ function restoreChatItem(idx) {
     document.getElementById('askInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// =============================================
-//  NOTE PREVIEW
-// =============================================
-function openNotePreview(filePath) {
-    if (!isLive) return;
-    const overlay = document.getElementById('notePreviewOverlay');
-    const panel = document.getElementById('notePreviewPanel');
-    const title = document.getElementById('notePreviewTitle');
-    const meta = document.getElementById('notePreviewMeta');
-    const body = document.getElementById('notePreviewBody');
-
-    title.textContent = filePath.split('/').pop().replace('.md', '');
-    meta.innerHTML = '<span>Loading...</span>';
-    body.textContent = 'Fetching note content...';
-    overlay.classList.add('open');
-    setTimeout(() => panel.classList.add('open'), 10);
-
-    // Fetch note content from API
-    apiFetch(`${API_GATEWAY}/api/notes/content?file=${encodeURIComponent(filePath)}`)
-        .then(data => {
-            if (data && data.content) {
-                title.textContent = data.file.split('/').pop().replace('.md', '');
-                const metaParts = [];
-                if (data.folder) metaParts.push(`<span style="color:var(--accent-indigo)">${escapeHtml(data.folder)}</span>`);
-                if (data.word_count) metaParts.push(`<span>${data.word_count} words</span>`);
-                if (data.modified) metaParts.push(`<span>${data.modified}</span>`);
-                if (data.tags && data.tags.length) metaParts.push(`<span>${data.tags.map(t => '#' + t).join(' ')}</span>`);
-                meta.innerHTML = metaParts.join('') || '<span>No metadata</span>';
-
-                // Strip YAML frontmatter before rendering
-                let md = data.content;
-                if (md.startsWith('---')) {
-                    const fmEnd = md.indexOf('\n---', 3);
-                    if (fmEnd !== -1) md = md.substring(fmEnd + 4).trim();
-                }
-                // Markdown rendering
-                let rendered = escapeHtml(md)
-                    .replace(/```(\w*)\n([\s\S]*?)```/gm, '<pre><code>$2</code></pre>')
-                    .replace(/`([^`]+)`/g, '<code>$1</code>')
-                    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-                    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-                    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/_(.+?)_/g, '<em>$1</em>')
-                    .replace(/\[\[(.+?)\]\]/g, '<span style="color:var(--accent-indigo);font-weight:500;cursor:pointer" onclick="openNotePreview(\'$1.md\')">$1</span>')
-                    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-                    .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
-                    .replace(/^---$/gm, '<hr>')
-                    .replace(/^- (.+)$/gm, '<li>$1</li>')
-                    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
-                    .replace(/\n\n/g, '<br><br>');
-                body.innerHTML = rendered;
-            } else {
-                body.textContent = 'Note content not available. The /api/notes/content endpoint may not be active yet.';
-                meta.innerHTML = '<span style="color:var(--accent-amber)">API unavailable</span>';
-            }
-        })
-        .catch(() => {
-            body.textContent = 'Failed to load note content.';
-            meta.innerHTML = '<span style="color:var(--accent-red)">Error</span>';
-        });
-}
-
 function closeNotePreview() {
     document.getElementById('notePreviewPanel').classList.remove('open');
     setTimeout(() => document.getElementById('notePreviewOverlay').classList.remove('open'), 250);
 }
+
+// Delegated wikilink click handler (safe — no inline onclick)
+document.addEventListener('click', (e) => {
+    const wl = e.target.closest('.wikilink');
+    if (wl) {
+        const note = wl.dataset.note;
+        if (note) openNotePreview(note + '.md', note);
+    }
+});
 
 async function triggerReindex() {
     const btn = document.getElementById('reindexBtn');
@@ -3835,7 +3791,7 @@ async function loadResearchPipeline() {
                 digestEl.textContent = 'First digest generates at 9 PM UTC';
             }
         }
-    } catch(e) { /* keep placeholder */ }
+    } catch(e) { console.warn('API unavailable:', e.message); }
 }
 
 async function queueVerticalResearch(vertical, btn) {
@@ -3887,7 +3843,7 @@ async function loadTagExplorer() {
                 `<span class="tag-pill">${t.tag} <span class="tag-count">${t.count}</span></span>`
             ).join('');
         }
-    } catch(e) { /* keep placeholder */ }
+    } catch(e) { console.warn('API unavailable:', e.message); }
 }
 async function loadVaultQuality() {
     try {
@@ -3919,7 +3875,7 @@ async function loadVaultQuality() {
                     return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border-subtle)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${issues}">${name}</span><span style="color:var(--accent-red);font-weight:600;margin-left:8px">${n.score}</span></div>`;
                 }).join('');
         }
-    } catch(e) { /* keep placeholder */ }
+    } catch(e) { console.warn('API unavailable:', e.message); }
 }
 
 // =============================================
