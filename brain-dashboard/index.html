@@ -1710,7 +1710,6 @@
             </span>
             <span id="lastUpdatedTicker" class="last-updated-ticker">Updated just now</span>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle">&#9789;</button>
-            <button class="theme-toggle" onclick="toggleSettings()" title="Settings" id="settingsBtn" style="font-size:16px">&#9881;</button>
             <span id="refreshInfo" class="refresh-info">--</span>
             <button class="btn-refresh" onclick="refreshAll()" title="Refresh now">&#8635; Refresh</button>
         </div>
@@ -2018,30 +2017,6 @@
 </div>
 
 <!-- KEYBOARD SHORTCUTS OVERLAY -->
-<!-- SETTINGS PANEL -->
-<div class="kb-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()">
-    <div class="kb-panel" style="max-width:400px">
-        <h3><i data-lucide="settings" style="width:18px;height:18px"></i> Dashboard Settings</h3>
-        <div style="margin-bottom:16px">
-            <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">API Gateway URL</label>
-            <input type="text" class="ask-input" id="settingsGateway" style="width:100%;font-size:13px" placeholder="http://your-gateway:port">
-        </div>
-        <div style="margin-bottom:16px">
-            <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Refresh Interval (seconds)</label>
-            <input type="number" class="ask-input" id="settingsRefresh" style="width:120px;font-size:13px" min="10" max="600" step="10" value="60">
-        </div>
-        <div style="margin-bottom:16px">
-            <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Max Recent Searches</label>
-            <input type="number" class="ask-input" id="settingsMaxSearches" style="width:80px;font-size:13px" min="3" max="20" value="8">
-        </div>
-        <div style="display:flex;gap:8px;margin-top:20px">
-            <button class="btn-refresh" onclick="saveSettings()" style="flex:1">Save & Apply</button>
-            <button class="btn-refresh" onclick="resetSettings()" style="flex:1;opacity:0.7">Reset Defaults</button>
-        </div>
-        <div id="settingsFeedback" style="font-size:12px;margin-top:8px;color:var(--accent-green);display:none"></div>
-    </div>
-</div>
-
 <div class="kb-overlay" id="kbOverlay" onclick="if(event.target===this)closeKbOverlay()">
     <div class="kb-panel">
         <h3><i data-lucide="keyboard" style="width:18px;height:18px"></i> Keyboard Shortcuts</h3>
@@ -2053,7 +2028,6 @@
         <div class="kb-row"><span class="kb-action">Reset graph camera</span><kbd>G</kbd></div>
         <div class="kb-row"><span class="kb-action">Focus braindump</span><kbd>B</kbd></div>
         <div class="kb-row"><span class="kb-action">New chat session</span><kbd>N</kbd></div>
-        <div class="kb-row"><span class="kb-action">Open settings</span><kbd>S</kbd></div>
         <div class="kb-row"><span class="kb-action">Close overlay</span><kbd>Esc</kbd></div>
     </div>
 </div>
@@ -3122,12 +3096,6 @@ function initKeyboardShortcuts() {
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     refreshAll();
-                }
-                break;
-            case 's': case 'S':
-                if (!e.ctrlKey && !e.metaKey) {
-                    e.preventDefault();
-                    toggleSettings();
                 }
                 break;
             case 't': case 'T':
