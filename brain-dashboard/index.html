@@ -1341,6 +1341,55 @@
         .graph-container canvas {
             touch-action: none;
         }
+        .graph-search {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            z-index: 6;
+        }
+        .graph-search-input {
+            width: 150px;
+            padding: 5px 10px;
+            background: rgba(12,16,28,0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+        .graph-search-input:focus {
+            border-color: var(--accent-indigo);
+            color: var(--text-primary);
+            width: 200px;
+        }
+        .graph-search-results {
+            position: absolute;
+            bottom: 32px;
+            left: 0;
+            background: rgba(12,16,28,0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-sm);
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            min-width: 200px;
+        }
+        .graph-search-results.visible { display: block; }
+        .graph-search-result {
+            padding: 6px 10px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .graph-search-result:hover {
+            background: rgba(99,102,241,0.15);
+            color: var(--text-primary);
+        }
         .graph-controls {
             position: absolute;
             bottom: 12px;
@@ -5009,6 +5058,94 @@ function applyCinematicMode(mode) {
     });
 }
 
+// =============================================
+//  GRAPH SEARCH (find + zoom to nodes)
+// =============================================
+function initGraphSearch() {
+    const input = document.getElementById('graphSearchInput');
+    const results = document.getElementById('graphSearchResults');
+    if (!input || !results) return;
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        results.innerHTML = '';
+        if (q.length < 2 || !g3.nodes3d) { results.classList.remove('visible'); return; }
+        const matches = g3.nodes3d.filter(n => n.id.toLowerCase().includes(q)).slice(0, 8);
+        if (matches.length === 0) { results.classList.remove('visible'); return; }
+        matches.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'graph-search-result';
+            div.textContent = n._emoji + ' ' + n.id;
+            div.addEventListener('click', () => {
+                graphZoomToNode(n.id);
+                input.value = '';
+                results.classList.remove('visible');
+                results.innerHTML = '';
+            });
+            results.appendChild(div);
+        });
+        results.classList.add('visible');
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const first = results.querySelector('.graph-search-result');
+            if (first) first.click();
+        } else if (e.key === 'Escape') {
+            input.value = '';
+            results.classList.remove('visible');
+            results.innerHTML = '';
+            input.blur();
+            // Restore all nodes
+            if (g3.nodeMeshes) {
+                g3.nodeMeshes.forEach(m => { m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5; m.userData._scaleTarget = 1; });
+                g3.lineMeshes.forEach(l => { l.material.opacity = l.userData._baseOpacity || 0.45; });
+            }
+        }
+    });
+
+    // Close results on click outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.graph-search')) {
+            results.classList.remove('visible');
+        }
+    });
+}
+
+function graphZoomToNode(nodeId) {
+    if (!g3.nodeMeshes) return;
+    const mesh = g3.nodeMeshes.find(m => m.userData.id === nodeId);
+    if (!mesh) return;
+    // Zoom camera to node
+    g3.targetLookAt.copy(mesh.position);
+    g3.targetDist = 80;
+    g3._setAutoRotate(false);
+    // Highlight: dim all except target + neighbors
+    const nd = mesh.userData;
+    const neighbors = new Set(nd._neighbors || []);
+    g3.nodeMeshes.forEach(m => {
+        if (m.userData.id === nodeId) {
+            m.material.opacity = 1; m.material.emissiveIntensity = 1.0; m.userData._scaleTarget = 1.4;
+        } else if (neighbors.has(m.userData.id)) {
+            m.material.opacity = 0.8; m.material.emissiveIntensity = 0.6; m.userData._scaleTarget = 1.1;
+        } else {
+            m.material.opacity = 0.12; m.material.emissiveIntensity = 0.1; m.userData._scaleTarget = 0.8;
+        }
+    });
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        if (e.source.id === nodeId || e.target.id === nodeId) l.material.opacity = 0.8;
+        else l.material.opacity = 0.03;
+    });
+    // Bounce the target
+    if (nd._bounceVel !== undefined) { nd._bounceVel = 10; nd._wiggle = 2; }
+    SFX.sparkle();
+    // Add search pulse
+    if (!g3._searchPulse) g3._searchPulse = [];
+    g3._searchPulse.push({ mesh, elapsed: 0 });
+}
+
+
 // Graph filter: toggle visibility of a community/folder group
 const graphHiddenGroups = new Set(JSON.parse(localStorage.getItem('brain-graph-hidden') || '[]'));
 function toggleGraphFilter(el, group) {
@@ -5684,6 +5821,7 @@ function initFloatingSearch() {
     // Initialize UI enhancements
     initScrollObservers();
     initFloatingSearch();
+    initGraphSearch();
 
     // Keyboard shortcuts
     initKeyboardShortcuts();
