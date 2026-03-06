@@ -688,6 +688,37 @@
             display: inline-block;
         }
 
+        /* ---- TAG EXPLORER ---- */
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+        .tag-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+            background: var(--bg-surface-hover); color: var(--text-secondary);
+            border: 1px solid var(--border-subtle); cursor: default; transition: all 0.2s;
+        }
+        .tag-pill:hover { border-color: var(--accent-indigo); color: var(--text-primary); }
+        .tag-pill .tag-count {
+            font-size: 10px; color: var(--text-tertiary); background: var(--bg-inset);
+            padding: 1px 5px; border-radius: 8px; font-weight: 600;
+        }
+        .tag-stats-row {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px;
+        }
+        .tag-stat-card {
+            background: var(--bg-inset); border-radius: var(--radius-sm); padding: 12px;
+            text-align: center; border: 1px solid var(--border-subtle);
+        }
+        .tag-stat-val { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+        .tag-stat-label { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+        .quality-bar {
+            display: flex; height: 24px; border-radius: var(--radius-sm); overflow: hidden;
+            background: var(--bg-inset); margin-top: 8px;
+        }
+        .quality-bar div {
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 600; color: var(--bg-base); transition: width 0.5s;
+        }
+
         /* ---- SCROLLBAR ---- */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -1188,13 +1219,40 @@
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
             </div>
         </div>
-        <div class="graph-legend">
+        <div class="graph-legend" id="graphLegend">
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#818cf8"></span> Resources</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#22d3ee"></span> Areas</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span> Projects</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bfa"></span> Galaxy</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#f87171"></span> Inbox</span>
             <span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">drag to orbit &middot; scroll to zoom &middot; click node to focus</span>
+        </div>
+    </div>
+
+    <!-- TAG EXPLORER + VAULT QUALITY -->
+    <div class="grid-2">
+        <div class="card">
+            <div class="card-title"><i data-lucide="tags" class="icon"></i> Tag Explorer</div>
+            <div class="tag-stats-row" id="tagStats">
+                <div class="tag-stat-card"><div class="tag-stat-val" id="tagUnique">--</div><div class="tag-stat-label">Unique Tags</div></div>
+                <div class="tag-stat-card"><div class="tag-stat-val" id="tagWithTags">--</div><div class="tag-stat-label">Notes w/ Tags</div></div>
+                <div class="tag-stat-card"><div class="tag-stat-val" id="tagNormNeeded">--</div><div class="tag-stat-label">Need Normalization</div></div>
+                <div class="tag-stat-card"><div class="tag-stat-val" id="tagAliasGroups">--</div><div class="tag-stat-label">Alias Groups</div></div>
+            </div>
+            <div class="tag-cloud" id="tagCloud">
+                <span style="color:var(--text-tertiary);font-size:12px">Loading tags...</span>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><i data-lucide="shield-check" class="icon"></i> Vault Quality</div>
+            <div class="tag-stats-row" id="qualityStats">
+                <div class="tag-stat-card"><div class="tag-stat-val" id="qualityAvg">--</div><div class="tag-stat-label">Avg Score</div></div>
+                <div class="tag-stat-card"><div class="tag-stat-val" id="qualityA">--</div><div class="tag-stat-label">A Tier (80+)</div></div>
+                <div class="tag-stat-card"><div class="tag-stat-val" id="qualityBC">--</div><div class="tag-stat-label">B-C Tier</div></div>
+                <div class="tag-stat-card"><div class="tag-stat-val" id="qualityDF">--</div><div class="tag-stat-label">D-F Tier</div></div>
+            </div>
+            <div class="quality-bar" id="qualityBar"></div>
+            <div id="qualityBottomList" style="margin-top:12px;font-size:12px;color:var(--text-secondary)"></div>
         </div>
     </div>
 
@@ -1887,6 +1945,17 @@ const GRAPH_COLORS = {
     Resources: '#818cf8', Areas: '#22d3ee', Projects: '#fbbf24',
     Galaxy: '#a78bfa', Archive: '#71717a', Inbox: '#f87171', root: '#a1a1aa'
 };
+const COMMUNITY_COLORS = [
+    '#f87171', '#60a5fa', '#4ade80', '#fbbf24', '#a78bfa', '#f472b6', '#22d3ee', '#fb923c'
+];
+const COMMUNITY_LABELS = {
+    'cybersecurity': 'Cybersecurity', 'security': 'Cybersecurity',
+    'ai': 'AI & Research', 'openai': 'AI & Research', 'research': 'AI & Research',
+    'business': 'Business', 'startups': 'Business', 'essays': 'Business', 'strategy': 'Business',
+    'agriculture': 'Agriculture', 'ag-tech': 'Agriculture',
+    'podcast': 'Podcasts', 'huberman': 'Podcasts', 'neuroscience': 'Podcasts',
+    'hacker-news': 'Tech & News', 'consumer': 'Tech & News', 'science': 'Tech & News'
+};
 
 const DEMO_GRAPH = {
     nodes: [
@@ -1934,7 +2003,22 @@ function initGraph(data) {
     // Stats label
     const stats = graph.stats || {};
     document.getElementById('graphStats').textContent =
-        `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges`;
+        `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges · ${(graph.communities || []).length} communities`;
+
+    // Update legend with community colors if available
+    if (graph.communities && graph.communities.length > 0) {
+        const legendEl = document.getElementById('graphLegend');
+        if (legendEl) {
+            const comms = graph.communities.map((c, idx) => {
+                const color = COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length];
+                const topTag = (c.top_tags || [])[0] || '';
+                const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
+                return `<span class="graph-legend-item"><span class="graph-legend-dot" style="background:${color}"></span> ${label} (${c.size})</span>`;
+            }).join('');
+            legendEl.innerHTML = comms +
+                '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">drag to orbit &middot; scroll to zoom &middot; click node to focus</span>';
+        }
+    }
 
     // Clean up previous
     if (g3.renderer) {
@@ -1980,6 +2064,19 @@ function initGraph(data) {
         color: 0x1e293b, size: 1.2, transparent: true, opacity: 0.6
     })));
 
+    // -- Build community color map from graph data --
+    const communityMap = {};
+    const communityMeta = [];
+    if (graph.communities) {
+        graph.communities.forEach((c, idx) => {
+            const color = COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length];
+            const topTag = (c.top_tags || [])[0] || '';
+            const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
+            communityMeta.push({ label, color, size: c.size || 0 });
+            (c.members || []).forEach(id => { communityMap[id] = color; });
+        });
+    }
+
     // -- Layout: 3D force simulation (pre-computed) --
     const nodeMap = {};
     const nodes3d = graph.nodes.map((n, i) => {
@@ -1993,7 +2090,8 @@ function initGraph(data) {
             z: r * Math.cos(phi),
             vx: 0, vy: 0, vz: 0
         };
-        const nd = { ...n, ...pos, color: GRAPH_COLORS[n.folder] || GRAPH_COLORS.root,
+        const nodeColor = communityMap[n.id] || GRAPH_COLORS[n.folder] || GRAPH_COLORS.root;
+        const nd = { ...n, ...pos, color: nodeColor,
             radius: Math.max(1.5, Math.min(5, (n.connections || 1) * 0.35)) };
         nodeMap[n.id] = nd;
         return nd;
@@ -2388,6 +2486,56 @@ function renderHealthGauges(healthData) {
 }
 
 // =============================================
+//  TAG EXPLORER + VAULT QUALITY
+// =============================================
+async function loadTagExplorer() {
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/health/vault-tags`, {signal: AbortSignal.timeout(8000)});
+        const d = await resp.json();
+        document.getElementById('tagUnique').textContent = d.unique_tags || '--';
+        document.getElementById('tagWithTags').textContent = d.notes_with_tags || '--';
+        document.getElementById('tagNormNeeded').textContent = d.notes_needing_normalization || '0';
+        document.getElementById('tagAliasGroups').textContent = (d.alias_groups_found || []).length || '0';
+        const cloud = document.getElementById('tagCloud');
+        if (cloud && d.top_tags) {
+            cloud.innerHTML = d.top_tags.slice(0, 25).map(t =>
+                `<span class="tag-pill">${t.tag} <span class="tag-count">${t.count}</span></span>`
+            ).join('');
+        }
+    } catch(e) { /* keep placeholder */ }
+}
+async function loadVaultQuality() {
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/health/vault-quality`, {signal: AbortSignal.timeout(12000)});
+        const d = await resp.json();
+        if (d.error) return;
+        document.getElementById('qualityAvg').textContent = d.average_score || '--';
+        const dist = d.distribution || {};
+        const a = dist.A || 0, b = dist.B || 0, c = dist.C || 0, df = (dist.D || 0) + (dist.F || 0);
+        document.getElementById('qualityA').textContent = a;
+        document.getElementById('qualityBC').textContent = b + c;
+        document.getElementById('qualityDF').textContent = df;
+        const total = a + b + c + df || 1;
+        const bar = document.getElementById('qualityBar');
+        if (bar) {
+            bar.innerHTML = [
+                a > 0 ? `<div style="width:${a/total*100}%;background:#4ade80">A:${a}</div>` : '',
+                b > 0 ? `<div style="width:${b/total*100}%;background:#22d3ee">B:${b}</div>` : '',
+                c > 0 ? `<div style="width:${c/total*100}%;background:#fbbf24">C:${c}</div>` : '',
+                df > 0 ? `<div style="width:${df/total*100}%;background:#f87171">D/F:${df}</div>` : ''
+            ].join('');
+        }
+        const bottom = document.getElementById('qualityBottomList');
+        if (bottom && d.bottom_20) {
+            bottom.innerHTML = '<div style="font-weight:600;margin-bottom:6px;color:var(--text-tertiary)">Lowest Quality Notes:</div>' +
+                d.bottom_20.slice(0, 8).map(n =>
+                    `<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border-subtle)"><span>${n.title || n.file}</span><span style="color:var(--accent-red);font-weight:600">${n.score}</span></div>`
+                ).join('');
+        }
+    } catch(e) { /* keep placeholder */ }
+}
+
+// =============================================
 //  INIT
 // =============================================
 (async function init() {
@@ -2422,12 +2570,15 @@ function renderHealthGauges(healthData) {
                     const topNodes = sorted.slice(0, 70);
                     const nodeIds = new Set(topNodes.map(n => n.id));
                     const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
-                    initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats });
+                    initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats, communities: gData.communities });
                 } else {
                     initGraph(gData);
                 }
             }
         } catch(e) { /* keep demo graph */ }
+        // Load tag explorer and quality panels in parallel
+        loadTagExplorer();
+        loadVaultQuality();
         startAutoRefresh();
     }
 })();
