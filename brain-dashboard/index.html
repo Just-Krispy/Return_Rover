@@ -292,7 +292,7 @@
             margin-bottom: 24px;
         }
 
-        /* ---- VAULT STRUCTURE (EPARAX) ---- */
+        /* ---- VAULT STRUCTURE (PARA) ---- */
         .vault-bars {
             display: flex;
             flex-direction: column;
@@ -1763,7 +1763,6 @@
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#818cf8"></span> Resources</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#22d3ee"></span> Areas</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span> Projects</span>
-            <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#a78bfa"></span> Galaxy</span>
             <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#f87171"></span> Inbox</span>
             <span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click to expand &middot; drag to orbit &middot; scroll to zoom</span>
         </div>
@@ -1792,7 +1791,7 @@
     <div class="grid-2">
         <!-- VAULT STRUCTURE -->
         <div class="card">
-            <div class="card-title"><i data-lucide="folder-tree" class="icon"></i> Vault Structure (EPARAX)</div>
+            <div class="card-title"><i data-lucide="folder-tree" class="icon"></i> Vault Structure (PARA)</div>
             <div class="vault-bars" id="vaultBars"></div>
             <div class="vault-detail-panel" id="vaultDetail">
                 <h4 id="vaultDetailTitle">--</h4>
@@ -2206,8 +2205,6 @@ const DEMO = {
         Projects:  { count: 0,  notes: [] },
         Areas:     { count: 3,  notes: ['Personal Knowledge Management.md', 'Health & Fitness Tracker.md', 'Career Development 2026.md'] },
         Resources: { count: 43, notes: ['RAG Architecture Patterns.md', 'LangChain vs LlamaIndex.md', 'Vector Database Comparison.md', 'Obsidian Plugin Development.md', 'n8n Workflow Recipes.md', 'Claude API Best Practices.md', 'Self-Hosting Guide.md', 'Tailscale VPN Setup.md', 'Zettelkasten Method.md', 'Building a Second Brain (BASB).md', 'Progressive Summarization.md', 'Spaced Repetition Systems.md', 'NotebookLM Integration.md', 'Whisper Transcription Pipeline.md', 'YouTube to Notes Pipeline.md'] },
-        Galaxy:    { count: 0,  notes: [] },
-        Archive:   { count: 0,  notes: [] }
     },
     ragStats: {
         total_chunks: 273,
@@ -3194,7 +3191,7 @@ function startAutoRefresh() {
 // =============================================
 const GRAPH_COLORS = {
     Resources: '#818cf8', Areas: '#22d3ee', Projects: '#fbbf24',
-    Galaxy: '#a78bfa', Archive: '#71717a', Inbox: '#f87171', root: '#a1a1aa'
+    Inbox: '#f87171', root: '#a1a1aa'
 };
 const COMMUNITY_COLORS = [
     '#f87171', '#60a5fa', '#4ade80', '#fbbf24', '#a78bfa', '#f472b6', '#22d3ee', '#fb923c'
@@ -3271,7 +3268,7 @@ function initGraph(data) {
             }).join('');
         } else {
             // Fallback: folder-based legend
-            const folders = ['Resources','Areas','Projects','Galaxy','Inbox'];
+            const folders = ['Resources','Areas','Projects','Inbox'];
             legendItems = folders.map(f => {
                 const c = GRAPH_COLORS[f] || '#a1a1aa';
                 const count = graph.nodes.filter(n => n.folder === f).length;
