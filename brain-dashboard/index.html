@@ -1601,6 +1601,7 @@
             </span>
             <span id="lastUpdatedTicker" class="last-updated-ticker">Updated just now</span>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle">&#9789;</button>
+            <button class="theme-toggle" onclick="toggleSettings()" title="Settings" id="settingsBtn" style="font-size:16px">&#9881;</button>
             <span id="refreshInfo" class="refresh-info">--</span>
             <button class="btn-refresh" onclick="refreshAll()" title="Refresh now">&#8635; Refresh</button>
         </div>
@@ -1885,6 +1886,30 @@
 </div>
 
 <!-- KEYBOARD SHORTCUTS OVERLAY -->
+<!-- SETTINGS PANEL -->
+<div class="kb-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()">
+    <div class="kb-panel" style="max-width:400px">
+        <h3><i data-lucide="settings" style="width:18px;height:18px"></i> Dashboard Settings</h3>
+        <div style="margin-bottom:16px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">API Gateway URL</label>
+            <input type="text" class="ask-input" id="settingsGateway" style="width:100%;font-size:13px" placeholder="http://100.103.26.21:8888">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Refresh Interval (seconds)</label>
+            <input type="number" class="ask-input" id="settingsRefresh" style="width:120px;font-size:13px" min="10" max="600" step="10" value="60">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Max Recent Searches</label>
+            <input type="number" class="ask-input" id="settingsMaxSearches" style="width:80px;font-size:13px" min="3" max="20" value="8">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:20px">
+            <button class="btn-refresh" onclick="saveSettings()" style="flex:1">Save & Apply</button>
+            <button class="btn-refresh" onclick="resetSettings()" style="flex:1;opacity:0.7">Reset Defaults</button>
+        </div>
+        <div id="settingsFeedback" style="font-size:12px;margin-top:8px;color:var(--accent-green);display:none"></div>
+    </div>
+</div>
+
 <div class="kb-overlay" id="kbOverlay" onclick="if(event.target===this)closeKbOverlay()">
     <div class="kb-panel">
         <h3><i data-lucide="keyboard" style="width:18px;height:18px"></i> Keyboard Shortcuts</h3>
@@ -1896,6 +1921,7 @@
         <div class="kb-row"><span class="kb-action">Reset graph camera</span><kbd>G</kbd></div>
         <div class="kb-row"><span class="kb-action">Focus braindump</span><kbd>B</kbd></div>
         <div class="kb-row"><span class="kb-action">New chat session</span><kbd>N</kbd></div>
+        <div class="kb-row"><span class="kb-action">Open settings</span><kbd>S</kbd></div>
         <div class="kb-row"><span class="kb-action">Close overlay</span><kbd>Esc</kbd></div>
     </div>
 </div>
@@ -1915,8 +1941,11 @@
 // =============================================
 //  CONFIGURATION
 // =============================================
-const API_GATEWAY = 'http://100.103.26.21:8888';
+const DEFAULT_GATEWAY = 'http://100.103.26.21:8888';
+let API_GATEWAY = localStorage.getItem('brain-api-gateway') || DEFAULT_GATEWAY;
 const FETCH_TIMEOUT = 5000;
+let REFRESH_INTERVAL = parseInt(localStorage.getItem('brain-refresh-interval') || '60') * 1000;
+let MAX_RECENT_SEARCHES = parseInt(localStorage.getItem('brain-max-searches') || '8');
 
 let isLive = false;
 let refreshTimer = null;
@@ -1978,6 +2007,59 @@ function openKbOverlay() {
 }
 function closeKbOverlay() {
     document.getElementById('kbOverlay').classList.remove('open');
+}
+
+// =============================================
+//  SETTINGS PANEL
+// =============================================
+function toggleSettings() {
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay.classList.contains('open')) {
+        overlay.classList.remove('open');
+    } else {
+        document.getElementById('settingsGateway').value = API_GATEWAY;
+        document.getElementById('settingsRefresh').value = REFRESH_INTERVAL / 1000;
+        document.getElementById('settingsMaxSearches').value = MAX_RECENT_SEARCHES;
+        overlay.classList.add('open');
+        lucide.createIcons();
+    }
+}
+
+function saveSettings() {
+    const gateway = document.getElementById('settingsGateway').value.trim().replace(/\/+$/, '');
+    const refresh = parseInt(document.getElementById('settingsRefresh').value) || 60;
+    const maxSearches = parseInt(document.getElementById('settingsMaxSearches').value) || 8;
+
+    if (gateway) {
+        API_GATEWAY = gateway;
+        localStorage.setItem('brain-api-gateway', gateway);
+    }
+    REFRESH_INTERVAL = Math.max(10, Math.min(600, refresh)) * 1000;
+    localStorage.setItem('brain-refresh-interval', String(REFRESH_INTERVAL / 1000));
+    MAX_RECENT_SEARCHES = Math.max(3, Math.min(20, maxSearches));
+    localStorage.setItem('brain-max-searches', String(MAX_RECENT_SEARCHES));
+
+    startAutoRefresh();
+    const fb = document.getElementById('settingsFeedback');
+    fb.textContent = 'Settings saved. Refreshing...';
+    fb.style.display = '';
+    setTimeout(() => { fb.style.display = 'none'; toggleSettings(); refreshAll(); }, 800);
+}
+
+function resetSettings() {
+    localStorage.removeItem('brain-api-gateway');
+    localStorage.removeItem('brain-refresh-interval');
+    localStorage.removeItem('brain-max-searches');
+    API_GATEWAY = DEFAULT_GATEWAY;
+    REFRESH_INTERVAL = 60000;
+    MAX_RECENT_SEARCHES = 8;
+    document.getElementById('settingsGateway').value = DEFAULT_GATEWAY;
+    document.getElementById('settingsRefresh').value = '60';
+    document.getElementById('settingsMaxSearches').value = '8';
+    const fb = document.getElementById('settingsFeedback');
+    fb.textContent = 'Reset to defaults.';
+    fb.style.display = '';
+    setTimeout(() => fb.style.display = 'none', 1500);
 }
 
 // =============================================
@@ -2888,6 +2970,7 @@ function initKeyboardShortcuts() {
             case 'Escape':
                 closeKbOverlay();
                 closeNotePreview();
+                if (document.getElementById('settingsOverlay').classList.contains('open')) toggleSettings();
                 break;
             case '/':
                 e.preventDefault();
@@ -2909,6 +2992,12 @@ function initKeyboardShortcuts() {
                 if (!e.ctrlKey && !e.metaKey) {
                     e.preventDefault();
                     refreshAll();
+                }
+                break;
+            case 's': case 'S':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    toggleSettings();
                 }
                 break;
             case 't': case 'T':
@@ -2979,7 +3068,7 @@ async function refreshAll() {
 function startAutoRefresh() {
     if (refreshTimer) clearInterval(refreshTimer);
     if (isLive) {
-        refreshTimer = setInterval(refreshAll, 60000);
+        refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
     }
 }
 
@@ -3059,7 +3148,8 @@ function initGraph(data) {
                 const color = COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length];
                 const topTag = (c.top_tags || [])[0] || '';
                 const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
-                return `<span class="graph-legend-item filterable" data-filter="${label}" onclick="toggleGraphFilter(this,'${label}')"><span class="graph-legend-dot" style="background:${color}"></span> ${label} (${c.size})</span>`;
+                const dimmed = graphHiddenGroups.has(label) ? ' dimmed' : '';
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${label}" onclick="toggleGraphFilter(this,'${label}')"><span class="graph-legend-dot" style="background:${color}"></span> ${label} (${c.size})</span>`;
             }).join('');
         } else {
             // Fallback: folder-based legend
@@ -3068,7 +3158,8 @@ function initGraph(data) {
                 const c = GRAPH_COLORS[f] || '#a1a1aa';
                 const count = graph.nodes.filter(n => n.folder === f).length;
                 if (count === 0) return '';
-                return `<span class="graph-legend-item filterable" data-filter="${f}" onclick="toggleGraphFilter(this,'${f}')"><span class="graph-legend-dot" style="background:${c}"></span> ${f} (${count})</span>`;
+                const dimmed = graphHiddenGroups.has(f) ? ' dimmed' : '';
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${f}" onclick="toggleGraphFilter(this,'${f}')"><span class="graph-legend-dot" style="background:${c}"></span> ${f} (${count})</span>`;
             }).join('');
         }
         legendEl.innerHTML = legendItems +
@@ -3461,6 +3552,11 @@ function initGraph(data) {
             lineMeshes.forEach(l => { l.visible = true; });
         }
     };
+
+    // Apply saved filter state on init
+    if (graphHiddenGroups.size > 0 && g3._applyFilter) {
+        g3._applyFilter(graphHiddenGroups);
+    }
 }
 
 // Glow texture generator
@@ -3493,11 +3589,12 @@ function graphReset() {
 }
 
 // Graph filter: toggle visibility of a community/folder group
-const graphHiddenGroups = new Set();
+const graphHiddenGroups = new Set(JSON.parse(localStorage.getItem('brain-graph-hidden') || '[]'));
 function toggleGraphFilter(el, group) {
     el.classList.toggle('dimmed');
     if (graphHiddenGroups.has(group)) graphHiddenGroups.delete(group);
     else graphHiddenGroups.add(group);
+    localStorage.setItem('brain-graph-hidden', JSON.stringify([...graphHiddenGroups]));
     if (g3._applyFilter) g3._applyFilter(graphHiddenGroups);
 }
 
@@ -3508,7 +3605,7 @@ function saveRecentSearch(q) {
     let recent = JSON.parse(localStorage.getItem('brain-recent-searches') || '[]');
     recent = recent.filter(s => s !== q);
     recent.unshift(q);
-    recent = recent.slice(0, 8);
+    recent = recent.slice(0, MAX_RECENT_SEARCHES);
     localStorage.setItem('brain-recent-searches', JSON.stringify(recent));
     renderRecentSearches();
 }
