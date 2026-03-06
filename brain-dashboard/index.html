@@ -410,6 +410,7 @@
         .note-preview-body {
             flex: 1; overflow-y: auto; padding: 20px;
             font-size: 14px; line-height: 1.7; color: var(--text-secondary);
+            word-break: break-word; overflow-wrap: anywhere;
         }
         .note-preview-body h1, .note-preview-body h2, .note-preview-body h3 {
             color: var(--text-primary); margin: 20px 0 8px;
@@ -1419,6 +1420,9 @@
             .health-pills { grid-template-columns: 1fr; }
             .graph-legend-item { font-size: 11px; }
             .vault-bar-label { width: 70px; font-size: 12px; }
+            .workflow-list { max-height: 200px; }
+            .research-stats { grid-template-columns: 1fr 1fr; }
+            .health-gauges { grid-template-columns: repeat(2, 1fr); }
         }
 
         /* ---- CHAT HISTORY ---- */
@@ -1646,8 +1650,9 @@
             <input type="text" class="ask-input" id="searchInput" placeholder="Search your vault..." onkeydown="if(event.key==='Enter')searchVault()">
             <button class="btn-primary" id="searchBtn" onclick="searchVault()" style="background:var(--accent-cyan);"><i data-lucide="search" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Search</button>
         </div>
+        <div id="recentSearches" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
         <div id="searchResults" class="search-results">
-            <div class="search-empty">Search across 200+ vault notes using semantic RAG search.</div>
+            <div class="search-empty">Search across your vault notes using semantic RAG search.</div>
         </div>
     </div>
 
@@ -1836,17 +1841,6 @@
         <div id="tagCloudContainer" style="display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;min-height:40px;padding:4px 0"></div>
     </div>
 
-</div>
-
-<!-- NOTE PREVIEW PANEL -->
-<div class="note-preview-overlay" id="notePreviewOverlay" onclick="closeNotePreview()"></div>
-<div class="note-preview-panel" id="notePreviewPanel">
-    <div class="note-preview-header">
-        <h3 id="notePreviewTitle">--</h3>
-        <button class="note-preview-close" onclick="closeNotePreview()" title="Close">&times;</button>
-    </div>
-    <div class="note-preview-meta" id="notePreviewMeta"></div>
-    <div class="note-preview-body" id="notePreviewBody">Loading...</div>
 </div>
 
 <!-- KEYBOARD SHORTCUTS OVERLAY -->
@@ -2400,7 +2394,7 @@ function renderTagCloud(tags, uniqueCount) {
         el.onclick = () => {
             document.getElementById('searchInput').value = '#' + t.tag;
             document.getElementById('searchInput').focus();
-            if (typeof doSearch === 'function') doSearch();
+            if (typeof searchVault === 'function') searchVault();
         };
         container.appendChild(el);
     });
@@ -3396,12 +3390,31 @@ function toggleGraphFilter(el, group) {
 // =============================================
 //  VAULT SEARCH (RAG)
 // =============================================
+function saveRecentSearch(q) {
+    let recent = JSON.parse(localStorage.getItem('brain-recent-searches') || '[]');
+    recent = recent.filter(s => s !== q);
+    recent.unshift(q);
+    recent = recent.slice(0, 8);
+    localStorage.setItem('brain-recent-searches', JSON.stringify(recent));
+    renderRecentSearches();
+}
+
+function renderRecentSearches() {
+    const container = document.getElementById('recentSearches');
+    if (!container) return;
+    const recent = JSON.parse(localStorage.getItem('brain-recent-searches') || '[]');
+    if (!recent.length) { container.innerHTML = ''; return; }
+    container.innerHTML = '<span style="font-size:11px;color:var(--text-tertiary);margin-right:2px">Recent:</span>' +
+        recent.map(s => `<span style="font-size:11px;color:var(--accent-indigo);cursor:pointer;padding:2px 8px;background:var(--bg-inset);border-radius:10px;border:1px solid var(--border-subtle)" onclick="document.getElementById('searchInput').value='${escapeHtml(s).replace(/'/g,"\\'")}';searchVault()">${escapeHtml(s)}</span>`).join('');
+}
+
 async function searchVault() {
     const input = document.getElementById('searchInput');
     const container = document.getElementById('searchResults');
     const btn = document.getElementById('searchBtn');
     const q = input.value.trim();
     if (!q) return;
+    saveRecentSearch(q);
 
     if (!isLive) {
         // Demo search
@@ -3557,15 +3570,28 @@ function openNotePreview(filePath) {
                 if (data.tags && data.tags.length) metaParts.push(`<span>${data.tags.map(t => '#' + t).join(' ')}</span>`);
                 meta.innerHTML = metaParts.join('') || '<span>No metadata</span>';
 
-                // Simple markdown rendering (headers, bold, links)
-                let rendered = escapeHtml(data.content)
+                // Strip YAML frontmatter before rendering
+                let md = data.content;
+                if (md.startsWith('---')) {
+                    const fmEnd = md.indexOf('\n---', 3);
+                    if (fmEnd !== -1) md = md.substring(fmEnd + 4).trim();
+                }
+                // Markdown rendering
+                let rendered = escapeHtml(md)
+                    .replace(/```(\w*)\n([\s\S]*?)```/gm, '<pre><code>$2</code></pre>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
                     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
                     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
                     .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text-primary)">$1</strong>')
-                    .replace(/\[\[(.+?)\]\]/g, '<span style="color:var(--accent-indigo);font-weight:500">$1</span>')
-                    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border-subtle);margin:12px 0">')
-                    .replace(/^- (.+)$/gm, '&bull; $1');
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/_(.+?)_/g, '<em>$1</em>')
+                    .replace(/\[\[(.+?)\]\]/g, '<span style="color:var(--accent-indigo);font-weight:500;cursor:pointer" onclick="openNotePreview(\'$1.md\')">$1</span>')
+                    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                    .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+                    .replace(/^---$/gm, '<hr>')
+                    .replace(/^- (.+)$/gm, '<li>$1</li>')
+                    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+                    .replace(/\n\n/g, '<br><br>');
                 body.innerHTML = rendered;
             } else {
                 body.textContent = 'Note content not available. The /api/notes/content endpoint may not be active yet.';
@@ -3736,6 +3762,9 @@ async function loadVaultQuality() {
 
     // Keyboard shortcuts
     initKeyboardShortcuts();
+
+    // Recent searches
+    renderRecentSearches();
 
     // Show loading skeletons while fetching
     showSkeletons();
