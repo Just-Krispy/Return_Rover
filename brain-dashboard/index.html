@@ -107,7 +107,7 @@
         .dashboard {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 40px 32px 80px;
+            padding: 28px 32px 80px;
         }
 
         /* ---- HEADER ---- */
@@ -116,9 +116,9 @@
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 40px;
-            padding-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 0;
             position: relative;
         }
         .header-left {
@@ -295,7 +295,7 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .stat-card {
             text-align: left;
@@ -374,13 +374,13 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .grid-3 {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .full-width {
             margin-bottom: 24px;
@@ -1707,7 +1707,7 @@
         }
 
         /* ---- FLOATING SEARCH BAR ---- */
-        .floating-search { position: sticky; top: 0; z-index: 50; background: var(--bg-base); padding: 12px 0; margin: -12px 0 20px; border-bottom: 1px solid var(--border-subtle); transition: box-shadow 0.3s ease; }
+        .floating-search { position: sticky; top: 0; z-index: 50; background: var(--bg-base); padding: 10px 0; margin: 0 0 16px; border-bottom: 1px solid var(--border-subtle); transition: box-shadow 0.3s ease; }
         .floating-search.scrolled { box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         [data-theme="light"] .floating-search.scrolled { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .floating-search-inner { display: flex; gap: 8px; align-items: center; }
@@ -1786,7 +1786,7 @@
         }
         @media (max-width: 768px) {
             .grid-2 { grid-template-columns: 1fr; }
-            .dashboard { padding: 24px 16px 60px; }
+            .dashboard { padding: 20px 16px 60px; }
             .header { flex-direction: column; align-items: flex-start; }
             .header-right { position: static; transform: none; flex-wrap: wrap; }
             .header h1 { font-size: 20px; }
@@ -2168,7 +2168,7 @@
     </div>
 
     <!-- KNOWLEDGE GRAPH 3D (hero position #2) -->
-    <div class="card card--hero graph-hero-card" id="sec-graph" style="margin-bottom: 20px;">
+    <div class="card card--hero graph-hero-card" id="sec-graph" style="margin-bottom: 16px;">
         <div class="card-title graph-card-title">
             <span class="graph-title-glow">
                 <i data-lucide="network" class="icon"></i>
