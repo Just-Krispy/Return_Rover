@@ -1890,48 +1890,7 @@
     </div>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle" style="position:fixed;top:12px;right:12px;z-index:1000">&#9789;</button>
 
-    <!-- QUICK STATS -->
-    <div class="stats-row">
-        <div class="card stat-card stat-card--indigo">
-            <div class="stat-card__header">
-                <i data-lucide="file-text" class="stat-card__icon"></i>
-                <span class="stat-label">Total Notes</span>
-            </div>
-            <div class="stat-value" id="statNotes">--</div>
-            <div class="stat-sub" id="statNotesSub"></div>
-            <div class="sparkline-container">
-                <canvas id="sparklineCanvas"></canvas>
-                <div class="sparkline-label">7-day vault growth</div>
-            </div>
-        </div>
-        <div class="card stat-card stat-card--cyan">
-            <div class="stat-card__header">
-                <i data-lucide="search" class="stat-card__icon"></i>
-                <span class="stat-label">Chunks Indexed</span>
-            </div>
-            <div class="stat-value" id="statChunks">--</div>
-            <div class="stat-sub">RAG search index</div>
-            <button class="btn-reindex" id="reindexBtn" onclick="triggerReindex()" title="Rebuild the RAG search index"><i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex</button>
-        </div>
-        <div class="card stat-card stat-card--amber">
-            <div class="stat-card__header">
-                <i data-lucide="message-circle" class="stat-card__icon"></i>
-                <span class="stat-label">Questions Answered</span>
-            </div>
-            <div class="stat-value" id="statQuestions">--</div>
-            <div class="stat-sub">Vault conversations</div>
-        </div>
-        <div class="card stat-card stat-card--green">
-            <div class="stat-card__header">
-                <i data-lucide="inbox" class="stat-card__icon"></i>
-                <span class="stat-label">Ingested Today</span>
-            </div>
-            <div class="stat-value" id="statToday">--</div>
-            <div class="stat-sub">New notes processed</div>
-        </div>
-    </div>
-
-    <!-- KNOWLEDGE GRAPH 3D (hero position) -->
+    <!-- KNOWLEDGE GRAPH 3D (hero position #2) -->
     <div class="card graph-hero-card" style="margin-bottom: 20px;">
         <div class="card-title">
             <i data-lucide="network" class="icon"></i> Knowledge Graph
@@ -2017,6 +1976,47 @@
         <div id="graphFullscreenContainer" class="graph-fullscreen-container"></div>
         <div class="graph-fullscreen-legend" id="graphFullscreenLegend"></div>
         <div id="graphFullscreenTooltip" class="graph-tooltip"></div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="stats-row">
+        <div class="card stat-card stat-card--indigo">
+            <div class="stat-card__header">
+                <i data-lucide="file-text" class="stat-card__icon"></i>
+                <span class="stat-label">Total Notes</span>
+            </div>
+            <div class="stat-value" id="statNotes">--</div>
+            <div class="stat-sub" id="statNotesSub"></div>
+            <div class="sparkline-container">
+                <canvas id="sparklineCanvas"></canvas>
+                <div class="sparkline-label">7-day vault growth</div>
+            </div>
+        </div>
+        <div class="card stat-card stat-card--cyan">
+            <div class="stat-card__header">
+                <i data-lucide="search" class="stat-card__icon"></i>
+                <span class="stat-label">Chunks Indexed</span>
+            </div>
+            <div class="stat-value" id="statChunks">--</div>
+            <div class="stat-sub">RAG search index</div>
+            <button class="btn-reindex" id="reindexBtn" onclick="triggerReindex()" title="Rebuild the RAG search index"><i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex</button>
+        </div>
+        <div class="card stat-card stat-card--amber">
+            <div class="stat-card__header">
+                <i data-lucide="message-circle" class="stat-card__icon"></i>
+                <span class="stat-label">Questions Answered</span>
+            </div>
+            <div class="stat-value" id="statQuestions">--</div>
+            <div class="stat-sub">Vault conversations</div>
+        </div>
+        <div class="card stat-card stat-card--green">
+            <div class="stat-card__header">
+                <i data-lucide="inbox" class="stat-card__icon"></i>
+                <span class="stat-label">Ingested Today</span>
+            </div>
+            <div class="stat-value" id="statToday">--</div>
+            <div class="stat-sub">New notes processed</div>
+        </div>
     </div>
 
     <!-- ROW: VAULT STRUCTURE + ACTIVITY -->
