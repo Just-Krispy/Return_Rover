@@ -2024,7 +2024,7 @@
         <h3><i data-lucide="settings" style="width:18px;height:18px"></i> Dashboard Settings</h3>
         <div style="margin-bottom:16px">
             <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">API Gateway URL</label>
-            <input type="text" class="ask-input" id="settingsGateway" style="width:100%;font-size:13px" placeholder="http://100.103.26.21:8888">
+            <input type="text" class="ask-input" id="settingsGateway" style="width:100%;font-size:13px" placeholder="http://your-gateway:port">
         </div>
         <div style="margin-bottom:16px">
             <label style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Refresh Interval (seconds)</label>
@@ -2073,7 +2073,7 @@
 // =============================================
 //  CONFIGURATION
 // =============================================
-const DEFAULT_GATEWAY = 'http://100.103.26.21:8888';
+const DEFAULT_GATEWAY = '';
 let API_GATEWAY = localStorage.getItem('brain-api-gateway') || DEFAULT_GATEWAY;
 const FETCH_TIMEOUT = 5000;
 let REFRESH_INTERVAL = parseInt(localStorage.getItem('brain-refresh-interval') || '60') * 1000;
