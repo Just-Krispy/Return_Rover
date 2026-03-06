@@ -2528,9 +2528,11 @@ async function loadVaultQuality() {
         const bottom = document.getElementById('qualityBottomList');
         if (bottom && d.bottom_20) {
             bottom.innerHTML = '<div style="font-weight:600;margin-bottom:6px;color:var(--text-tertiary)">Lowest Quality Notes:</div>' +
-                d.bottom_20.slice(0, 8).map(n =>
-                    `<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border-subtle)"><span>${n.title || n.file}</span><span style="color:var(--accent-red);font-weight:600">${n.score}</span></div>`
-                ).join('');
+                d.bottom_20.slice(0, 8).map(n => {
+                    const name = (n.file || '').split('/').pop().replace('.md','');
+                    const issues = (n.issues || []).slice(0,2).join(', ');
+                    return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border-subtle)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${issues}">${name}</span><span style="color:var(--accent-red);font-weight:600;margin-left:8px">${n.score}</span></div>`;
+                }).join('');
         }
     } catch(e) { /* keep placeholder */ }
 }
@@ -2564,10 +2566,10 @@ async function loadVaultQuality() {
             const gResp = await fetch(`${API_GATEWAY}/api/graph/graph`, {signal: AbortSignal.timeout(10000)});
             const gData = await gResp.json();
             if (gData.nodes && gData.nodes.length > 0) {
-                // Cap at 70 nodes for smooth 3D performance
-                if (gData.nodes.length > 70) {
+                // Cap at 250 nodes for smooth 3D performance (pre-baked layout handles it)
+                if (gData.nodes.length > 250) {
                     const sorted = [...gData.nodes].sort((a, b) => (b.connections || 0) - (a.connections || 0));
-                    const topNodes = sorted.slice(0, 70);
+                    const topNodes = sorted.slice(0, 150);
                     const nodeIds = new Set(topNodes.map(n => n.id));
                     const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
                     initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats, communities: gData.communities });
