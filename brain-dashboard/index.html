@@ -262,6 +262,34 @@
             flex-shrink: 0;
         }
 
+        /* ---- KNOWLEDGE GRAPH TITLE ---- */
+        .graph-card-title {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(99,102,241,0.12);
+        }
+        .graph-title-glow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            color: #a78bfa;
+            text-shadow: 0 0 8px rgba(167,139,250,0.4), 0 0 16px rgba(167,139,250,0.15);
+        }
+        .graph-title-glow .icon {
+            color: #a78bfa;
+            filter: drop-shadow(0 0 4px rgba(167,139,250,0.5));
+        }
+        [data-theme="light"] .graph-title-glow {
+            color: #6d5fbd;
+            text-shadow: 0 0 6px rgba(109,95,189,0.2);
+        }
+        [data-theme="light"] .graph-card-title {
+            border-bottom-color: rgba(99,102,241,0.15);
+        }
+
         /* ---- STAT CARDS ---- */
         .stats-row {
             display: grid;
@@ -2141,8 +2169,11 @@
 
     <!-- KNOWLEDGE GRAPH 3D (hero position #2) -->
     <div class="card card--hero graph-hero-card" id="sec-graph" style="margin-bottom: 20px;">
-        <div class="card-title">
-            <i data-lucide="network" class="icon"></i> Knowledge Graph
+        <div class="card-title graph-card-title">
+            <span class="graph-title-glow">
+                <i data-lucide="network" class="icon"></i>
+                <span>Knowledge Graph</span>
+            </span>
             <span id="graphStats" class="graph-stats-label" style="display:none"></span>
             <button class="graph-expand-btn" onclick="openGraphFullscreen()" title="Expand to fullscreen">
                 <i data-lucide="maximize-2" style="width:14px;height:14px"></i>
