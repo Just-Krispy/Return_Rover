@@ -539,6 +539,52 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        .chat-history {
+            max-height: 240px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .chat-history:empty { display: none; }
+        .chat-bubble {
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 90%;
+        }
+        .chat-bubble.user {
+            background: var(--accent-indigo);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.assistant {
+            background: var(--bg-inset);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-bubble.assistant .sources {
+            margin-top: 6px;
+            font-size: 11px;
+        }
+        .chat-bubble.assistant .sources span {
+            cursor: pointer;
+            display: inline-block;
+            background: rgba(129,140,248,0.1);
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin: 2px 3px 2px 0;
+            color: var(--accent-indigo);
+            font-weight: 500;
+        }
+        .chat-bubble.assistant .sources span:hover {
+            background: rgba(129,140,248,0.2);
+        }
         .ask-result {
             background: var(--bg-inset);
             border: 1px solid var(--border-subtle);
@@ -1652,6 +1698,7 @@
                 <input type="text" class="ask-input" id="askInput" placeholder="Ask your second brain anything..." onkeydown="if(event.key==='Enter')askVault()">
                 <button class="btn-primary" id="askBtn" onclick="askVault()">Ask</button>
             </div>
+            <div class="chat-history" id="chatHistory"></div>
             <div class="ask-result" id="askResult">
                 <div class="demo-notice" id="askPlaceholder">
                     Type a question to search your vault using conversational RAG.
@@ -1778,9 +1825,15 @@
 
         <!-- AUTOMATION STATUS -->
         <div class="card">
-            <div class="card-title"><i data-lucide="workflow" class="icon"></i> Automation Workflows (n8n)</div>
+            <div class="card-title"><i data-lucide="workflow" class="icon"></i> Automation Workflows (n8n) <span id="workflowCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
             <div class="workflow-list" id="workflowList"></div>
         </div>
+    </div>
+
+    <!-- TAG CLOUD -->
+    <div class="card" style="margin-top:0">
+        <div class="card-title"><i data-lucide="tags" class="icon"></i> Knowledge Tags <span id="tagCloudCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
+        <div id="tagCloudContainer" style="display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;min-height:40px;padding:4px 0"></div>
     </div>
 
 </div>
@@ -1846,7 +1899,9 @@ function resetChatSession() {
     chatSessionId = generateSessionId();
     chatTurnCount = 0;
     document.getElementById('chatTurnCount').textContent = '0';
+    document.getElementById('chatHistory').innerHTML = '';
     document.getElementById('askResult').innerHTML = '<div class="demo-notice">New conversation started. Ask your second brain anything.</div>';
+    document.getElementById('askResult').style.display = '';
     document.getElementById('askInput').value = '';
     document.getElementById('askInput').focus();
 }
@@ -2304,17 +2359,49 @@ function renderHealth(services) {
     });
 }
 
-function renderWorkflows(workflows) {
+function renderWorkflows(workflows, count, n8nStatus) {
     const container = document.getElementById('workflowList');
+    const countEl = document.getElementById('workflowCount');
     container.innerHTML = '';
+    if (countEl && count) countEl.textContent = `(${count} workflows${n8nStatus ? ' \u2022 n8n ' + n8nStatus : ''})`;
     workflows.forEach(wf => {
         const el = document.createElement('div');
         el.className = 'workflow-item';
         el.innerHTML = `
-            <span class="workflow-name" title="${wf.name}">${wf.name}</span>
-            <span class="workflow-schedule">${wf.schedule}</span>
+            <span class="workflow-name" title="${escapeHtml(wf.name)}">${escapeHtml(wf.name)}</span>
+            ${wf.schedule ? `<span class="workflow-schedule">${escapeHtml(wf.schedule)}</span>` : ''}
             <span class="workflow-status ${wf.status}">${wf.status}</span>
         `;
+        container.appendChild(el);
+    });
+}
+
+function renderTagCloud(tags, uniqueCount) {
+    const container = document.getElementById('tagCloudContainer');
+    const countEl = document.getElementById('tagCloudCount');
+    if (!container || !tags || !tags.length) return;
+    if (countEl) countEl.textContent = `(${uniqueCount || tags.length} unique)`;
+    const NOISE_TAGS = new Set(['auto-ingest', 'rss', 'auto-generated']);
+    const filtered = tags.filter(t => !NOISE_TAGS.has(t.tag));
+    if (!filtered.length) return;
+    const maxCount = filtered[0].count;
+    const minCount = filtered[filtered.length - 1].count;
+    const range = maxCount - minCount || 1;
+    container.innerHTML = '';
+    filtered.slice(0, 30).forEach(t => {
+        const size = 11 + ((t.count - minCount) / range) * 8;
+        const opacity = 0.5 + ((t.count - minCount) / range) * 0.5;
+        const el = document.createElement('span');
+        el.style.cssText = `font-size:${size}px;opacity:${opacity};color:var(--accent-indigo);cursor:pointer;transition:opacity .15s;white-space:nowrap`;
+        el.textContent = '#' + t.tag;
+        el.title = `${t.count} notes`;
+        el.onmouseenter = () => el.style.opacity = '1';
+        el.onmouseleave = () => el.style.opacity = String(opacity);
+        el.onclick = () => {
+            document.getElementById('searchInput').value = '#' + t.tag;
+            document.getElementById('searchInput').focus();
+            if (typeof doSearch === 'function') doSearch();
+        };
         container.appendChild(el);
     });
 }
@@ -2334,6 +2421,31 @@ function timeAgo(date) {
 // =============================================
 //  ASK THE VAULT
 // =============================================
+function addChatBubble(type, content, sources) {
+    const history = document.getElementById('chatHistory');
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${type}`;
+    if (type === 'user') {
+        bubble.textContent = content;
+    } else {
+        bubble.innerHTML = escapeHtml(content);
+        if (sources && sources.length > 0) {
+            const srcDiv = document.createElement('div');
+            srcDiv.className = 'sources';
+            srcDiv.textContent = 'Sources: ';
+            sources.forEach(s => {
+                const span = document.createElement('span');
+                span.textContent = s.split('/').pop().replace('.md', '');
+                span.addEventListener('click', () => openNotePreview(s, span.textContent));
+                srcDiv.appendChild(span);
+            });
+            bubble.appendChild(srcDiv);
+        }
+    }
+    history.appendChild(bubble);
+    history.scrollTop = history.scrollHeight;
+}
+
 async function askVault() {
     const input = document.getElementById('askInput');
     const resultDiv = document.getElementById('askResult');
@@ -2343,29 +2455,26 @@ async function askVault() {
 
     chatTurnCount++;
     document.getElementById('chatTurnCount').textContent = chatTurnCount;
+    addChatBubble('user', q);
+    input.value = '';
 
     if (!isLive) {
-        // Demo mode: cycle through demo responses
         const demo = DEMO.chatHistory[(chatTurnCount - 1) % DEMO.chatHistory.length];
-        resultDiv.innerHTML = `
-            <div class="answer">${escapeHtml(demo.a)}</div>
-            <div class="sources">Sources: ${demo.sources.map(s => `<span>${escapeHtml(s)}</span>`).join('')}</div>
-        `;
-        input.value = '';
+        addChatBubble('assistant', demo.a, demo.sources);
+        resultDiv.style.display = 'none';
         return;
     }
 
     btn.disabled = true;
     resultDiv.innerHTML = '<span class="spinner"></span> Thinking...';
+    resultDiv.style.display = '';
 
     try {
         const data = await apiFetch(`${API_GATEWAY}/api/chat/chat?q=${encodeURIComponent(q)}&session=${encodeURIComponent(chatSessionId)}`);
         if (data && data.answer) {
             const sourceNames = (data.sources || []).map(s => typeof s === 'string' ? s : s.file);
-            resultDiv.innerHTML = `
-                <div class="answer">${escapeHtml(data.answer)}</div>
-                ${sourceNames.length ? `<div class="sources">Sources: ${sourceNames.map(s => `<span>${escapeHtml(s)}</span>`).join('')}</div>` : ''}
-            `;
+            addChatBubble('assistant', data.answer, sourceNames);
+            resultDiv.style.display = 'none';
         } else {
             resultDiv.innerHTML = '<div class="demo-notice">No answer returned. Try a different question.</div>';
         }
@@ -2373,7 +2482,6 @@ async function askVault() {
         resultDiv.innerHTML = `<div class="demo-notice" style="color:var(--accent-red)">Error: ${escapeHtml(err.message)}</div>`;
     }
     btn.disabled = false;
-    input.value = '';
 }
 
 // =============================================
@@ -2427,7 +2535,7 @@ async function fetchLiveData() {
     const data = JSON.parse(JSON.stringify(DEMO)); // Start with demo as base
 
     try {
-        const [health, ragStats, chatStats, chatHistory, bmStats, graphData, vaultGrowth, vaultActivity, vaultNotesList] = await Promise.allSettled([
+        const [health, ragStats, chatStats, chatHistory, bmStats, graphData, vaultGrowth, vaultActivity, vaultNotesList, liveWorkflows, vaultTags] = await Promise.allSettled([
             apiFetch(`${API_GATEWAY}/api/health`),
             apiFetch(`${API_GATEWAY}/api/rag/stats`),
             apiFetch(`${API_GATEWAY}/api/chat/stats`),
@@ -2436,7 +2544,9 @@ async function fetchLiveData() {
             apiFetch(`${API_GATEWAY}/api/graph/graph`),
             apiFetch(`${API_GATEWAY}/api/stats/growth?days=7`),
             apiFetch(`${API_GATEWAY}/api/stats/activity?n=20`),
-            apiFetch(`${API_GATEWAY}/api/notes/list?folder=all`)
+            apiFetch(`${API_GATEWAY}/api/notes/list?folder=all`),
+            apiFetch(`${API_GATEWAY}/api/health/workflows`),
+            apiFetch(`${API_GATEWAY}/api/health/vault-tags`)
         ]);
 
         // Health: {"gateway":"running","disk":"17%","memory":"12%","load":"0.06","n8n":"Up 15 minutes"}
@@ -2548,6 +2658,23 @@ async function fetchLiveData() {
                     data.vaultStructure[f].count = folderCounts[f];
                 }
             });
+        }
+
+        // Live n8n workflows
+        if (liveWorkflows.status === 'fulfilled' && liveWorkflows.value && liveWorkflows.value.workflows) {
+            data.workflows = liveWorkflows.value.workflows.map(wf => ({
+                name: wf.name,
+                schedule: '',
+                status: wf.active ? 'active' : 'idle'
+            }));
+            data._workflowCount = liveWorkflows.value.count;
+            data._n8nStatus = liveWorkflows.value.n8n_status;
+        }
+
+        // Vault tag cloud
+        if (vaultTags.status === 'fulfilled' && vaultTags.value && vaultTags.value.top_tags) {
+            data._tagCloud = vaultTags.value.top_tags;
+            data._uniqueTags = vaultTags.value.unique_tags;
         }
 
         // Build live service health by checking what data we got back
@@ -3300,14 +3427,22 @@ async function searchVault() {
     try {
         const data = await apiFetch(`${API_GATEWAY}/api/rag/search?q=${encodeURIComponent(q)}&n=8`);
         if (data && data.results && data.results.length > 0) {
-            container.innerHTML = data.results.map(r => `
-                <div class="search-result-item" onclick="openNotePreview('${escapeHtml(r.file)}')" style="cursor:pointer" title="Click to preview note">
-                    <div class="search-result-title">${escapeHtml(r.file.split('/').pop())}</div>
+            container.innerHTML = '';
+            data.results.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.style.cursor = 'pointer';
+                div.title = 'Click to preview note';
+                const fileName = r.file.split('/').pop().replace('.md', '');
+                div.innerHTML = `
+                    <div class="search-result-title">${escapeHtml(fileName)}</div>
                     <div class="search-result-folder">${escapeHtml(r.folder || r.file.split('/')[0])}</div>
-                    ${r.snippet ? `<div class="search-result-snippet">${escapeHtml(r.snippet)}</div>` : ''}
+                    ${r.snippet ? `<div class="search-result-snippet">${escapeHtml(r.snippet.substring(0, 200))}</div>` : ''}
                     <div class="search-result-sim">similarity: ${(r.similarity || 0).toFixed(3)}${r.section ? ' · ' + escapeHtml(r.section) : ''}</div>
-                </div>
-            `).join('');
+                `;
+                div.addEventListener('click', () => openNotePreview(r.file, fileName));
+                container.appendChild(div);
+            });
         } else {
             container.innerHTML = '<div class="search-empty">No results found. Try different keywords.</div>';
         }
