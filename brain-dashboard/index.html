@@ -770,7 +770,7 @@
             height: min(520px, 65vh);
             position: relative;
             border-radius: var(--radius-md);
-            background: #07090f;
+            background: linear-gradient(135deg, #0a0a1a 0%, #0d1025 50%, #0a0a1a 100%);
             overflow: hidden;
         }
         .graph-container canvas {
@@ -780,6 +780,15 @@
             cursor: grab;
         }
         .graph-container canvas:active { cursor: grabbing; }
+
+        /* Sparkle overlay canvas */
+        .sparkle-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
         .graph-tooltip {
             display: none;
             position: absolute;
@@ -836,8 +845,13 @@
 
         /* ---- GRAPH HERO + FULLSCREEN ---- */
         .graph-hero-card {
-            border: 1px solid rgba(99,102,241,0.15);
-            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(99,102,241,0.03) 100%);
+            border: 1px solid rgba(99,102,241,0.25);
+            background: linear-gradient(135deg, var(--bg-surface) 0%, rgba(99,102,241,0.06) 50%, rgba(168,85,247,0.04) 100%);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .graph-hero-card:hover {
+            border-color: rgba(99,102,241,0.4);
+            box-shadow: 0 0 30px rgba(99,102,241,0.08);
         }
         .graph-expand-btn {
             margin-left: auto;
@@ -1753,10 +1767,12 @@
             </button>
         </div>
         <div id="graphContainer" class="graph-container">
+            <canvas id="sparkleCanvas" class="sparkle-canvas"></canvas>
             <div id="graphTooltip" class="graph-tooltip"></div>
             <div class="graph-controls">
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
+                <button class="graph-btn" onclick="graphShakeAll()" title="Shake it up!" style="font-size:16px">🎉</button>
             </div>
         </div>
         <div class="graph-legend" id="graphLegend">
@@ -3244,10 +3260,102 @@ const DEMO_GRAPH = {
 let g3 = {}; // all Three.js state in one object
 let hoveredNode = null;
 
+// ---- PLAYFUL COLORS (bright, cheerful) ----
+const PLAYFUL_COLORS = [
+    '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bff',
+    '#ff9f43', '#00d2d3', '#a29bfe', '#fd79a8', '#55efc4',
+    '#74b9ff', '#e17055', '#00cec9', '#fdcb6e', '#e056fd'
+];
+
+// ---- EMOJI ICONS by tag/folder ----
+const NODE_EMOJIS = {
+    'podcast': '🎙️', 'ai': '🤖', 'research': '🔬', 'neuroscience': '🧠',
+    'cybersecurity': '🛡️', 'security': '🔒', 'productivity': '⚡',
+    'education': '📚', 'infrastructure': '⚙️', 'synthesis': '🔮',
+    'business': '💼', 'agriculture': '🌾', 'startups': '🚀',
+    'Resources': '📦', 'Areas': '🗂️', 'Projects': '🎯', 'Inbox': '📥'
+};
+
+function getNodeEmoji(node) {
+    for (const tag of (node.tags || [])) {
+        if (NODE_EMOJIS[tag]) return NODE_EMOJIS[tag];
+    }
+    return NODE_EMOJIS[node.folder] || '✨';
+}
+
+// ---- SPARKLE SYSTEM ----
+const sparkles = [];
+function spawnSparkles(x, y, count, canvas2d) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3;
+        const hue = Math.random() * 360;
+        sparkles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.0,
+            decay: 0.015 + Math.random() * 0.025,
+            size: 2 + Math.random() * 4,
+            color: `hsl(${hue}, 100%, 70%)`,
+            shape: Math.random() > 0.5 ? 'star' : 'circle'
+        });
+    }
+}
+
+function updateSparkles(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+        const s = sparkles[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 0.05; // gravity
+        s.life -= s.decay;
+        if (s.life <= 0) { sparkles.splice(i, 1); continue; }
+        ctx.globalAlpha = s.life;
+        ctx.fillStyle = s.color;
+        if (s.shape === 'star') {
+            drawStar(ctx, s.x, s.y, 4, s.size, s.size * 0.4);
+        } else {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.globalAlpha = 1;
+}
+
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+    let rot = Math.PI / 2 * 3;
+    const step = Math.PI / spikes;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerR);
+    for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+    }
+    ctx.lineTo(cx, cy - outerR);
+    ctx.closePath();
+    ctx.fill();
+}
+
+let g3ShakeAll = null; // global ref for shake button
+
 function initGraph(data) {
     const graph = data || DEMO_GRAPH;
     const container = document.getElementById('graphContainer');
     if (!container || typeof THREE === 'undefined') return;
+
+    // Setup sparkle overlay
+    const sparkleCanvas = document.getElementById('sparkleCanvas');
+    let sparkleCtx = null;
+    if (sparkleCanvas) {
+        sparkleCanvas.width = container.clientWidth;
+        sparkleCanvas.height = container.clientHeight;
+        sparkleCtx = sparkleCanvas.getContext('2d');
+    }
 
     // Stats label
     const stats = graph.stats || {};
@@ -3278,7 +3386,7 @@ function initGraph(data) {
             }).join('');
         }
         legendEl.innerHTML = legendItems +
-            '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click legend to filter &middot; drag to orbit &middot; scroll to zoom</span>';
+            '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click for sparkles ✨ drag to orbit · scroll to zoom · shake 🎉</span>';
     }
 
     // Clean up previous
@@ -3294,7 +3402,7 @@ function initGraph(data) {
     // Scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x07090f);
-    scene.fog = new THREE.FogExp2(0x07090f, 0.0018);
+    scene.fog = new THREE.FogExp2(0x07090f, 0.0014);
 
     // Camera
     const camera = new THREE.PerspectiveCamera(50, W / H, 1, 2000);
@@ -3306,24 +3414,32 @@ function initGraph(data) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.insertBefore(renderer.domElement, container.firstChild);
 
-    // -- Lights --
-    scene.add(new THREE.AmbientLight(0x334155, 0.6));
-    const pointLight = new THREE.PointLight(0x818cf8, 0.8, 600);
+    // -- Lights (brighter, more colorful) --
+    scene.add(new THREE.AmbientLight(0x445577, 0.8));
+    const pointLight = new THREE.PointLight(0xa78bfa, 1.0, 800);
     pointLight.position.set(0, 100, 100);
     scene.add(pointLight);
+    const pointLight2 = new THREE.PointLight(0xfb7185, 0.5, 600);
+    pointLight2.position.set(-100, -50, 80);
+    scene.add(pointLight2);
 
-    // -- Starfield --
+    // -- Starfield (brighter, twinkle) --
     const starGeo = new THREE.BufferGeometry();
-    const starPos = new Float32Array(800 * 3);
-    for (let i = 0; i < 800; i++) {
+    const starCount = 1000;
+    const starPos = new Float32Array(starCount * 3);
+    const starSizes = new Float32Array(starCount);
+    for (let i = 0; i < starCount; i++) {
         starPos[i*3]     = (Math.random() - 0.5) * 1400;
         starPos[i*3 + 1] = (Math.random() - 0.5) * 1400;
         starPos[i*3 + 2] = (Math.random() - 0.5) * 1400;
+        starSizes[i] = 0.8 + Math.random() * 2.0;
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
-        color: 0x1e293b, size: 1.2, transparent: true, opacity: 0.6
-    })));
+    const starMat = new THREE.PointsMaterial({
+        color: 0x4466aa, size: 1.5, transparent: true, opacity: 0.7
+    });
+    const starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
 
     // -- Build community color map from graph data --
     const communityMap = {};
@@ -3351,9 +3467,22 @@ function initGraph(data) {
             z: r * Math.cos(phi),
             vx: 0, vy: 0, vz: 0
         };
-        const nodeColor = communityMap[n.id] || GRAPH_COLORS[n.folder] || GRAPH_COLORS.root;
+        // Use playful colors instead of muted ones
+        let nodeColor = communityMap[n.id] || GRAPH_COLORS[n.folder] || GRAPH_COLORS.root;
+        if (!communityMap[n.id]) {
+            nodeColor = PLAYFUL_COLORS[i % PLAYFUL_COLORS.length];
+        }
         const nd = { ...n, ...pos, color: nodeColor,
-            radius: Math.max(1.5, Math.min(5, (n.connections || 1) * 0.35)) };
+            radius: Math.max(2.5, Math.min(6, (n.connections || 1) * 0.5)),
+            // Playful physics
+            _baseY: 0, _floatOffset: Math.random() * Math.PI * 2,
+            _floatSpeed: 0.3 + Math.random() * 0.5,
+            _floatAmp: 1.5 + Math.random() * 2.5,
+            _bounceVel: 0, _bouncePos: 0,
+            _wiggle: 0, _wiggleDecay: 0,
+            _scaleTarget: 1, _scale: 1,
+            _emoji: getNodeEmoji(n)
+        };
         nodeMap[n.id] = nd;
         return nd;
     });
@@ -3400,36 +3529,63 @@ function initGraph(data) {
         });
     }
 
-    // -- Create node meshes --
+    // Save base Y for floating animation
+    nodes3d.forEach(n => { n._baseY = n.y; });
+
+    // -- Create node meshes (bigger, bouncier) --
     const nodeMeshes = [];
     const glowMat = new THREE.SpriteMaterial({
         map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
     });
 
+    // Create emoji texture for sprite labels
+    function createEmojiTexture(emoji) {
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        const ctx = c.getContext('2d');
+        ctx.font = '48px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, 32, 36);
+        return new THREE.CanvasTexture(c);
+    }
+
     nodes3d.forEach(n => {
         const color = new THREE.Color(n.color);
-        // Sphere
-        const geo = new THREE.SphereGeometry(n.radius, 16, 12);
-        const mat = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.4, transparent: true, opacity: 0.9 });
+        // Sphere (slightly bigger for playfulness)
+        const geo = new THREE.SphereGeometry(n.radius, 20, 14);
+        const mat = new THREE.MeshPhongMaterial({
+            color, emissive: color, emissiveIntensity: 0.5,
+            transparent: true, opacity: 0.92, shininess: 80
+        });
         const mesh = new THREE.Mesh(geo, mat);
         mesh.position.set(n.x, n.y, n.z);
         mesh.userData = n;
         scene.add(mesh);
         nodeMeshes.push(mesh);
 
-        // Glow sprite
+        // Glow sprite (bigger, more vibrant)
         const glow = new THREE.Sprite(glowMat.clone());
         glow.material.color = color;
-        glow.material.opacity = 0.25;
-        glow.scale.set(n.radius * 5, n.radius * 5, 1);
+        glow.material.opacity = 0.35;
+        glow.scale.set(n.radius * 6, n.radius * 6, 1);
         glow.position.copy(mesh.position);
         scene.add(glow);
         mesh.userData._glow = glow;
+
+        // Emoji sprite floating above node
+        const emojiTex = createEmojiTexture(n._emoji);
+        const emojiMat = new THREE.SpriteMaterial({ map: emojiTex, transparent: true, depthWrite: false });
+        const emojiSprite = new THREE.Sprite(emojiMat);
+        emojiSprite.scale.set(n.radius * 2.5, n.radius * 2.5, 1);
+        emojiSprite.position.set(n.x, n.y + n.radius + 3, n.z);
+        scene.add(emojiSprite);
+        mesh.userData._emojiSprite = emojiSprite;
     });
 
-    // -- Create edge lines --
+    // -- Create edge lines (more colorful) --
     const edgeTypeColors = {
-        wikilink: 0x60a5fa, mention: 0x34d399, semantic: 0xf472b6, shared_tags: 0x1e293b
+        wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: 0x2d3561
     };
     const lineMeshes = [];
     edges3d.forEach(e => {
@@ -3438,7 +3594,7 @@ function initGraph(data) {
             new THREE.Vector3(e.target.x, e.target.y, e.target.z)
         ]);
         const c = edgeTypeColors[e.type] || edgeTypeColors.shared_tags;
-        const opacity = e.type === 'shared_tags' ? 0.08 : (e.type === 'wikilink' ? 0.5 : 0.35);
+        const opacity = e.type === 'shared_tags' ? 0.12 : (e.type === 'wikilink' ? 0.6 : 0.45);
         const mat = new THREE.LineBasicMaterial({ color: c, transparent: true, opacity, depthWrite: false });
         const line = new THREE.Line(geo, mat);
         line.userData = e;
@@ -3454,14 +3610,13 @@ function initGraph(data) {
     let autoRotate = true;
     let isDragging = false, lastMouse = {x:0,y:0};
     hoveredNode = null;
+    let clickCount = {}; // track clicks per node for easter eggs
 
     function updateCamera() {
-        // Smooth interpolation (Google Earth feel)
         orbitTheta += (targetTheta - orbitTheta) * 0.08;
         orbitPhi += (targetPhi - orbitPhi) * 0.08;
         orbitDist += (targetDist - orbitDist) * 0.06;
         currentLookAt.lerp(targetLookAt, 0.06);
-        // Clamp phi
         orbitPhi = Math.max(0.1, Math.min(Math.PI - 0.1, orbitPhi));
         orbitDist = Math.max(40, Math.min(800, orbitDist));
 
@@ -3472,6 +3627,77 @@ function initGraph(data) {
         );
         camera.lookAt(currentLookAt);
     }
+
+    // -- Playful node physics update --
+    function updatePlayfulNodes(time) {
+        nodeMeshes.forEach(m => {
+            const nd = m.userData;
+            // Gentle floating motion
+            const floatY = Math.sin(time * nd._floatSpeed + nd._floatOffset) * nd._floatAmp;
+            // Bounce physics (spring)
+            nd._bounceVel += (-nd._bouncePos) * 0.15; // spring force
+            nd._bounceVel *= 0.85; // damping
+            nd._bouncePos += nd._bounceVel;
+            // Wiggle decay
+            nd._wiggle *= 0.92;
+            const wiggleX = Math.sin(time * 15) * nd._wiggle;
+            const wiggleZ = Math.cos(time * 15) * nd._wiggle;
+            // Apply position
+            m.position.y = nd._baseY + floatY + nd._bouncePos;
+            m.position.x = nd.x + wiggleX;
+            m.position.z = nd.z + wiggleZ;
+            // Smooth scale (for hover pop)
+            nd._scale += (nd._scaleTarget - nd._scale) * 0.12;
+            m.scale.setScalar(nd._scale);
+            // Update glow + emoji positions
+            if (nd._glow) {
+                nd._glow.position.copy(m.position);
+                nd._glow.scale.set(nd.radius * 6 * nd._scale, nd.radius * 6 * nd._scale, 1);
+            }
+            if (nd._emojiSprite) {
+                nd._emojiSprite.position.set(m.position.x, m.position.y + nd.radius * nd._scale + 3, m.position.z);
+                nd._emojiSprite.scale.set(nd.radius * 2.5 * nd._scale, nd.radius * 2.5 * nd._scale, 1);
+            }
+        });
+        // Update edge positions to follow floating nodes
+        lineMeshes.forEach(l => {
+            const e = l.userData;
+            const srcMesh = nodeMeshes.find(m => m.userData.id === e.source.id);
+            const tgtMesh = nodeMeshes.find(m => m.userData.id === e.target.id);
+            if (srcMesh && tgtMesh) {
+                const positions = l.geometry.attributes.position;
+                positions.setXYZ(0, srcMesh.position.x, srcMesh.position.y, srcMesh.position.z);
+                positions.setXYZ(1, tgtMesh.position.x, tgtMesh.position.y, tgtMesh.position.z);
+                positions.needsUpdate = true;
+            }
+        });
+        // Twinkle starfield
+        starMat.opacity = 0.5 + Math.sin(time * 0.5) * 0.2;
+    }
+
+    // Bounce a node (called on click)
+    function bounceNode(nd) {
+        nd._bounceVel = 8;
+        nd._wiggle = 2;
+    }
+
+    // Shake ALL nodes (party mode / easter egg)
+    function shakeAllNodes() {
+        nodes3d.forEach(n => {
+            n._bounceVel = 5 + Math.random() * 10;
+            n._wiggle = 2 + Math.random() * 3;
+        });
+        // Big sparkle burst in center
+        if (sparkleCtx) {
+            const cx = sparkleCanvas.width / 2;
+            const cy = sparkleCanvas.height / 2;
+            spawnSparkles(cx, cy, 60, sparkleCtx);
+            for (let i = 0; i < 5; i++) {
+                spawnSparkles(cx + (Math.random()-0.5) * 300, cy + (Math.random()-0.5) * 200, 20, sparkleCtx);
+            }
+        }
+    }
+    g3ShakeAll = shakeAllNodes;
 
     // Mouse/touch handlers
     const canvas = renderer.domElement;
@@ -3488,7 +3714,6 @@ function initGraph(data) {
             targetPhi += dy * 0.005;
             lastMouse = {x: e.clientX, y: e.clientY};
         } else {
-            // Raycast for hover tooltip
             const rect = canvas.getBoundingClientRect();
             const mouse = new THREE.Vector2(
                 ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -3503,51 +3728,58 @@ function initGraph(data) {
                 const nd = hits[0].object.userData;
                 hoveredNode = nd;
                 canvas.style.cursor = 'pointer';
+                // Pop scale on hover
+                nd._scaleTarget = 1.3;
                 tooltip.style.display = 'block';
                 tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
                 tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
                 const tags = (nd.tags || []).slice(0, 5).map(t => `<span class="tt-tag">${t}</span>`).join('');
-                tooltip.innerHTML = `<strong>${nd.id}</strong>
+                tooltip.innerHTML = `<span style="font-size:16px;margin-right:4px">${nd._emoji}</span><strong>${nd.id}</strong>
                     <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
                     <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
                     ${tags ? '<div class="tt-tags">' + tags + '</div>' : ''}
-                    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Click to zoom &middot; Double-click to preview</div>`;
+                    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Click to bounce ✨ Double-click to preview</div>`;
                 // Highlight connected edges
                 lineMeshes.forEach(l => {
                     const le = l.userData;
                     if (le.source.id === nd.id || le.target.id === nd.id) {
-                        l.material.opacity = 0.7;
-                        l.material.color.set(edgeTypeColors[le.type] || 0x60a5fa);
+                        l.material.opacity = 0.8;
+                        l.material.color.set(edgeTypeColors[le.type] || 0x74b9ff);
                     } else {
-                        l.material.opacity = 0.02;
+                        l.material.opacity = 0.03;
                     }
                 });
                 nodeMeshes.forEach(m => {
                     const mn = m.userData;
                     if (mn.id === nd.id || nd._neighbors.has(mn.id)) {
                         m.material.opacity = 1;
-                        m.material.emissiveIntensity = mn.id === nd.id ? 0.9 : 0.6;
-                        if (m.userData._glow) m.userData._glow.material.opacity = 0.45;
+                        m.material.emissiveIntensity = mn.id === nd.id ? 1.0 : 0.7;
+                        if (mn._glow) mn._glow.material.opacity = 0.5;
+                        if (mn.id !== nd.id) mn._scaleTarget = 1.15;
                     } else {
                         m.material.opacity = 0.15;
                         m.material.emissiveIntensity = 0.1;
-                        if (m.userData._glow) m.userData._glow.material.opacity = 0.03;
+                        if (mn._glow) mn._glow.material.opacity = 0.03;
+                        mn._scaleTarget = 0.85;
                     }
                 });
             } else {
+                if (hoveredNode) {
+                    // Reset all scales
+                    nodes3d.forEach(n => { n._scaleTarget = 1; });
+                }
                 hoveredNode = null;
                 canvas.style.cursor = 'grab';
                 tooltip.style.display = 'none';
-                // Reset all
                 lineMeshes.forEach(l => {
                     const le = l.userData;
-                    l.material.opacity = le.type === 'shared_tags' ? 0.08 : (le.type === 'wikilink' ? 0.5 : 0.35);
+                    l.material.opacity = le.type === 'shared_tags' ? 0.12 : (le.type === 'wikilink' ? 0.6 : 0.45);
                     l.material.color.set(edgeTypeColors[le.type] || edgeTypeColors.shared_tags);
                 });
                 nodeMeshes.forEach(m => {
-                    m.material.opacity = 0.9;
-                    m.material.emissiveIntensity = 0.4;
-                    if (m.userData._glow) m.userData._glow.material.opacity = 0.25;
+                    m.material.opacity = 0.92;
+                    m.material.emissiveIntensity = 0.5;
+                    if (m.userData._glow) m.userData._glow.material.opacity = 0.35;
                 });
             }
         }
@@ -3555,14 +3787,35 @@ function initGraph(data) {
     canvas.addEventListener('mouseup', () => { isDragging = false; });
     canvas.addEventListener('mouseleave', () => {
         isDragging = false;
+        nodes3d.forEach(n => { n._scaleTarget = 1; });
         document.getElementById('graphTooltip').style.display = 'none';
     });
     canvas.addEventListener('click', (e) => {
         if (hoveredNode) {
-            // Fly to node (Google Earth zoom)
-            targetLookAt.set(hoveredNode.x, hoveredNode.y, hoveredNode.z);
+            // Bounce the node!
+            bounceNode(hoveredNode);
+            // Sparkles at click position
+            const rect = canvas.getBoundingClientRect();
+            if (sparkleCtx) {
+                spawnSparkles(e.clientX - rect.left, e.clientY - rect.top, 25, sparkleCtx);
+            }
+            // Fly to node
+            targetLookAt.set(hoveredNode.x, hoveredNode._baseY, hoveredNode.z);
             targetDist = 80;
             autoRotate = false;
+            // Easter egg: click same node 5 times
+            clickCount[hoveredNode.id] = (clickCount[hoveredNode.id] || 0) + 1;
+            if (clickCount[hoveredNode.id] >= 5) {
+                clickCount[hoveredNode.id] = 0;
+                shakeAllNodes(); // Party mode!
+            }
+            // Bounce neighbors too (chain reaction)
+            hoveredNode._neighbors.forEach(nid => {
+                const neighbor = nodes3d.find(n => n.id === nid);
+                if (neighbor) {
+                    setTimeout(() => bounceNode(neighbor), 100 + Math.random() * 200);
+                }
+            });
         }
     });
     canvas.addEventListener('dblclick', (e) => {
@@ -3607,11 +3860,18 @@ function initGraph(data) {
     }, { passive: false });
     canvas.addEventListener('touchend', () => { isDragging = false; });
 
-    // -- Animation loop --
+    // -- Animation loop (with playful physics) --
+    const startTime = performance.now();
     function animate() {
         g3.rafId = requestAnimationFrame(animate);
+        const time = (performance.now() - startTime) / 1000;
         if (autoRotate) targetTheta += 0.0015;
         updateCamera();
+        updatePlayfulNodes(time);
+        // Sparkle overlay
+        if (sparkleCtx && sparkles.length > 0) {
+            updateSparkles(sparkleCtx, sparkleCanvas.width, sparkleCanvas.height);
+        }
         renderer.render(scene, camera);
     }
     animate();
@@ -3622,6 +3882,10 @@ function initGraph(data) {
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
         renderer.setSize(w, h);
+        if (sparkleCanvas) {
+            sparkleCanvas.width = w;
+            sparkleCanvas.height = h;
+        }
     };
     window.addEventListener('resize', onResize);
 
@@ -3643,9 +3907,14 @@ function initGraph(data) {
             targetLookAt.set(0, 0, 0); targetDist = 280; targetPhi = Math.PI * 0.35; autoRotate = true;
             lineMeshes.forEach(l => {
                 const le = l.userData;
-                l.material.opacity = le.type === 'shared_tags' ? 0.08 : (le.type === 'wikilink' ? 0.5 : 0.35);
+                l.material.opacity = le.type === 'shared_tags' ? 0.12 : (le.type === 'wikilink' ? 0.6 : 0.45);
             });
-            nodeMeshes.forEach(m => { m.material.opacity = 0.9; m.material.emissiveIntensity = 0.4; if (m.userData._glow) m.userData._glow.material.opacity = 0.25; });
+            nodeMeshes.forEach(m => {
+                m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5;
+                if (m.userData._glow) m.userData._glow.material.opacity = 0.35;
+                m.userData._scaleTarget = 1;
+            });
+            clickCount = {};
         },
         _applyFilter(hiddenGroups) {
             nodeMeshes.forEach(m => {
@@ -3701,6 +3970,10 @@ function graphReset() {
     // Also clear all filters
     document.querySelectorAll('.graph-legend-item.filterable.dimmed').forEach(el => el.classList.remove('dimmed'));
     if (g3._showAll) g3._showAll();
+}
+
+function graphShakeAll() {
+    if (g3ShakeAll) g3ShakeAll();
 }
 
 // Graph filter: toggle visibility of a community/folder group
