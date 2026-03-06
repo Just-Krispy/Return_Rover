@@ -1682,6 +1682,184 @@
         .note-preview-body h1 { font-size: 18px; }
         .note-preview-body h2 { font-size: 16px; }
         .note-preview-body h3 { font-size: 14px; }
+
+        /* ============================================= */
+        /*  CINEMATIC VIEW MODES                         */
+        /* ============================================= */
+
+        /* --- Mode Switcher --- */
+        .graph-mode-switcher {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            gap: 3px;
+            z-index: 6;
+        }
+        .graph-mode-btn {
+            padding: 4px 10px;
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            background: rgba(12,16,28,0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: var(--radius-sm);
+            color: rgba(148,163,184,0.7);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .graph-mode-btn:hover {
+            border-color: rgba(99,102,241,0.5);
+            color: #fff;
+        }
+        .graph-mode-btn.active {
+            background: rgba(99,102,241,0.2);
+            border-color: rgba(99,102,241,0.6);
+            color: #fff;
+        }
+        .graph-mode-btn.active[data-mode="crt"] {
+            background: rgba(0,255,65,0.12);
+            border-color: rgba(0,255,65,0.5);
+            color: #00ff41;
+        }
+        .graph-mode-btn.active[data-mode="thermal"] {
+            background: rgba(255,69,0,0.12);
+            border-color: rgba(255,69,0,0.5);
+            color: #ff6347;
+        }
+        .graph-mode-btn.active[data-mode="nightvision"] {
+            background: rgba(0,255,0,0.08);
+            border-color: rgba(0,255,0,0.4);
+            color: #39ff14;
+        }
+
+        /* --- HUD Overlay --- */
+        .graph-hud {
+            position: absolute;
+            top: 12px;
+            right: 50px;
+            z-index: 6;
+            pointer-events: none;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            line-height: 1.6;
+            color: rgba(148,163,184,0.5);
+            text-align: right;
+            transition: all 0.5s ease;
+            opacity: 0;
+        }
+        .graph-hud.visible {
+            opacity: 1;
+        }
+        .graph-hud .hud-line {
+            white-space: nowrap;
+        }
+        .graph-hud .hud-val {
+            font-weight: 700;
+        }
+
+        /* --- CRT Scan Lines --- */
+        .crt-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .crt-overlay.active {
+            opacity: 1;
+        }
+        .crt-scanlines {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0,0,0,0.12) 2px,
+                rgba(0,0,0,0.12) 4px
+            );
+            pointer-events: none;
+        }
+        .crt-flicker {
+            position: absolute;
+            inset: 0;
+            background: transparent;
+            pointer-events: none;
+            animation: crtFlicker 0.08s infinite alternate;
+        }
+        @keyframes crtFlicker {
+            0% { opacity: 0.97; }
+            100% { opacity: 1; }
+        }
+        .crt-vignette {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.5) 100%);
+            pointer-events: none;
+        }
+
+        /* --- Targeting Reticle --- */
+        .graph-reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .graph-reticle.active {
+            opacity: 0.3;
+            animation: reticlePulse 3s ease-in-out infinite;
+        }
+        @keyframes reticlePulse {
+            0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.05); }
+        }
+        .graph-reticle svg {
+            width: 100%;
+            height: 100%;
+        }
+        [data-graph-mode="crt"] .graph-reticle { color: #00ff41; }
+        [data-graph-mode="thermal"] .graph-reticle { color: #ff6347; }
+        [data-graph-mode="nightvision"] .graph-reticle { color: #39ff14; }
+
+        /* --- Mode-specific HUD colors --- */
+        [data-graph-mode="crt"] .graph-hud {
+            color: rgba(0,255,65,0.7);
+            text-shadow: 0 0 6px rgba(0,255,65,0.3);
+        }
+        [data-graph-mode="thermal"] .graph-hud {
+            color: rgba(255,140,0,0.7);
+            text-shadow: 0 0 6px rgba(255,69,0,0.3);
+        }
+        [data-graph-mode="nightvision"] .graph-hud {
+            color: rgba(57,255,20,0.6);
+            text-shadow: 0 0 8px rgba(57,255,20,0.3);
+        }
+
+        /* --- Mode-specific graph-container borders --- */
+        [data-graph-mode="crt"] .graph-container {
+            box-shadow: inset 0 0 30px rgba(0,255,65,0.05), 0 0 20px rgba(0,255,65,0.08);
+        }
+        [data-graph-mode="thermal"] .graph-container {
+            box-shadow: inset 0 0 30px rgba(255,69,0,0.05), 0 0 20px rgba(255,69,0,0.08);
+        }
+        [data-graph-mode="nightvision"] .graph-container {
+            box-shadow: inset 0 0 30px rgba(0,255,0,0.03), 0 0 20px rgba(0,255,0,0.06);
+        }
+
+        /* Fullscreen mode adjustments */
+        .graph-fullscreen-container .graph-mode-switcher { top: 16px; left: 16px; }
+        .graph-fullscreen-container .graph-hud { top: 16px; right: 60px; }
     </style>
 </head>
 <body>
@@ -1765,6 +1943,42 @@
         <div id="graphContainer" class="graph-container">
             <canvas id="sparkleCanvas" class="sparkle-canvas"></canvas>
             <div id="graphTooltip" class="graph-tooltip"></div>
+
+            <!-- CRT Overlay -->
+            <div id="crtOverlay" class="crt-overlay">
+                <div class="crt-scanlines"></div>
+                <div class="crt-flicker"></div>
+                <div class="crt-vignette"></div>
+            </div>
+
+            <!-- Targeting Reticle -->
+            <div id="graphReticle" class="graph-reticle">
+                <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="1" opacity="0.6">
+                    <circle cx="30" cy="30" r="20" stroke-dasharray="4 4"/>
+                    <line x1="30" y1="4" x2="30" y2="16"/>
+                    <line x1="30" y1="44" x2="30" y2="56"/>
+                    <line x1="4" y1="30" x2="16" y2="30"/>
+                    <line x1="44" y1="30" x2="56" y2="30"/>
+                    <circle cx="30" cy="30" r="3"/>
+                </svg>
+            </div>
+
+            <!-- HUD Overlay -->
+            <div id="graphHud" class="graph-hud">
+                <div class="hud-line">NODES: <span class="hud-val" id="hudNodes">--</span></div>
+                <div class="hud-line">LINKS: <span class="hud-val" id="hudLinks">--</span></div>
+                <div class="hud-line">CLUSTERS: <span class="hud-val" id="hudClusters">--</span></div>
+                <div class="hud-line">MODE: <span class="hud-val" id="hudMode">PLAYFUL</span></div>
+            </div>
+
+            <!-- Mode Switcher -->
+            <div class="graph-mode-switcher">
+                <button class="graph-mode-btn active" data-mode="playful" onclick="setGraphMode('playful')" title="Playful (default)">▶ Play</button>
+                <button class="graph-mode-btn" data-mode="crt" onclick="setGraphMode('crt')" title="CRT / Spy terminal">CRT</button>
+                <button class="graph-mode-btn" data-mode="thermal" onclick="setGraphMode('thermal')" title="Thermal imaging">Therm</button>
+                <button class="graph-mode-btn" data-mode="nightvision" onclick="setGraphMode('nightvision')" title="Night vision">NVis</button>
+            </div>
+
             <div class="graph-controls">
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
@@ -1788,7 +2002,13 @@
                 Knowledge Graph
                 <span id="graphFullscreenStats" class="graph-stats-label"></span>
             </div>
-            <div class="graph-fullscreen-controls">
+            <div class="graph-fullscreen-controls" style="display:flex;align-items:center;gap:6px">
+                <div class="graph-mode-switcher" style="position:static;margin-right:8px">
+                    <button class="graph-mode-btn active" data-mode="playful" onclick="setGraphMode('playful')" title="Playful">&#9654; Play</button>
+                    <button class="graph-mode-btn" data-mode="crt" onclick="setGraphMode('crt')" title="CRT">CRT</button>
+                    <button class="graph-mode-btn" data-mode="thermal" onclick="setGraphMode('thermal')" title="Thermal">Therm</button>
+                    <button class="graph-mode-btn" data-mode="nightvision" onclick="setGraphMode('nightvision')" title="Night Vision">NVis</button>
+                </div>
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera">&#8634;</button>
                 <button class="graph-btn graph-close-btn" onclick="closeGraphFullscreen()" title="Exit fullscreen (ESC)">&#10005;</button>
@@ -3864,8 +4084,17 @@ function initGraph(data) {
         });
     }
 
+    // Update HUD stats
+    const hudNodes = document.getElementById('hudNodes');
+    const hudLinks = document.getElementById('hudLinks');
+    const hudClusters = document.getElementById('hudClusters');
+    if (hudNodes) hudNodes.textContent = nodes3d.length;
+    if (hudLinks) hudLinks.textContent = edges3d.length;
+    if (hudClusters) hudClusters.textContent = (graph.communities || []).length || '—';
+
     // Store state
     g3 = { renderer, scene, camera, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
+        nodeMeshes, lineMeshes, nodes3d, edges3d,
         _setAutoRotate(v) { autoRotate = v; },
         _getAutoRotate() { return autoRotate; },
         _resetCamera() {
@@ -3935,10 +4164,182 @@ function graphReset() {
     // Also clear all filters
     document.querySelectorAll('.graph-legend-item.filterable.dimmed').forEach(el => el.classList.remove('dimmed'));
     if (g3._showAll) g3._showAll();
+    // Re-apply current mode colors after reset
+    if (currentGraphMode !== 'playful') {
+        applyCinematicMode(currentGraphMode);
+    }
 }
 
 function graphShakeAll() {
     if (g3ShakeAll) g3ShakeAll();
+}
+
+// =============================================
+//  CINEMATIC VIEW MODES
+// =============================================
+let currentGraphMode = 'playful';
+
+// Color palettes for each mode
+const MODE_COLORS = {
+    playful: null, // uses original colors stored on nodes
+    crt: {
+        node: '#00ff41',       // phosphor green
+        nodeAlt: '#00cc33',
+        glow: '#00ff41',
+        edge: { wikilink: 0x00ff41, mention: 0x00cc33, semantic: 0x33ff77, shared_tags: 0x003300 },
+        bg: 0x0a0a0a,
+        fog: 0x0a0a0a,
+        emissive: 0.8,
+        nodeOpacity: 0.95,
+        glowOpacity: 0.5,
+    },
+    thermal: {
+        // Hot = red/yellow/white, cool = blue/purple
+        nodeHot: '#ff4500',
+        nodeMed: '#ff8c00',
+        nodeCool: '#4169e1',
+        glow: '#ff6347',
+        edge: { wikilink: 0xff4500, mention: 0xff8c00, semantic: 0xffd700, shared_tags: 0x1a0500 },
+        bg: 0x0d0d1a,
+        fog: 0x0d0d1a,
+        emissive: 0.7,
+        nodeOpacity: 0.9,
+        glowOpacity: 0.45,
+    },
+    nightvision: {
+        node: '#39ff14',
+        nodeAlt: '#2bcc0f',
+        glow: '#39ff14',
+        edge: { wikilink: 0x39ff14, mention: 0x2bcc0f, semantic: 0x66ff44, shared_tags: 0x0a1a00 },
+        bg: 0x050a02,
+        fog: 0x050a02,
+        emissive: 0.6,
+        nodeOpacity: 0.85,
+        glowOpacity: 0.4,
+    },
+};
+
+function setGraphMode(mode) {
+    if (!g3.scene || !g3.nodeMeshes) return;
+    currentGraphMode = mode;
+
+    // Update button states
+    document.querySelectorAll('.graph-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // Update HUD mode label
+    const hudMode = document.getElementById('hudMode');
+    if (hudMode) hudMode.textContent = mode.toUpperCase();
+
+    // Show/hide HUD
+    const hud = document.getElementById('graphHud');
+    if (hud) hud.classList.toggle('visible', mode !== 'playful');
+
+    // CRT overlay
+    const crt = document.getElementById('crtOverlay');
+    if (crt) crt.classList.toggle('active', mode === 'crt');
+
+    // Reticle
+    const reticle = document.getElementById('graphReticle');
+    if (reticle) reticle.classList.toggle('active', mode !== 'playful');
+
+    // Set data attribute on graph card for CSS scoping
+    const graphCard = document.querySelector('.graph-hero-card');
+    if (graphCard) graphCard.setAttribute('data-graph-mode', mode);
+
+    // Also set on fullscreen modal
+    const fsModal = document.getElementById('graphFullscreenModal');
+    if (fsModal) fsModal.setAttribute('data-graph-mode', mode);
+
+    // Apply colors
+    if (mode === 'playful') {
+        applyPlayfulMode();
+    } else {
+        applyCinematicMode(mode);
+    }
+}
+
+function applyPlayfulMode() {
+    // Restore original colors
+    const defaultBg = getTheme() === 'light' ? 0xe2e8f0 : 0x09090b;
+    const defaultFog = defaultBg;
+    g3.scene.background = new THREE.Color(defaultBg);
+    g3.scene.fog = new THREE.FogExp2(defaultFog, 0.0018);
+
+    g3.nodeMeshes.forEach(m => {
+        const n = m.userData;
+        if (n._origColor) {
+            const c = new THREE.Color(n._origColor);
+            m.material.color = c;
+            m.material.emissive = c;
+            m.material.emissiveIntensity = 0.5;
+            m.material.opacity = 0.92;
+            if (n._glow) {
+                n._glow.material.color = c;
+                n._glow.material.opacity = 0.35;
+            }
+        }
+        // Show emoji sprites
+        if (n._emojiSprite) n._emojiSprite.visible = true;
+    });
+
+    const edgeTypeColors = { wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: 0x2d3561 };
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        l.material.color = new THREE.Color(edgeTypeColors[e.type] || edgeTypeColors.shared_tags);
+        l.material.opacity = e.type === 'shared_tags' ? 0.12 : (e.type === 'wikilink' ? 0.6 : 0.45);
+    });
+}
+
+function applyCinematicMode(mode) {
+    const palette = MODE_COLORS[mode];
+    if (!palette) return;
+
+    // Background + fog
+    g3.scene.background = new THREE.Color(palette.bg);
+    g3.scene.fog = new THREE.FogExp2(palette.fog, 0.0022);
+
+    // Nodes
+    g3.nodeMeshes.forEach((m, i) => {
+        const n = m.userData;
+
+        // Store original color on first mode switch
+        if (!n._origColor) n._origColor = '#' + m.material.color.getHexString();
+
+        let nodeColor;
+        if (mode === 'thermal') {
+            // Use connections count to determine heat (more connections = hotter)
+            const conns = n.connections || (n._neighbors ? n._neighbors.length : 0);
+            if (conns >= 4) nodeColor = new THREE.Color(palette.nodeHot);
+            else if (conns >= 2) nodeColor = new THREE.Color(palette.nodeMed);
+            else nodeColor = new THREE.Color(palette.nodeCool);
+        } else {
+            // CRT / Night Vision — slight variation
+            nodeColor = new THREE.Color(i % 3 === 0 ? palette.nodeAlt : palette.node);
+        }
+
+        m.material.color = nodeColor;
+        m.material.emissive = nodeColor;
+        m.material.emissiveIntensity = palette.emissive;
+        m.material.opacity = palette.nodeOpacity;
+
+        if (n._glow) {
+            n._glow.material.color = nodeColor;
+            n._glow.material.opacity = palette.glowOpacity;
+        }
+
+        // Hide emoji sprites in cinematic modes for cleaner look
+        if (n._emojiSprite) n._emojiSprite.visible = false;
+    });
+
+    // Edges
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        const edgeColor = palette.edge[e.type] || palette.edge.shared_tags;
+        l.material.color = new THREE.Color(edgeColor);
+        l.material.opacity = e.type === 'shared_tags' ? 0.08 : (e.type === 'wikilink' ? 0.5 : 0.35);
+    });
 }
 
 // Graph filter: toggle visibility of a community/folder group
