@@ -4,17 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Second Brain - Mission Control</title>
+    <meta name="description" content="Mission Control for your second brain — 3D knowledge graph, vault health, RAG search, braindump capture, and automation workflows. Built with Three.js.">
     <meta property="og:title" content="Second Brain Dashboard">
     <meta property="og:description" content="Mission Control for your second brain — vault stats, knowledge graph, RAG search, and automation workflows.">
     <meta property="og:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/preview.png">
+    <meta property="og:url" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Second Brain Dashboard">
-    <meta name="twitter:description" content="Mission Control for your second brain.">
+    <meta name="twitter:description" content="Mission Control for your second brain — 3D knowledge graph, vault health, and RAG search.">
     <meta name="twitter:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/preview.png">
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://unpkg.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -1044,7 +1051,7 @@
         .graph-fullscreen-modal .graph-tooltip {
             z-index: 10001;
         }
-        [data-theme="light"] .graph-fullscreen-modal { background: #e2e8f0; }
+        [data-theme="light"] .graph-fullscreen-modal { background: #dde4ed; }
         [data-theme="light"] .graph-fullscreen-header { background: rgba(255,255,255,0.95); border-color: var(--border-default); }
         [data-theme="light"] .graph-fullscreen-title { color: #0f172a; }
         [data-theme="light"] .graph-fullscreen-legend { background: rgba(255,255,255,0.95); border-color: var(--border-default); }
@@ -1694,7 +1701,7 @@
         }
 
         /* ---- LIGHT THEME graph overrides ---- */
-        [data-theme="light"] .graph-container { background: #e2e8f0; }
+        [data-theme="light"] .graph-container { background: #dde4ed; }
         [data-theme="light"] .graph-tooltip {
             background: rgba(255,255,255,0.95);
             border-color: var(--border-default);
@@ -1705,6 +1712,27 @@
             border-color: var(--border-default);
             color: var(--text-secondary);
         }
+        [data-theme="light"] .graph-search-input {
+            background: rgba(255,255,255,0.9);
+            border-color: var(--border-default);
+            color: var(--text-primary);
+        }
+        [data-theme="light"] .graph-search-results {
+            background: rgba(255,255,255,0.97);
+            border-color: var(--border-default);
+        }
+        [data-theme="light"] .graph-search-result:hover {
+            background: rgba(99,102,241,0.08);
+        }
+        [data-theme="light"] .graph-tooltip .tt-mini-graph {
+            background: rgba(240,242,245,0.6);
+        }
+        [data-theme="light"] .graph-legend-item {
+            color: var(--text-secondary);
+        }
+        [data-theme="light"] .graph-hud { color: #334155; }
+        [data-theme="light"] .graph-mode-btn { background: rgba(255,255,255,0.8); color: var(--text-secondary); border-color: var(--border-default); }
+        [data-theme="light"] .graph-mode-btn.active { background: var(--accent-indigo); color: #fff; }
 
         /* ---- FLOATING SEARCH BAR ---- */
         .floating-search { position: sticky; top: 0; z-index: 50; background: var(--bg-base); padding: 10px 0; margin: 0 0 16px; border-bottom: 1px solid var(--border-subtle); transition: box-shadow 0.3s ease; }
@@ -2617,10 +2645,54 @@ function toggleTheme() {
     const next = getTheme() === 'dark' ? 'light' : 'dark';
     localStorage.setItem('brain-theme', next);
     applyTheme(next);
-    // Re-render graph with appropriate background if scene exists
+    // Re-render graph with appropriate colors if scene exists
     if (g3.scene) {
-        g3.scene.background = new THREE.Color(next === 'dark' ? 0x07090f : 0xe2e8f0);
-        g3.scene.fog = new THREE.FogExp2(next === 'dark' ? 0x07090f : 0xe2e8f0, 0.0018);
+        const lit = next === 'light';
+        const bg = lit ? 0xdde4ed : 0x07090f;
+        g3.scene.background = new THREE.Color(bg);
+        g3.scene.fog = new THREE.FogExp2(bg, lit ? 0.001 : 0.0014);
+        // Starfield: muted on light, brighter on dark
+        if (g3.scene.children) {
+            g3.scene.children.forEach(c => {
+                if (c.isPoints && c.material && c.geometry.attributes.position.count > 500) {
+                    c.material.color.set(lit ? 0x8899bb : 0x4466aa);
+                    c.material.opacity = lit ? 0.35 : 0.7;
+                }
+            });
+        }
+        // Labels: dark text on light bg, light text on dark bg
+        if (g3.labelSprites) {
+            g3.labelSprites.forEach(s => { s.material.color.set(lit ? '#1e293b' : '#e2e8f0'); });
+        }
+        // Ambient particles: darker on light bg
+        if (g3.ambientParticles) {
+            g3.ambientParticles.material.color.set(lit ? 0x6678 : 0xcccccc);
+            g3.ambientParticles.material.opacity = lit ? 0.3 : 0.2;
+        }
+        // Cluster halos: slightly more visible on light bg
+        if (g3.halos) {
+            g3.halos.forEach(h => { h.material.opacity = lit ? 0.08 : 0.045; });
+        }
+        // Node glow: reduce on light (additive blending washes out)
+        if (g3.nodeMeshes && currentGraphMode === 'playful') {
+            g3.nodeMeshes.forEach(m => {
+                if (m.userData._glow) {
+                    m.userData._glow.material.opacity = lit ? 0.12 : 0.35;
+                }
+                // Boost emissive on light so nodes pop against pale bg
+                m.material.emissiveIntensity = lit ? 0.3 : 0.5;
+            });
+        }
+        // Edge shared_tags: more visible on light bg
+        if (g3.lineMeshes && currentGraphMode === 'playful') {
+            g3.lineMeshes.forEach(l => {
+                const e = l.userData;
+                if (e.type === 'shared_tags') {
+                    l.material.opacity = lit ? 0.2 : (e._baseOpacity || 0.12);
+                    l.material.color.set(lit ? 0x6678aa : 0x2d3561);
+                }
+            });
+        }
     }
 }
 
@@ -3935,10 +4007,12 @@ function initGraph(data) {
     const W = container.clientWidth;
     const H = container.clientHeight;
 
-    // Scene
+    // Scene — theme-aware background
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x07090f);
-    scene.fog = new THREE.FogExp2(0x07090f, 0.0014);
+    const isLight = getTheme() === 'light';
+    const sceneBg = isLight ? 0xdde4ed : 0x07090f;
+    scene.background = new THREE.Color(sceneBg);
+    scene.fog = new THREE.FogExp2(sceneBg, isLight ? 0.001 : 0.0014);
 
     // Camera
     const camera = new THREE.PerspectiveCamera(50, W / H, 1, 2000);
@@ -3986,7 +4060,7 @@ function initGraph(data) {
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     const starMat = new THREE.PointsMaterial({
-        color: 0x4466aa, size: 1.5, transparent: true, opacity: 0.7
+        color: isLight ? 0x8899bb : 0x4466aa, size: 1.5, transparent: true, opacity: isLight ? 0.35 : 0.7
     });
     const starField = new THREE.Points(starGeo, starMat);
     scene.add(starField);
@@ -4985,13 +5059,15 @@ function setGraphMode(mode) {
     ct.progress = 0;
     ct.active = true;
 
-    // Update ambient particle + label colors for new mode
+    // Update ambient particle + label colors for new mode (theme-aware for playful)
+    const isLightTheme = getTheme() === 'light';
     if (g3.ambientParticles) {
-        const pColors = { playful: 0xcccccc, crt: 0x00ff41, thermal: 0xff6500, nightvision: 0x39ff14 };
+        const pColors = { playful: isLightTheme ? 0x6678 : 0xcccccc, crt: 0x00ff41, thermal: 0xff6500, nightvision: 0x39ff14 };
         g3.ambientParticles.material.color.set(pColors[mode] || 0xcccccc);
+        if (mode === 'playful') g3.ambientParticles.material.opacity = isLightTheme ? 0.3 : 0.2;
     }
     if (g3.labelSprites) {
-        const lColors = { playful: '#e2e8f0', crt: '#00ff41', thermal: '#ff8c00', nightvision: '#39ff14' };
+        const lColors = { playful: isLightTheme ? '#1e293b' : '#e2e8f0', crt: '#00ff41', thermal: '#ff8c00', nightvision: '#39ff14' };
         const lc = lColors[mode] || '#e2e8f0';
         g3.labelSprites.forEach(s => { s.material.color.set(lc); });
     }
@@ -5007,11 +5083,11 @@ function setGraphMode(mode) {
 }
 
 function applyPlayfulMode() {
-    // Restore original colors
-    const defaultBg = getTheme() === 'light' ? 0xe2e8f0 : 0x09090b;
-    const defaultFog = defaultBg;
+    // Restore original colors — theme-aware
+    const lit = getTheme() === 'light';
+    const defaultBg = lit ? 0xdde4ed : 0x07090f;
     g3.scene.background = new THREE.Color(defaultBg);
-    g3.scene.fog = new THREE.FogExp2(defaultFog, 0.0018);
+    g3.scene.fog = new THREE.FogExp2(defaultBg, lit ? 0.001 : 0.0014);
 
     g3.nodeMeshes.forEach(m => {
         const n = m.userData;
@@ -5019,22 +5095,22 @@ function applyPlayfulMode() {
             const c = new THREE.Color(n._origColor);
             m.material.color = c;
             m.material.emissive = c;
-            m.material.emissiveIntensity = 0.5;
+            m.material.emissiveIntensity = lit ? 0.3 : 0.5;
             m.material.opacity = 0.92;
             if (n._glow) {
                 n._glow.material.color = c;
-                n._glow.material.opacity = 0.35;
+                n._glow.material.opacity = lit ? 0.12 : 0.35;
             }
         }
         // Show emoji sprites
         if (n._emojiSprite) n._emojiSprite.visible = true;
     });
 
-    const edgeTypeColors = { wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: 0x2d3561 };
+    const edgeTypeColors = { wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: lit ? 0x6678aa : 0x2d3561 };
     g3.lineMeshes.forEach(l => {
         const e = l.userData;
         l.material.color = new THREE.Color(edgeTypeColors[e.type] || edgeTypeColors.shared_tags);
-        l.material.opacity = e.type === 'shared_tags' ? 0.12 : (e.type === 'wikilink' ? 0.6 : 0.45);
+        l.material.opacity = e.type === 'shared_tags' ? (lit ? 0.2 : 0.12) : (e.type === 'wikilink' ? 0.6 : 0.45);
     });
 }
 
