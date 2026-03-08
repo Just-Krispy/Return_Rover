@@ -16,6 +16,7 @@
     <meta name="twitter:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/preview.png">
     <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+    <link rel="canonical" href="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2161,6 +2162,7 @@
 </head>
 <body>
 
+<a href="#sec-graph" class="skip-to-content" style="position:absolute;top:-100px;left:0;background:var(--accent-indigo);color:#fff;padding:8px 16px;z-index:9999;font-size:14px;border-radius:0 0 8px 0;transition:top 0.2s" onfocus="this.style.top='0'" onblur="this.style.top='-100px'">Skip to content</a>
 <div class="dashboard">
 
     <!-- HEADER -->
@@ -2174,7 +2176,7 @@
                 </div>
             </div>
         </div>
-        <div class="header-right" style="display:none">
+        <div class="header-right" style="display:flex;align-items:center;gap:8px">
             <span id="modeBadge" class="mode-badge demo">
                 <span id="modeLabel">DEMO</span>
             </span>
@@ -2182,6 +2184,7 @@
                 <span class="dot" style="background:var(--accent-green)"></span>
                 <span id="healthScoreLabel">--</span>
             </span>
+            <button class="graph-btn" onclick="toggleSettings()" title="Settings" aria-label="Open settings" style="font-size:14px">&#9881;</button>
         </div>
     </div>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle" aria-label="Toggle dark/light mode" style="position:fixed;top:12px;right:12px;z-index:1000">&#9789;</button>
@@ -2269,7 +2272,7 @@
     </div>
 
     <!-- FULLSCREEN GRAPH MODAL -->
-    <div id="graphFullscreenModal" class="graph-fullscreen-modal" style="display:none">
+    <div id="graphFullscreenModal" class="graph-fullscreen-modal" role="dialog" aria-label="Fullscreen Knowledge Graph" style="display:none">
         <div class="graph-fullscreen-header">
             <div class="graph-fullscreen-title">
                 <i data-lucide="network" style="width:20px;height:20px"></i>
@@ -2586,7 +2589,7 @@
 
 <!-- NOTE PREVIEW PANEL -->
 <div class="note-preview-overlay" id="notePreviewOverlay" onclick="closeNotePreview()"></div>
-<div class="note-preview-panel" id="notePreviewPanel">
+<div class="note-preview-panel" id="notePreviewPanel" role="dialog" aria-label="Note preview">
     <div class="note-preview-header">
         <span class="note-preview-title" id="notePreviewTitle">--</span>
         <button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
@@ -3087,7 +3090,8 @@ function renderMarkdownBasic(md) {
     html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
     // Inline code
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-    // Wikilinks (safe — uses data attribute, no inline JS)
+    // Wikilinks: handle [[file|display]] pipe syntax first, then plain [[file]]
+    html = html.replace(/\[\[([^\]|]+?)\|([^\]]+?)\]\]/g, '<span class="wikilink" data-note="$1" style="color:var(--accent-indigo);font-weight:500;cursor:pointer;border-bottom:1px dashed var(--accent-indigo)">$2</span>');
     html = html.replace(/\[\[(.+?)\]\]/g, '<span class="wikilink" data-note="$1" style="color:var(--accent-indigo);font-weight:500;cursor:pointer;border-bottom:1px dashed var(--accent-indigo)">$1</span>');
     // External links
     html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
@@ -3675,7 +3679,7 @@ function initKeyboardShortcuts() {
             case 'Escape':
                 closeKbOverlay();
                 closeNotePreview();
-                if (document.getElementById('settingsOverlay').classList.contains('open')) toggleSettings();
+                const so = document.getElementById('settingsOverlay'); if (so && so.classList.contains('open')) toggleSettings();
                 break;
             case '/':
                 e.preventDefault();
@@ -3958,6 +3962,15 @@ function initGraph(data) {
     const container = document.getElementById('graphContainer');
     if (!container || typeof THREE === 'undefined') return;
 
+    // Teardown previous graph if reinitializing
+    if (g3.renderer) {
+        if (g3.rafId) cancelAnimationFrame(g3.rafId);
+        if (g3._onResize) window.removeEventListener('resize', g3._onResize);
+        g3.renderer.dispose();
+        g3.renderer.forceContextLoss();
+        container.innerHTML = '';
+    }
+
     try { _initGraphInner(graph, container); }
     catch (e) {
         console.error('Knowledge graph init failed:', e, e.stack);
@@ -3990,7 +4003,8 @@ function _initGraphInner(graph, container) {
                 const topTag = (c.top_tags || [])[0] || '';
                 const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
                 const dimmed = graphHiddenGroups.has(label) ? ' dimmed' : '';
-                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${label}" onclick="toggleGraphFilter(this,'${label}')"><span class="graph-legend-dot" style="background:${color}"></span> ${label} (${c.size})</span>`;
+                const safeLabel = escapeHtml(label).replace(/'/g, '&#39;');
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${safeLabel}" onclick="toggleGraphFilter(this,'${safeLabel}')"><span class="graph-legend-dot" style="background:${color}"></span> ${safeLabel} (${c.size})</span>`;
             }).join('');
         } else {
             // Fallback: folder-based legend
@@ -4206,7 +4220,7 @@ function _initGraphInner(graph, container) {
         // Sphere (slightly bigger for playfulness)
         const geo = new THREE.SphereGeometry(n.radius, 20, 14);
         const mat = new THREE.MeshPhongMaterial({
-            color, emissive: color, emissiveIntensity: isLight ? 0.3 : 0.5,
+            color, emissive: color.clone(), emissiveIntensity: isLight ? 0.3 : 0.5,
             transparent: true, opacity: 0.92, shininess: 80
         });
         const mesh = new THREE.Mesh(geo, mat);
@@ -4233,6 +4247,10 @@ function _initGraphInner(graph, container) {
         scene.add(emojiSprite);
         mesh.userData._emojiSprite = emojiSprite;
     });
+
+    // Build node lookup map (O(1) instead of O(n) find per access)
+    const nodeMeshMap = new Map();
+    nodeMeshes.forEach(m => nodeMeshMap.set(m.userData.id, m));
 
     console.log('[graph] nodes created:', nodeMeshes.length);
     // -- Create curved edge lines --
@@ -4263,7 +4281,6 @@ function _initGraphInner(graph, container) {
         // Phase 2: weight-based opacity
         const w = Math.min(e.weight || 1, 3);
         const baseTypeOp = e.type === 'shared_tags' ? (isLight ? 0.25 : 0.12) : (e.type === 'wikilink' ? 0.6 : 0.45);
-        const weightBoost = 0.15 + (w / 3) * 0.55;
         const opacity = Math.min(baseTypeOp * (0.5 + w * 0.5), 0.85);
         let mat, line;
         // Phase 3: dashed material for strong edges
@@ -4379,8 +4396,8 @@ function _initGraphInner(graph, container) {
             if (!fp.active) return;
             fp.t += fp.speed * (1 + (fp.edge.weight || 1) * 0.3);
             if (fp.t > 1) fp.t -= 1;
-            const sm = nodeMeshes.find(m => m.userData.id === fp.edge.source.id);
-            const tm = nodeMeshes.find(m => m.userData.id === fp.edge.target.id);
+            const sm = nodeMeshMap.get(fp.edge.source.id);
+            const tm = nodeMeshMap.get(fp.edge.target.id);
             if (!sm || !tm || !sm.visible || !tm.visible) { fp.mesh.visible = false; return; }
             fp.mesh.visible = true;
             const sp = sm.position, tp = tm.position;
@@ -4474,8 +4491,8 @@ function _initGraphInner(graph, container) {
         // Update edge positions to follow floating nodes
         lineMeshes.forEach(l => {
             const e = l.userData;
-            const srcMesh = nodeMeshes.find(m => m.userData.id === e.source.id);
-            const tgtMesh = nodeMeshes.find(m => m.userData.id === e.target.id);
+            const srcMesh = nodeMeshMap.get(e.source.id);
+            const tgtMesh = nodeMeshMap.get(e.target.id);
             if (srcMesh && tgtMesh) {
                 const cpts = computeCurvePoints(srcMesh.position.x, srcMesh.position.y, srcMesh.position.z, tgtMesh.position.x, tgtMesh.position.y, tgtMesh.position.z);
                 const pos = l.geometry.attributes.position;
@@ -4520,7 +4537,10 @@ function _initGraphInner(graph, container) {
     }
     g3ShakeAll = shakeAllNodes;
 
-    // Mouse/touch handlers
+    // Mouse/touch handlers — reuse raycaster + mouse vector (avoid GC pressure)
+    const _raycaster = new THREE.Raycaster();
+    _raycaster.params.Mesh = { threshold: 2 };
+    const _mouseVec = new THREE.Vector2();
     const canvas = renderer.domElement;
     canvas.addEventListener('mousedown', (e) => {
         isDragging = true;
@@ -4536,14 +4556,12 @@ function _initGraphInner(graph, container) {
             lastMouse = {x: e.clientX, y: e.clientY};
         } else {
             const rect = canvas.getBoundingClientRect();
-            const mouse = new THREE.Vector2(
+            _mouseVec.set(
                 ((e.clientX - rect.left) / rect.width) * 2 - 1,
                 -((e.clientY - rect.top) / rect.height) * 2 + 1
             );
-            const raycaster = new THREE.Raycaster();
-            raycaster.params.Mesh = { threshold: 2 };
-            raycaster.setFromCamera(mouse, camera);
-            const hits = raycaster.intersectObjects(nodeMeshes);
+            _raycaster.setFromCamera(_mouseVec, camera);
+            const hits = _raycaster.intersectObjects(nodeMeshes);
             const tooltip = document.getElementById('graphTooltip');
             if (hits.length > 0) {
                 const nd = hits[0].object.userData;
@@ -4773,8 +4791,10 @@ function _initGraphInner(graph, container) {
             const camPos = camera.position;
             const dists = g3.labelSprites.map((s, i) => ({ i, d: camPos.distanceTo(s.position) }));
             dists.sort((a, b) => a.d - b.d);
+            const rankMap = new Map();
+            dists.forEach((d, rank) => rankMap.set(d.i, rank));
             g3.labelSprites.forEach((s, i) => {
-                const rank = dists.findIndex(d => d.i === i);
+                const rank = rankMap.get(i);
                 if (rank < 20 && dists[rank].d < 15) {
                     const d = dists[rank].d;
                     s.visible = true;
@@ -4874,6 +4894,7 @@ function _initGraphInner(graph, container) {
         }
     };
     window.addEventListener('resize', onResize);
+    g3._onResize = onResize; // store for cleanup on reinit
 
     // Build community/folder label map for filtering
     const nodeGroupMap = {};
@@ -4895,7 +4916,7 @@ function _initGraphInner(graph, container) {
 
     // Store state
     g3 = { renderer, scene, camera, composer, bloomPass, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
-        nodeMeshes, lineMeshes, nodes3d, edges3d, visible: true, communityMeta,
+        nodeMeshes, nodeMeshMap, lineMeshes, nodes3d, edges3d, visible: true, communityMeta,
         labelSprites, halos, ambientParticles, flowParticles,
         colorTransition: { active: false, from: {}, to: {}, progress: 0, duration: 0.5 },
         _setAutoRotate(v) { autoRotate = v; },
@@ -5305,7 +5326,6 @@ function toggleGraphFilter(el, group) {
 //  FULLSCREEN GRAPH
 // =============================================
 let graphFullscreenActive = false;
-let graphFullscreenRenderer = null;
 
 function openGraphFullscreen() {
     const modal = document.getElementById('graphFullscreenModal');
@@ -5660,14 +5680,15 @@ async function loadResearchPipeline() {
         // Vertical list
         const vList = document.getElementById('verticalList');
         if (vList && d.verticals_list) {
-            vList.innerHTML = Object.entries(d.verticals_list).map(([name, covered]) =>
-                `<div class="vertical-row">
-                    <span class="vr-name">${name}</span>
+            vList.innerHTML = Object.entries(d.verticals_list).map(([name, covered]) => {
+                const safeName = escapeHtml(name).replace(/'/g, '&#39;');
+                return `<div class="vertical-row">
+                    <span class="vr-name">${safeName}</span>
                     <span style="display:flex;gap:6px;align-items:center">
-                        ${!covered ? `<button class="vr-action" onclick="queueVerticalResearch('${name}', this)">Queue</button>` : ''}
+                        ${!covered ? `<button class="vr-action" onclick="queueVerticalResearch('${safeName}', this)">Queue</button>` : ''}
                         <span class="vr-status ${covered ? 'covered' : 'gap'}">${covered ? 'COVERED' : 'GAP'}</span>
                     </span>
-                </div>`
+                </div>`; }
             ).join('');
         }
 
@@ -5683,10 +5704,10 @@ async function loadResearchPipeline() {
                 "Vet Partnerships": "Clinic software integrations, AVMA trends",
             };
             gapsEl.innerHTML = '<strong>Research needed:</strong>' +
-                d.gaps.map(g => `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
-                    <span>• <strong>${g}</strong> — <span style="font-size:12px;color:var(--text-tertiary)">${suggestions[g] || 'Queue research'}</span></span>
-                    <button class="vr-action" onclick="queueVerticalResearch('${g}', this)" style="flex-shrink:0;margin-left:8px">Queue</button>
-                </div>`).join('');
+                d.gaps.map(g => { const sg = escapeHtml(g).replace(/'/g, '&#39;'); return `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+                    <span>• <strong>${sg}</strong> — <span style="font-size:12px;color:var(--text-tertiary)">${escapeHtml(suggestions[g] || 'Queue research')}</span></span>
+                    <button class="vr-action" onclick="queueVerticalResearch('${sg}', this)" style="flex-shrink:0;margin-left:8px">Queue</button>
+                </div>`; }).join('');
         } else if (gapsEl) {
             gapsEl.innerHTML = '<strong style="color:var(--accent-green)">All verticals covered!</strong>';
         }
@@ -6002,6 +6023,7 @@ function initFloatingSearch() {
                     const nodeIds = new Set(topNodes.map(n => n.id));
                     const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
                     initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats, communities: gData.communities });
+                    showToast(`Showing top 150 of ${gData.nodes.length} nodes (sorted by connections)`, 'info', 4000);
                 } else {
                     initGraph(gData);
                 }
@@ -6021,5 +6043,25 @@ function initFloatingSearch() {
 })();
 </script>
 
+
+<!-- SETTINGS PANEL -->
+<div class="kb-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()" role="dialog" aria-label="Settings">
+    <div class="kb-panel" style="max-width:420px">
+        <h3><i data-lucide="settings" style="width:18px;height:18px"></i> Dashboard Settings</h3>
+        <div style="margin:16px 0">
+            <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">API Gateway URL</label>
+            <input type="text" id="settingsGateway" class="ask-input" placeholder="https://your-vps:port" style="width:100%;margin-bottom:12px">
+            <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Auto-refresh interval (seconds)</label>
+            <input type="number" id="settingsRefresh" class="ask-input" min="10" max="600" style="width:100%;margin-bottom:12px">
+            <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Max recent searches</label>
+            <input type="number" id="settingsMaxSearches" class="ask-input" min="3" max="20" style="width:100%;margin-bottom:12px">
+        </div>
+        <div id="settingsFeedback" style="display:none;font-size:12px;color:var(--accent-green);margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+            <button class="btn-primary" onclick="saveSettings()" style="flex:1">Save</button>
+            <button class="btn-primary" onclick="resetSettings()" style="flex:1;background:var(--bg-inset);color:var(--text-secondary)">Reset Defaults</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
