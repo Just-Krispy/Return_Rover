@@ -3959,8 +3959,8 @@ function initGraph(data) {
 
     try { _initGraphInner(graph, container); }
     catch (e) {
-        console.error('Knowledge graph init failed:', e);
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;">Graph failed to load — check console</div>';
+        console.error('Knowledge graph init failed:', e, e.stack);
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>Graph failed to load</div><div style="font-size:11px;color:#71717a;max-width:600px;word-break:break-all">' + (e.message || e) + '</div></div>';
     }
 }
 
@@ -4015,6 +4015,7 @@ function _initGraphInner(graph, container) {
 
     const W = container.clientWidth;
     const H = container.clientHeight;
+    console.log('[graph] container size:', W, H, 'THREE defined:', typeof THREE !== 'undefined');
 
     // Scene — theme-aware background
     const scene = new THREE.Scene();
@@ -4028,6 +4029,7 @@ function _initGraphInner(graph, container) {
     camera.position.set(0, 60, 280);
 
     // Renderer
+    console.log('[graph] creating renderer...');
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -4053,6 +4055,7 @@ function _initGraphInner(graph, container) {
         bloomPass = null;
     }
 
+    console.log('[graph] bloom done, composer:', !!composer, 'building scene...');
     // -- Lights (brighter, more colorful) --
     scene.add(new THREE.AmbientLight(0x445577, 0.8));
     const pointLight = new THREE.PointLight(0xa78bfa, 1.0, 800);
@@ -4080,6 +4083,7 @@ function _initGraphInner(graph, container) {
     const starField = new THREE.Points(starGeo, starMat);
     scene.add(starField);
 
+    console.log('[graph] starfield + lights added, building nodes...');
     // -- Build community color map from graph data --
     const communityMap = {};
     const communityMeta = [];
@@ -4222,6 +4226,7 @@ function _initGraphInner(graph, container) {
         mesh.userData._emojiSprite = emojiSprite;
     });
 
+    console.log('[graph] nodes created:', nodeMeshes.length);
     // -- Create curved edge lines --
     const edgeTypeColors = {
         wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: isLight ? 0x6678aa : 0x2d3561
@@ -4270,6 +4275,7 @@ function _initGraphInner(graph, container) {
         lineMeshes.push(line);
     });
 
+    console.log('[graph] edges created:', lineMeshes.length);
     // -- Phase 4: Node text labels (billboard sprites) --
     const labelSprites = [];
     function createLabelTexture(text, color) {
@@ -4740,6 +4746,7 @@ function _initGraphInner(graph, container) {
     canvas.addEventListener('touchend', () => { isDragging = false; });
 
     // -- Animation loop (with playful physics) --
+    console.log('[graph] all phases done, starting animation...');
     const startTime = performance.now();
     function animate() {
         g3.rafId = requestAnimationFrame(animate);
