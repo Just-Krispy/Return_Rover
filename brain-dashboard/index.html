@@ -23,14 +23,15 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://unpkg.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <!-- Shaders first (dependencies), then passes that use them -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -3956,6 +3957,14 @@ function initGraph(data) {
     const container = document.getElementById('graphContainer');
     if (!container || typeof THREE === 'undefined') return;
 
+    try { _initGraphInner(graph, container); }
+    catch (e) {
+        console.error('Knowledge graph init failed:', e);
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;">Graph failed to load — check console</div>';
+    }
+}
+
+function _initGraphInner(graph, container) {
     // Setup sparkle overlay
     const sparkleCanvas = document.getElementById('sparkleCanvas');
     let sparkleCtx = null;
@@ -4024,18 +4033,24 @@ function initGraph(data) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.insertBefore(renderer.domElement, container.firstChild);
 
-    // -- Post-processing: Bloom --
-    let composer, bloomPass;
-    if (typeof THREE.EffectComposer !== 'undefined') {
-        composer = new THREE.EffectComposer(renderer);
-        composer.addPass(new THREE.RenderPass(scene, camera));
-        bloomPass = new THREE.UnrealBloomPass(
-            new THREE.Vector2(W, H),
-            0.8,   // strength
-            0.4,   // radius
-            0.25   // threshold
-        );
-        composer.addPass(bloomPass);
+    // -- Post-processing: Bloom (wrapped in try-catch for resilience) --
+    let composer = null, bloomPass = null;
+    try {
+        if (typeof THREE.EffectComposer !== 'undefined' && typeof THREE.UnrealBloomPass !== 'undefined') {
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+            bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(W, H),
+                0.8,   // strength
+                0.4,   // radius
+                0.25   // threshold
+            );
+            composer.addPass(bloomPass);
+        }
+    } catch (e) {
+        console.warn('Bloom post-processing failed, falling back to basic render:', e);
+        composer = null;
+        bloomPass = null;
     }
 
     // -- Lights (brighter, more colorful) --
@@ -4179,7 +4194,7 @@ function initGraph(data) {
         // Sphere (slightly bigger for playfulness)
         const geo = new THREE.SphereGeometry(n.radius, 20, 14);
         const mat = new THREE.MeshPhongMaterial({
-            color, emissive: color, emissiveIntensity: 0.5,
+            color, emissive: color, emissiveIntensity: isLight ? 0.3 : 0.5,
             transparent: true, opacity: 0.92, shininess: 80
         });
         const mesh = new THREE.Mesh(geo, mat);
@@ -4191,7 +4206,7 @@ function initGraph(data) {
         // Glow sprite (bigger, more vibrant)
         const glow = new THREE.Sprite(glowMat.clone());
         glow.material.color = color;
-        glow.material.opacity = composer ? 0.15 : 0.35;
+        glow.material.opacity = isLight ? 0.12 : (composer ? 0.15 : 0.35);
         glow.scale.set(n.radius * (composer ? 4 : 6), n.radius * (composer ? 4 : 6), 1);
         glow.position.copy(mesh.position);
         scene.add(glow);
@@ -4209,7 +4224,7 @@ function initGraph(data) {
 
     // -- Create curved edge lines --
     const edgeTypeColors = {
-        wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: 0x2d3561
+        wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: isLight ? 0x6678aa : 0x2d3561
     };
     const CURVE_SEGMENTS = 20;
     const lineMeshes = [];
@@ -4234,7 +4249,7 @@ function initGraph(data) {
         const c = edgeTypeColors[e.type] || edgeTypeColors.shared_tags;
         // Phase 2: weight-based opacity
         const w = Math.min(e.weight || 1, 3);
-        const baseTypeOp = e.type === 'shared_tags' ? 0.12 : (e.type === 'wikilink' ? 0.6 : 0.45);
+        const baseTypeOp = e.type === 'shared_tags' ? (isLight ? 0.25 : 0.12) : (e.type === 'wikilink' ? 0.6 : 0.45);
         const weightBoost = 0.15 + (w / 3) * 0.55;
         const opacity = Math.min(baseTypeOp * (0.5 + w * 0.5), 0.85);
         let mat, line;
@@ -4264,15 +4279,15 @@ function initGraph(data) {
         ctx.font = 'bold 28px Inter, system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillStyle = isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)';
         ctx.fillText(text, 130, 34); // shadow
-        ctx.fillStyle = color || '#e2e8f0';
+        ctx.fillStyle = color || (isLight ? '#1e293b' : '#e2e8f0');
         ctx.fillText(text, 128, 32);
         return new THREE.CanvasTexture(c);
     }
     nodes3d.forEach((n, i) => {
         const label = (n.id || '').length > 18 ? n.id.substring(0, 18) + '…' : n.id;
-        const tex = createLabelTexture(label, '#e2e8f0');
+        const tex = createLabelTexture(label, isLight ? '#1e293b' : '#e2e8f0');
         const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false });
         const sprite = new THREE.Sprite(mat);
         sprite.scale.set(n.radius * 5, n.radius * 1.3, 1);
@@ -4326,7 +4341,7 @@ function initGraph(data) {
         drift.push({ x: (Math.random()-0.5)*0.004, y: (Math.random()-0.5)*0.004, z: (Math.random()-0.5)*0.004 });
     }
     apGeo.setAttribute('position', new THREE.BufferAttribute(apPos, 3));
-    const apMat = new THREE.PointsMaterial({ color: 0xcccccc, size: 1.2, transparent: true, opacity: 0.2, depthWrite: false });
+    const apMat = new THREE.PointsMaterial({ color: isLight ? 0x667788 : 0xcccccc, size: 1.2, transparent: true, opacity: isLight ? 0.3 : 0.2, depthWrite: false });
     const ambientParticles = new THREE.Points(apGeo, apMat);
     ambientParticles.userData._drift = drift;
     scene.add(ambientParticles);
@@ -4817,9 +4832,18 @@ function initGraph(data) {
             bloomPass.strength += (bloomPass._targetStrength - bloomPass.strength) * 0.04;
             bloomPass.radius += (bloomPass._targetRadius - bloomPass.radius) * 0.04;
         }
-        if (composer) composer.render();
-        else renderer.render(scene, camera);
+        try {
+            if (composer) composer.render();
+            else renderer.render(scene, camera);
+        } catch (e) {
+            // If bloom render fails, fall back to basic
+            console.warn('Composer render failed, using basic renderer:', e);
+            composer = null;
+            renderer.render(scene, camera);
+        }
     }
+    // Force one immediate render to ensure canvas shows content
+    renderer.render(scene, camera);
     animate();
 
     // Resize handler
@@ -5918,8 +5942,8 @@ function initFloatingSearch() {
 //  INIT
 // =============================================
 (async function init() {
-    // Initialize Lucide icons
-    lucide.createIcons();
+    // Initialize Lucide icons (wrapped for resilience)
+    try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { console.warn('Lucide icons failed:', e); }
 
     // Start the "last updated" live ticker
     startLastUpdatedTicker();
