@@ -2746,7 +2746,7 @@ function toggleTheme() {
         }
         // Ambient particles: darker on light bg
         if (g3.ambientParticles) {
-            g3.ambientParticles.material.color.set(lit ? 0x6678 : 0xcccccc);
+            g3.ambientParticles.material.color.set(lit ? 0x667788 : 0xcccccc);
             g3.ambientParticles.material.opacity = lit ? 0.3 : 0.2;
         }
         // Cluster halos: slightly more visible on light bg
@@ -2754,7 +2754,7 @@ function toggleTheme() {
             g3.halos.forEach(h => { h.material.opacity = lit ? 0.08 : 0.045; });
         }
         // Node glow: reduce on light (additive blending washes out)
-        if (g3.nodeMeshes && currentGraphMode === 'playful') {
+        if (g3.nodeMeshes) {
             g3.nodeMeshes.forEach(m => {
                 if (m.userData._glow) {
                     m.userData._glow.material.opacity = lit ? 0.12 : 0.35;
@@ -2763,13 +2763,24 @@ function toggleTheme() {
                 m.material.emissiveIntensity = lit ? 0.3 : 0.5;
             });
         }
-        // Edge shared_tags: more visible on light bg
-        if (g3.lineMeshes && currentGraphMode === 'playful') {
+        // Edges: adjust opacity for all types on theme switch
+        if (g3.lineMeshes) {
             g3.lineMeshes.forEach(l => {
                 const e = l.userData;
                 if (e.type === 'shared_tags') {
                     l.material.opacity = lit ? 0.2 : (e._baseOpacity || 0.12);
                     l.material.color.set(lit ? 0x6678aa : 0x2d3561);
+                } else {
+                    // wikilink, mention, semantic edges — boost opacity in light mode
+                    l.material.opacity = lit ? Math.min((e._baseOpacity || 0.3) * 1.5, 0.8) : (e._baseOpacity || 0.3);
+                }
+            });
+        }
+        // Flow particles: update color for theme
+        if (g3.scene) {
+            g3.scene.children.forEach(c => {
+                if (c.isPoints && c.material && c.geometry.attributes.position.count <= 500 && c.geometry.attributes.position.count > 1) {
+                    c.material.color.set(lit ? 0x4488cc : 0x00ff88);
                 }
             });
         }
@@ -6108,8 +6119,8 @@ function initFloatingSearch() {
                 }
                 // Update graph background if light theme
                 if (getTheme() === 'light' && g3.scene) {
-                    g3.scene.background = new THREE.Color(0xe2e8f0);
-                    g3.scene.fog = new THREE.FogExp2(0xe2e8f0, 0.0018);
+                    g3.scene.background = new THREE.Color(0xdde4ed);
+                    g3.scene.fog = new THREE.FogExp2(0xdde4ed, 0.001);
                 }
             }
         } catch(e) { /* keep demo graph */ }
