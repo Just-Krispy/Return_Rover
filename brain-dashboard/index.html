@@ -16,6 +16,9 @@
     <meta name="twitter:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/preview.png">
     <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
     <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+    <meta http-equiv="x-dns-prefetch-control" content="on">
+    <meta name="robots" content="index, follow">
+    <meta name="color-scheme" content="dark light">
     <link rel="canonical" href="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,8 +26,14 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
     <link rel="preconnect" href="https://unpkg.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- EffectComposer MUST load first (defines THREE.Pass base class) -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
@@ -2158,6 +2167,61 @@
         /* Fullscreen mode adjustments */
         .graph-fullscreen-container .graph-mode-switcher { top: 16px; left: 16px; }
         .graph-fullscreen-container .graph-hud { top: 16px; right: 60px; }
+
+/* Graph Intelligence Panel */
+.graph-intel-panel {
+    position: absolute; bottom: 40px; right: 8px; width: 260px; max-height: 320px;
+    background: var(--bg-surface); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md); padding: 12px; font-size: 12px;
+    overflow-y: auto; z-index: 20; opacity: 0; pointer-events: none;
+    transform: translateY(8px); transition: opacity 0.25s, transform 0.25s;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+.graph-intel-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.graph-intel-section { margin-bottom: 10px; }
+.graph-intel-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); margin-bottom: 6px; }
+.graph-intel-item { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; color: var(--text-secondary); font-size: 11px; }
+.graph-intel-item .intel-val { color: var(--accent-indigo); font-weight: 600; }
+.graph-intel-bar { height: 4px; background: var(--bg-inset); border-radius: 2px; margin-top: 3px; overflow: hidden; }
+.graph-intel-bar-fill { height: 100%; border-radius: 2px; background: var(--accent-indigo); transition: width 0.5s ease; }
+.graph-intel-orphan { color: var(--accent-amber); cursor: pointer; font-size: 11px; padding: 2px 6px; background: rgba(251,191,36,0.1); border-radius: 4px; margin: 2px 0; display: inline-block; }
+.graph-intel-orphan:hover { background: rgba(251,191,36,0.2); }
+.graph-intel-gap { color: var(--accent-cyan); font-size: 11px; padding: 4px 8px; background: rgba(34,211,238,0.08); border-radius: 6px; margin: 3px 0; border-left: 2px solid var(--accent-cyan); }
+.autopilot-indicator {
+    position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    background: rgba(129,140,248,0.15); border: 1px solid var(--accent-indigo);
+    color: var(--accent-indigo); font-size: 11px; padding: 4px 14px;
+    border-radius: 20px; z-index: 15; display: none; backdrop-filter: blur(8px);
+    animation: autopilotPulse 2s ease-in-out infinite;
+}
+.autopilot-indicator.active { display: flex; align-items: center; gap: 6px; }
+@keyframes autopilotPulse { 0%,100% { opacity: 0.8; } 50% { opacity: 1; } }
+@keyframes screenshotFlash { 0% { opacity: 0.6; } 100% { opacity: 0; } }
+
+        /* Reduce motion for users who prefer it */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        /* Paint containment for below-fold sections — improves rendering perf */
+        #sec-stats, #sec-vault, #sec-search, #sec-research,
+        #sec-ask, #sec-braindump, #sec-tags, #sec-system {
+            content-visibility: auto;
+            contain-intrinsic-size: auto 400px;
+        }
+
+        /* Touch target minimum 44x44 for mobile accessibility */
+        @media (pointer: coarse) {
+            button, .graph-btn, .section-nav-dot, .theme-toggle {
+                min-height: 44px;
+                min-width: 44px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -2256,10 +2320,17 @@
                 <div class="graph-search-results" id="graphSearchResults"></div>
             </div>
 
+            <!-- Autopilot indicator -->
+            <div class="autopilot-indicator" id="autopilotIndicator">&#9654; AUTOPILOT <span id="autopilotNodeName" style="font-weight:600"></span></div>
+            <!-- Graph Intelligence Panel -->
+            <div class="graph-intel-panel" id="graphIntelPanel"></div>
             <div class="graph-controls">
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
                 <button class="graph-btn" onclick="graphShakeAll()" title="Shake it up!" style="font-size:16px">🎉</button>
+                <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot scenic tour" aria-label="Toggle autopilot" id="autopilotBtn">&#9992;</button>
+                <button class="graph-btn" onclick="toggleGraphIntel()" title="Graph intelligence" aria-label="Graph analytics" id="intelBtn">&#128202;</button>
+                <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot graph" aria-label="Screenshot">&#128247;</button>
             </div>
         </div>
         <div class="graph-legend" id="graphLegend">
@@ -2288,6 +2359,9 @@
                 </div>
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
+                <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot" aria-label="Autopilot">&#9992;</button>
+                <button class="graph-btn" onclick="toggleGraphIntel()" title="Intelligence" aria-label="Analytics">&#128202;</button>
+                <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot" aria-label="Screenshot">&#128247;</button>
                 <button class="graph-btn graph-close-btn" onclick="closeGraphFullscreen()" title="Exit fullscreen (ESC)">&#10005;</button>
             </div>
         </div>
@@ -2583,6 +2657,8 @@
         <div class="kb-row"><span class="kb-action">Reset graph camera</span><kbd>G</kbd></div>
         <div class="kb-row"><span class="kb-action">Focus braindump</span><kbd>B</kbd></div>
         <div class="kb-row"><span class="kb-action">New chat session</span><kbd>N</kbd></div>
+        <div class="kb-row"><span class="kb-action">Toggle autopilot tour</span><kbd>P</kbd></div>
+        <div class="kb-row"><span class="kb-action">Graph intelligence</span><kbd>I</kbd></div>
         <div class="kb-row"><span class="kb-action">Close overlay</span><kbd>Esc</kbd></div>
     </div>
 </div>
@@ -2592,7 +2668,7 @@
 <div class="note-preview-panel" id="notePreviewPanel" role="dialog" aria-label="Note preview">
     <div class="note-preview-header">
         <span class="note-preview-title" id="notePreviewTitle">--</span>
-        <button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
+        <button style="font-size:12px;padding:4px 10px;background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:6px;color:var(--accent-cyan);cursor:pointer;margin-right:8px" onclick="const t=document.getElementById('notePreviewTitle').textContent;closeNotePreview();viewInGraph(t)" title="View in Graph">&#127760; Graph</button><button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
     </div>
     <div class="note-preview-meta" id="notePreviewMeta"></div>
     <div class="note-preview-body" id="notePreviewBody"></div>
@@ -5447,7 +5523,10 @@ function renderRecentSearches() {
     const recent = JSON.parse(localStorage.getItem('brain-recent-searches') || '[]');
     if (!recent.length) { container.innerHTML = ''; return; }
     container.innerHTML = '<span style="font-size:11px;color:var(--text-tertiary);margin-right:2px">Recent:</span>' +
-        recent.map(s => `<span style="font-size:11px;color:var(--accent-indigo);cursor:pointer;padding:2px 8px;background:var(--bg-inset);border-radius:10px;border:1px solid var(--border-subtle)" onclick="document.getElementById('searchInput').value='${escapeHtml(s).replace(/'/g,"\\'")}';searchVault()">${escapeHtml(s)}</span>`).join('');
+        recent.map(s => `<span class="recent-search-pill" data-query="${escapeHtml(s)}" style="font-size:11px;color:var(--accent-indigo);cursor:pointer;padding:2px 8px;background:var(--bg-inset);border-radius:10px;border:1px solid var(--border-subtle)">${escapeHtml(s)}</span>`).join('');
+    container.querySelectorAll('.recent-search-pill').forEach(pill => {
+        pill.addEventListener('click', () => { document.getElementById('searchInput').value = pill.dataset.query; searchVault(); });
+    });
 }
 
 async function searchVault() {
@@ -6040,6 +6119,249 @@ function initFloatingSearch() {
         loadVaultQuality();
         startAutoRefresh();
     }
+
+// =============================================
+//  GRAPH INTELLIGENCE PANEL
+// =============================================
+function computeGraphIntelligence() {
+    if (!g3.nodes3d || !g3.edges3d) return null;
+    const nodes = g3.nodes3d;
+    const edges = g3.edges3d;
+    const n = nodes.length;
+    const adj = {};
+    nodes.forEach(nd => { adj[nd.id] = []; });
+    edges.forEach(e => {
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        if (adj[sid]) adj[sid].push(tid);
+        if (adj[tid]) adj[tid].push(sid);
+    });
+    const degrees = {};
+    nodes.forEach(nd => { degrees[nd.id] = (adj[nd.id] || []).length; });
+    const sortedByDegree = [...nodes].sort((a, b) => degrees[b.id] - degrees[a.id]);
+    const orphans = nodes.filter(nd => degrees[nd.id] === 0);
+    // Label propagation for community detection
+    const labels = {};
+    nodes.forEach((nd, i) => { labels[nd.id] = i; });
+    for (let iter = 0; iter < 5; iter++) {
+        const shuffled = [...nodes].sort(() => Math.random() - 0.5);
+        shuffled.forEach(nd => {
+            const neighbors = adj[nd.id] || [];
+            if (neighbors.length === 0) return;
+            const counts = {};
+            neighbors.forEach(nid => { const l = labels[nid]; counts[l] = (counts[l] || 0) + 1; });
+            let maxL = labels[nd.id], maxC = 0;
+            Object.entries(counts).forEach(([l, ct]) => { if (ct > maxC) { maxC = ct; maxL = parseInt(l); } });
+            labels[nd.id] = maxL;
+        });
+    }
+    const clusterSizes = {};
+    Object.values(labels).forEach(l => { clusterSizes[l] = (clusterSizes[l] || 0) + 1; });
+    const clusters = Object.entries(clusterSizes)
+        .filter(([,s]) => s > 1)
+        .sort((a, b) => b[1] - a[1])
+        .map(([l, s]) => {
+            const members = nodes.filter(nd => labels[nd.id] === parseInt(l));
+            const topNode = members.sort((a, b) => degrees[b.id] - degrees[a.id])[0];
+            return { label: topNode ? topNode.id.replace(/.md$/, '').split('/').pop() : 'Cluster', size: s, members };
+        });
+    const bridges = nodes.filter(nd => {
+        const neighbors = adj[nd.id] || [];
+        if (neighbors.length < 2) return false;
+        const neighborLabels = new Set(neighbors.map(nid => labels[nid]));
+        return neighborLabels.size > 1;
+    }).sort((a, b) => degrees[b.id] - degrees[a.id]).slice(0, 5);
+    const gaps = [];
+    for (let i = 0; i < Math.min(clusters.length, 5); i++) {
+        for (let j = i + 1; j < Math.min(clusters.length, 5); j++) {
+            const c1 = new Set(clusters[i].members.map(m => m.id));
+            const c2 = new Set(clusters[j].members.map(m => m.id));
+            let cross = 0;
+            edges.forEach(e => {
+                const s = typeof e.source === 'object' ? e.source.id : e.source;
+                const t = typeof e.target === 'object' ? e.target.id : e.target;
+                if ((c1.has(s) && c2.has(t)) || (c1.has(t) && c2.has(s))) cross++;
+            });
+            if (cross < 2 && clusters[i].size >= 3 && clusters[j].size >= 3)
+                gaps.push({ a: clusters[i].label, b: clusters[j].label, edges: cross });
+        }
+    }
+    return {
+        totalNodes: n, totalEdges: edges.length,
+        avgDegree: n > 0 ? (edges.length * 2 / n).toFixed(1) : 0,
+        topHubs: sortedByDegree.slice(0, 5).map(nd => ({ name: nd.id.replace(/.md$/, '').split('/').pop(), degree: degrees[nd.id] })),
+        orphans: orphans.slice(0, 8).map(nd => nd.id.replace(/.md$/, '').split('/').pop()),
+        orphanCount: orphans.length,
+        clusters, bridges: bridges.map(nd => ({ name: nd.id.replace(/.md$/, '').split('/').pop(), degree: degrees[nd.id] })),
+        gaps: gaps.slice(0, 3),
+        density: n > 1 ? (2 * edges.length / (n * (n - 1)) * 100).toFixed(2) : 0
+    };
+}
+
+function renderGraphIntel(intel) {
+    const panel = document.getElementById('graphIntelPanel');
+    if (!panel || !intel) return;
+    panel.innerHTML = `
+        <div class="graph-intel-section">
+            <h4>Overview</h4>
+            <div class="graph-intel-item"><span>Nodes</span><span class="intel-val">${intel.totalNodes}</span></div>
+            <div class="graph-intel-item"><span>Edges</span><span class="intel-val">${intel.totalEdges}</span></div>
+            <div class="graph-intel-item"><span>Avg connections</span><span class="intel-val">${intel.avgDegree}</span></div>
+            <div class="graph-intel-item"><span>Density</span><span class="intel-val">${intel.density}%</span></div>
+            <div class="graph-intel-item"><span>Clusters</span><span class="intel-val">${intel.clusters.length}</span></div>
+        </div>
+        <div class="graph-intel-section">
+            <h4>Top Hub Notes</h4>
+            ${intel.topHubs.map(h => `<div class="graph-intel-item"><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(h.name)}</span><span class="intel-val">${h.degree} links</span></div>`).join('')}
+        </div>
+        ${intel.clusters.length > 0 ? `<div class="graph-intel-section"><h4>Knowledge Clusters</h4>${intel.clusters.slice(0, 6).map(cl => `<div class="graph-intel-item"><span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(cl.label)}</span><span class="intel-val">${cl.size} notes</span></div>`).join('')}</div>` : ''}
+        ${intel.bridges.length > 0 ? `<div class="graph-intel-section"><h4>Bridge Notes</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Connect different clusters</div>${intel.bridges.map(b => `<div class="graph-intel-item"><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(b.name)}</span><span class="intel-val">${b.degree}</span></div>`).join('')}</div>` : ''}
+        ${intel.orphanCount > 0 ? `<div class="graph-intel-section"><h4>Orphan Notes (${intel.orphanCount})</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">No connections - consider linking</div>${intel.orphans.map(o => `<span class="graph-intel-orphan" onclick="graphZoomToNode('${escapeHtml(o)}')">${escapeHtml(o)}</span> `).join('')}</div>` : ''}
+        ${intel.gaps.length > 0 ? `<div class="graph-intel-section"><h4>Knowledge Gaps</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Clusters that could be linked</div>${intel.gaps.map(g => `<div class="graph-intel-gap">${escapeHtml(g.a)} &harr; ${escapeHtml(g.b)} <span style="opacity:0.6">(${g.edges} links)</span></div>`).join('')}</div>` : ''}
+    `;
+}
+
+function toggleGraphIntel() {
+    const panel = document.getElementById('graphIntelPanel');
+    if (!panel) return;
+    if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+    const intel = computeGraphIntelligence();
+    renderGraphIntel(intel);
+    panel.classList.add('open');
+}
+
+// =============================================
+//  AUTOPILOT / SCENIC TOUR
+// =============================================
+let autopilotActive = false;
+let autopilotTimer = null;
+let autopilotQueue = [];
+let autopilotIndex = 0;
+
+function toggleAutopilot() { autopilotActive ? stopAutopilot() : startAutopilot(); }
+
+function startAutopilot() {
+    if (!g3.nodes3d || g3.nodes3d.length === 0) return;
+    autopilotActive = true;
+    autopilotQueue = [...g3.nodes3d]
+        .filter(nd => (nd.connections || 0) > 0)
+        .sort((a, b) => (b.connections || 0) - (a.connections || 0))
+        .slice(0, 30);
+    if (autopilotQueue.length === 0) { showToast('No connected nodes to tour', 'info'); autopilotActive = false; return; }
+    autopilotIndex = 0;
+    const ind = document.getElementById('autopilotIndicator');
+    if (ind) ind.classList.add('active');
+    const btn = document.getElementById('autopilotBtn');
+    if (btn) btn.style.color = 'var(--accent-indigo)';
+    if (g3._setAutoRotate) g3._setAutoRotate(false);
+    autopilotVisitNext();
+}
+
+function stopAutopilot() {
+    autopilotActive = false;
+    if (autopilotTimer) { clearTimeout(autopilotTimer); autopilotTimer = null; }
+    const ind = document.getElementById('autopilotIndicator');
+    if (ind) ind.classList.remove('active');
+    const btn = document.getElementById('autopilotBtn');
+    if (btn) btn.style.color = '';
+    if (g3.nodeMeshes) {
+        g3.nodeMeshes.forEach(m => { m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5; });
+        g3.lineMeshes.forEach(l => { const e = l.userData; l.material.opacity = e.type === 'shared_tags' ? 0.12 : (e.type === 'wikilink' ? 0.6 : 0.45); });
+    }
+    if (g3._setAutoRotate) g3._setAutoRotate(true);
+}
+
+function autopilotVisitNext() {
+    if (!autopilotActive || autopilotIndex >= autopilotQueue.length) {
+        if (autopilotActive && autopilotQueue.length > 0) autopilotIndex = 0;
+        else { stopAutopilot(); return; }
+    }
+    const node = autopilotQueue[autopilotIndex++];
+    const nameLabel = document.getElementById('autopilotNodeName');
+    const cleanName = (node.id || '').replace(/.md$/, '').split('/').pop();
+    if (nameLabel) nameLabel.textContent = cleanName;
+    const mesh = g3.nodeMeshes.find(m => m.userData.id === node.id);
+    if (!mesh) { autopilotTimer = setTimeout(autopilotVisitNext, 500); return; }
+    if (g3.targetLookAt) g3.targetLookAt.set(mesh.position.x, mesh.position.y, mesh.position.z);
+    if (g3.targetDist !== undefined) g3.targetDist = 60 + Math.max(0, 30 - (node.connections || 0) * 3);
+    // Highlight node + neighbors
+    const neighborIds = new Set();
+    g3.edges3d.forEach(e => {
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        if (sid === node.id) neighborIds.add(tid);
+        if (tid === node.id) neighborIds.add(sid);
+    });
+    g3.nodeMeshes.forEach(m => {
+        const nid = m.userData.id;
+        if (nid === node.id) { m.material.opacity = 1; m.material.emissiveIntensity = 1.2; }
+        else if (neighborIds.has(nid)) { m.material.opacity = 0.85; m.material.emissiveIntensity = 0.7; }
+        else { m.material.opacity = 0.15; m.material.emissiveIntensity = 0.1; }
+    });
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        l.material.opacity = (sid === node.id || tid === node.id) ? 0.8 : 0.03;
+    });
+    autopilotTimer = setTimeout(autopilotVisitNext, 4000);
+}
+
+// =============================================
+//  SCREENSHOT GRAPH
+// =============================================
+function screenshotGraph() {
+    if (!g3.renderer) { showToast('No graph to screenshot', 'error'); return; }
+    try { if (g3.composer) g3.composer.render(); else g3.renderer.render(g3.scene, g3.camera); } catch(e) {}
+    const canvas = g3.renderer.domElement;
+    const dataUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'knowledge-graph-' + (currentGraphMode || 'playful') + '-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const container = document.getElementById('graphContainer') || document.getElementById('graphFullscreenContainer');
+    if (container) {
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:absolute;inset:0;background:white;z-index:100;animation:screenshotFlash 0.3s ease-out forwards;pointer-events:none';
+        container.style.position = 'relative';
+        container.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+    }
+    showToast('Screenshot saved!', 'success', 2000);
+}
+
+// =============================================
+//  RAG-TO-GRAPH BRIDGE
+// =============================================
+function viewInGraph(noteName) {
+    const clean = noteName.replace(/.md$/, '').split('/').pop();
+    if (g3.nodeMeshes && g3.nodeMeshes.length > 0) {
+        scrollToSection('sec-graph');
+        setTimeout(() => {
+            if (typeof graphZoomToNode === 'function') graphZoomToNode(clean);
+            else {
+                const mesh = g3.nodeMeshes.find(m => {
+                    const id = (m.userData.id || '').replace(/.md$/, '').split('/').pop().toLowerCase();
+                    return id.includes(clean.toLowerCase()) || clean.toLowerCase().includes(id);
+                });
+                if (mesh) {
+                    if (g3.targetLookAt) g3.targetLookAt.copy(mesh.position);
+                    if (g3.targetDist !== undefined) g3.targetDist = 80;
+                    showToast('Zoomed to: ' + clean, 'success', 2000);
+                } else showToast('Node not found in graph: ' + clean, 'info', 3000);
+            }
+        }, 500);
+    } else showToast('Graph not loaded yet', 'info');
+}
+
+// Extra keyboard shortcuts: P = autopilot, I = intelligence
+document.addEventListener('keydown', function(e) {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); toggleAutopilot(); }
+    if ((e.key === 'i' || e.key === 'I') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); toggleGraphIntel(); }
+});
+
 })();
 </script>
 

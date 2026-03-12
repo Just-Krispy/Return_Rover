@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Second Brain — Turn Scattered Notes Into Connected Intelligence</title>
+    <meta name="description" content="The AI-powered second brain that connects your notes, automates research, and surfaces insights you'd miss. Built for knowledge workers who think in systems.">
+    <meta property="og:title" content="Second Brain — Mission Control for Your Mind">
+    <meta property="og:description" content="3D knowledge graph, automated research pipelines, and RAG-powered search. Turn scattered notes into connected intelligence.">
+    <meta property="og:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/product-hunt/og-image.png">
+    <meta property="og:url" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/product-hunt/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Second Brain — Mission Control for Your Mind">
+    <meta name="twitter:description" content="3D knowledge graph, automated research pipelines, and RAG-powered search.">
+    <meta name="twitter:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/product-hunt/og-image.png">
+    <meta name="theme-color" content="#09090b">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090b;
+            --surface: #18181b;
+            --border: #27272a;
+            --text: #fafafa;
+            --text-secondary: #a1a1aa;
+            --accent: #818cf8;
+            --accent-glow: rgba(129, 140, 248, 0.3);
+            --green: #4ade80;
+            --cyan: #22d3ee;
+            --amber: #fbbf24;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 50% 0%, rgba(129,140,248,0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 40% at 30% 80%, rgba(34,211,238,0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            background: var(--surface);
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            max-width: 800px;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 .gradient {
+            background: linear-gradient(135deg, var(--accent), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.35rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            line-height: 1.7;
+        }
+
+        .cta-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--accent-glow), 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+            transform: translateY(-2px);
+        }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            gap: 3rem;
+            margin-top: 4rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Sections */
+        section {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 6rem 2rem;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        h2 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1rem;
+        }
+
+        .section-desc {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin-bottom: 3rem;
+        }
+
+        /* Feature grid */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 2rem;
+            transition: all 0.25s ease;
+        }
+
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(129,140,248,0.08);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Screenshot section */
+        .screenshot-section {
+            text-align: center;
+        }
+
+        .screenshot-wrapper {
+            position: relative;
+            margin-top: 2rem;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .screenshot-wrapper img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* How it works */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            counter-reset: step;
+        }
+
+        .step {
+            position: relative;
+            padding: 1.5rem;
+        }
+
+        .step::before {
+            counter-increment: step;
+            content: counter(step);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent), var(--cyan));
+            color: white;
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .step h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Maker section */
+        .maker-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 3rem;
+            margin-top: 3rem;
+        }
+
+        .maker-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .maker-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .maker-name {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .maker-title {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .maker-quote {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .maker-quote strong {
+            color: var(--text);
+        }
+
+        /* CTA section */
+        .cta-section {
+            text-align: center;
+            padding: 6rem 2rem 8rem;
+        }
+
+        .cta-section h2 {
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .stats-bar { gap: 1.5rem; }
+            .features { grid-template-columns: 1fr; }
+            .maker-section { padding: 2rem 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="badge">
+            <span class="badge-dot"></span>
+            Launching on Product Hunt
+        </div>
+
+        <h1>
+            Turn Scattered Notes Into<br>
+            <span class="gradient">Connected Intelligence</span>
+        </h1>
+
+        <p class="subtitle">
+            The open-source second brain with a 3D knowledge graph, automated research pipelines,
+            and RAG-powered search. Save 5+ hours/week on research and never lose an insight again.
+        </p>
+
+        <div class="cta-group">
+            <a href="../" class="btn btn-primary">
+                Try the Live Demo
+            </a>
+            <a href="https://github.com/Just-Krispy/Return_Rover" class="btn btn-secondary">
+                View on GitHub
+            </a>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value">600+</div>
+                <div class="stat-label">Notes Connected</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">19</div>
+                <div class="stat-label">Automations Running</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">5h</div>
+                <div class="stat-label">Saved Per Week</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">24/7</div>
+                <div class="stat-label">Passive Research</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Screenshot -->
+    <section class="screenshot-section">
+        <div class="section-label">Mission Control</div>
+        <h2>Your knowledge, visualized</h2>
+        <p class="section-desc" style="margin: 0 auto 2rem;">
+            See every connection between your notes in a real-time 3D knowledge graph.
+            Zoom, rotate, and click nodes to explore how your ideas connect.
+        </p>
+        <div class="screenshot-wrapper">
+            <img src="../preview.png" alt="Second Brain Dashboard - 3D Knowledge Graph with vault stats, RAG search, and automation workflows" loading="lazy" width="1200" height="675">
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section>
+        <div class="section-label">Features</div>
+        <h2>Everything you need to think better</h2>
+        <p class="section-desc">
+            Not just a note app. A complete intelligence system that works while you sleep.
+        </p>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(129,140,248,0.15); color: var(--accent);">
+                    <span>🌐</span>
+                </div>
+                <h3>3D Knowledge Graph</h3>
+                <p>Interactive Three.js visualization of every note and connection. See clusters form, find orphaned ideas, and discover hidden relationships.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(34,211,238,0.15); color: var(--cyan);">
+                    <span>🔍</span>
+                </div>
+                <h3>RAG-Powered Search</h3>
+                <p>Ask questions in natural language. The AI retrieves relevant notes and synthesizes answers from your own knowledge base.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(74,222,128,0.15); color: var(--green);">
+                    <span>🤖</span>
+                </div>
+                <h3>Overnight Scholar</h3>
+                <p>Set research topics and wake up to fresh insights. Scrapes Reddit, GitHub, arXiv, and X while you sleep. Creates vault notes automatically.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(251,191,36,0.15); color: var(--amber);">
+                    <span>📥</span>
+                </div>
+                <h3>Auto-Ingestion</h3>
+                <p>RSS feeds, podcasts, bookmarks, and YouTube videos flow into your vault automatically. Smart dedup prevents duplicates.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(248,113,113,0.15); color: #f87171;">
+                    <span>🧩</span>
+                </div>
+                <h3>Cross-Pollinator</h3>
+                <p>AI finds unexpected connections between notes in different domains. Your agriculture research meets your AI notes — new ideas emerge.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon" style="background: rgba(167,139,250,0.15); color: #a78bfa;">
+                    <span>💬</span>
+                </div>
+                <h3>Discord Bot Integration</h3>
+                <p>Capture conversations, trigger research, and braindump ideas directly from Discord. Your bot assistant (Archer) manages the pipeline.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section>
+        <div class="section-label">How It Works</div>
+        <h2>From chaos to clarity in 3 steps</h2>
+        <p class="section-desc">
+            No complex setup. No vendor lock-in. Your notes stay in Obsidian, the intelligence layer runs on your own server.
+        </p>
+
+        <div class="steps">
+            <div class="step">
+                <h3>Capture Everything</h3>
+                <p>RSS feeds, podcasts, YouTube, bookmarks, Discord messages, and manual braindumps all flow into your vault Inbox automatically.</p>
+            </div>
+            <div class="step">
+                <h3>Connect Automatically</h3>
+                <p>19 automation workflows categorize, tag, and link your notes. The AI finds connections you'd never notice manually.</p>
+            </div>
+            <div class="step">
+                <h3>Surface Insights</h3>
+                <p>The 3D knowledge graph reveals clusters and patterns. RAG search answers questions from your own knowledge. Weekly syntheses highlight what matters.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Maker Comment -->
+    <section>
+        <div class="section-label">From the Maker</div>
+        <h2>Why I built this</h2>
+
+        <div class="maker-section">
+            <div class="maker-header">
+                <div class="maker-avatar">K</div>
+                <div>
+                    <div class="maker-name">Krispy</div>
+                    <div class="maker-title">Maker</div>
+                </div>
+            </div>
+            <div class="maker-quote">
+                <p>
+                    <strong>I was drowning in notes.</strong> Hundreds of bookmarks I'd never revisit.
+                    Podcast episodes I'd forget by lunch. Research papers that disappeared into folders.
+                </p>
+                <br>
+                <p>
+                    The problem wasn't capturing information — it was <strong>connecting it</strong>.
+                    That article about AI agents and that podcast about farm lending?
+                    They had a connection I'd never have found manually.
+                </p>
+                <br>
+                <p>
+                    So I built Second Brain: an intelligence system that captures, connects, and surfaces
+                    insights from everything I consume. It runs 24/7 on a VPS, has an AI bot (Archer) that
+                    manages research pipelines, and renders all my knowledge as an interactive 3D graph.
+                </p>
+                <br>
+                <p>
+                    <strong>The transformation:</strong> I went from "I know I read something about this"
+                    to "here are the 5 most relevant notes, synthesized into an answer" — in seconds.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <div class="cta-section">
+        <h2>Ready to build your second brain?</h2>
+        <p>Open source. Self-hosted. Your data stays yours.</p>
+        <div class="cta-group">
+            <a href="../" class="btn btn-primary">
+                Try the Live Demo
+            </a>
+            <a href="https://github.com/Just-Krispy/Return_Rover" class="btn btn-secondary">
+                Star on GitHub
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        Built with obsession by <a href="https://github.com/Just-Krispy">Krispy</a> &mdash;
+        Powered by Obsidian, Three.js, and too much coffee.
+    </footer>
+
+</body>
+</html>
