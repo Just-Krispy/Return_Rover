@@ -4056,7 +4056,7 @@ function initGraph(data) {
     try { _initGraphInner(graph, container); }
     catch (e) {
         console.error('Knowledge graph init failed:', e, e.stack);
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>Graph failed to load</div><div style="font-size:11px;color:#71717a;max-width:600px;max-width:600px'>Graph rendering encountered an issue. Try refreshing.</div></div>';
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>Graph failed to load</div><div style="font-size:11px;color:#71717a;max-width:600px">Graph rendering encountered an issue. Try refreshing.</div></div>';
     }
 }
 
