@@ -19,6 +19,7 @@
     <meta http-equiv="x-dns-prefetch-control" content="on">
     <meta name="robots" content="index, follow">
     <meta name="color-scheme" content="dark light">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="canonical" href="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,15 +34,15 @@
     <link rel="dns-prefetch" href="https://unpkg.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js" integrity="sha384-tTkFttkBclaU1cloKwOi9xk3pbao3VZxTjLNBt8iFABWDBQibbAbWpVmO28zMuxq" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
     <!-- EffectComposer MUST load first (defines THREE.Pass base class) -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" integrity="sha384-GkidzTYmQg24v13sa3xhBBbvOLbVLO1QxfyKLdOWweQqNqS/iWwUst2T1fER2Xrg" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js" integrity="sha384-2EpLreWSFuZsk4hcSplXLhlHd/wzvDNF907bTGIXSXM0SlhJNzy4YK0DhBFvkFEs" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js" integrity="sha384-I3lsvPeDJYFrEAzn/TA0yhc/SCYKwpyfyq8lKzHYKohu43H9f7xc/Q9ZWgSVUDl3" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" integrity="sha384-nhO9toQuMo5osCuA0l+YFpSqscZWxDu251Bnho2gD3kSPv1neEwHg0LyEmrA+mPj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" integrity="sha384-mY+ii969jnDCI2HjRHftH2NZVkIO5ZGUkcnGCg3oVJ3kVstWQXwerYWBg+nbUG4R" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" integrity="sha384-aVQ2QnWkoxhOefDB0YZB64OPVzujvccydpcC7UqMDJUK0ChwA382zOHmrWHGDRRa" crossorigin="anonymous"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -96,7 +97,7 @@
             --border-accent: #cbd5e1;
             --text-primary: #0f172a;
             --text-secondary: #475569;
-            --text-tertiary: #94a3b8;
+            --text-tertiary: #64748b;
             /* Darker accents for light backgrounds — WCAG AA compliant */
             --accent-indigo: #6366f1;
             --accent-cyan: #0891b2;
@@ -2198,6 +2199,9 @@
 @keyframes autopilotPulse { 0%,100% { opacity: 0.8; } 50% { opacity: 1; } }
 @keyframes screenshotFlash { 0% { opacity: 0.6; } 100% { opacity: 0; } }
 
+
+/* Screen reader only utility */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         /* Reduce motion for users who prefer it */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
@@ -2423,7 +2427,7 @@
             <button class="btn-primary" id="searchBtn" onclick="searchVault()" style="background:var(--accent-cyan);"><i data-lucide="search" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Search</button>
         </div>
         <div id="recentSearches" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
-        <div id="searchResults" class="search-results">
+        <div id="searchResults" class="search-results" aria-live="polite">
             <div class="search-empty">Search across your vault notes using semantic RAG search.</div>
         </div>
     </div>
@@ -2476,7 +2480,7 @@
                 <button class="btn-primary" id="askBtn" onclick="askVault()">Ask</button>
             </div>
             <div class="chat-history" id="chatHistory"></div>
-            <div class="ask-result" id="askResult">
+            <div class="ask-result" id="askResult" aria-live="polite" aria-atomic="true">
                 <div class="demo-notice" id="askPlaceholder">
                     Type a question to search your vault using conversational RAG.
                 </div>
@@ -2664,7 +2668,11 @@
 //  CONFIGURATION
 // =============================================
 const DEFAULT_GATEWAY = '';
-let API_GATEWAY = localStorage.getItem('brain-api-gateway') || DEFAULT_GATEWAY;
+let API_GATEWAY = (() => {
+    const stored = localStorage.getItem('brain-api-gateway') || DEFAULT_GATEWAY;
+    try { if (stored) new URL(stored); } catch { return DEFAULT_GATEWAY; }
+    return stored;
+})();
 const FETCH_TIMEOUT = 5000;
 let REFRESH_INTERVAL = 600000; // 10 minutes
 let MAX_RECENT_SEARCHES = parseInt(localStorage.getItem('brain-max-searches') || '8');
@@ -2679,7 +2687,9 @@ let chatSessionId = generateSessionId();
 let chatTurnCount = 0;
 
 function generateSessionId() {
-    return 'sess_' + Math.random().toString(36).substr(2, 12) + '_' + Date.now().toString(36);
+    const arr = new Uint8Array(12);
+    crypto.getRandomValues(arr);
+    return 'sess_' + Array.from(arr, b => b.toString(16).padStart(2, '0')).join('') + '_' + Date.now().toString(36);
 }
 
 function resetChatSession() {
@@ -4046,7 +4056,7 @@ function initGraph(data) {
     try { _initGraphInner(graph, container); }
     catch (e) {
         console.error('Knowledge graph init failed:', e, e.stack);
-        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>Graph failed to load</div><div style="font-size:11px;color:#71717a;max-width:600px;word-break:break-all">' + (e.message || e) + '</div></div>';
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>Graph failed to load</div><div style="font-size:11px;color:#71717a;max-width:600px;max-width:600px'>Graph rendering encountered an issue. Try refreshing.</div></div>';
     }
 }
 
@@ -4076,7 +4086,7 @@ function _initGraphInner(graph, container) {
                 const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
                 const dimmed = graphHiddenGroups.has(label) ? ' dimmed' : '';
                 const safeLabel = escapeHtml(label).replace(/'/g, '&#39;');
-                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${safeLabel}" onclick="toggleGraphFilter(this,'${safeLabel}')"><span class="graph-legend-dot" style="background:${color}"></span> ${safeLabel} (${c.size})</span>`;
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${safeLabel}"><span class="graph-legend-dot" style="background:${color}"></span> ${safeLabel} (${c.size})</span>`;
             }).join('');
         } else {
             // Fallback: folder-based legend
@@ -4086,11 +4096,15 @@ function _initGraphInner(graph, container) {
                 const count = graph.nodes.filter(n => n.folder === f).length;
                 if (count === 0) return '';
                 const dimmed = graphHiddenGroups.has(f) ? ' dimmed' : '';
-                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${f}" onclick="toggleGraphFilter(this,'${f}')"><span class="graph-legend-dot" style="background:${c}"></span> ${f} (${count})</span>`;
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${f}"><span class="graph-legend-dot" style="background:${c}"></span> ${f} (${count})</span>`;
             }).join('');
         }
         legendEl.innerHTML = legendItems +
             '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click for sparkles ✨ drag to orbit · scroll to zoom · shake 🎉</span>';
+        // Event delegation for legend filter clicks (safe — no inline onclick)
+        legendEl.querySelectorAll('.graph-legend-item.filterable').forEach(el => {
+            el.addEventListener('click', () => toggleGraphFilter(el, el.dataset.filter));
+        });
     }
 
     // Clean up previous
@@ -4650,7 +4664,7 @@ function _initGraphInner(graph, container) {
                 const neighborIds = nd._neighbors ? [...nd._neighbors].slice(0, 3) : [];
                 const neighborNames = neighborIds.map(id => `<span class="tt-neighbor">${id}</span>`).join(', ');
                 const communityLabel = nodeGroupMap[nd.id] || '';
-                tooltip.innerHTML = `<span style="font-size:16px;margin-right:4px">${nd._emoji}</span><strong>${nd.id}</strong>
+                tooltip.innerHTML = `<span style="font-size:16px;margin-right:4px">${nd._emoji}</span><strong>${escapeHtml(nd.id)}</strong>
                     <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
                     ${communityLabel ? '<div class="tt-community">' + communityLabel + '</div>' : ''}
                     <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
@@ -5660,7 +5674,7 @@ function renderChatHistory(items) {
         const sources = item.sources || [];
         const ago = item.ts ? timeAgo(new Date(item.ts)) : '';
         const sourcesStr = sources.slice(0, 3).map(s => typeof s === 'string' ? s.split('/').pop().replace('.md','') : '').join(', ');
-        return `<div class="chat-history-item" onclick="restoreChatItem(${i})">
+        return `<div class="chat-history-item" role="button" tabindex="0" onclick="restoreChatItem(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();restoreChatItem(${i})}">
             <div style="flex:1;min-width:0">
                 <div class="ch-q">${escapeHtml(q)}</div>
                 ${sourcesStr ? `<div class="ch-sources">${escapeHtml(sourcesStr)}</div>` : ''}
@@ -6212,7 +6226,7 @@ function renderGraphIntel(intel) {
         </div>
         ${intel.clusters.length > 0 ? `<div class="graph-intel-section"><h4>Knowledge Clusters</h4>${intel.clusters.slice(0, 6).map(cl => `<div class="graph-intel-item"><span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(cl.label)}</span><span class="intel-val">${cl.size} notes</span></div>`).join('')}</div>` : ''}
         ${intel.bridges.length > 0 ? `<div class="graph-intel-section"><h4>Bridge Notes</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Connect different clusters</div>${intel.bridges.map(b => `<div class="graph-intel-item"><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(b.name)}</span><span class="intel-val">${b.degree}</span></div>`).join('')}</div>` : ''}
-        ${intel.orphanCount > 0 ? `<div class="graph-intel-section"><h4>Orphan Notes (${intel.orphanCount})</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">No connections - consider linking</div>${intel.orphans.map(o => `<span class="graph-intel-orphan" onclick="graphZoomToNode('${escapeHtml(o)}')">${escapeHtml(o)}</span> `).join('')}</div>` : ''}
+        ${intel.orphanCount > 0 ? `<div class="graph-intel-section"><h4>Orphan Notes (${intel.orphanCount})</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">No connections - consider linking</div>${intel.orphans.map(o => `<span class="graph-intel-orphan" data-node="${escapeHtml(o)}">${escapeHtml(o)}</span> `).join('')}</div>` : ''}
         ${intel.gaps.length > 0 ? `<div class="graph-intel-section"><h4>Knowledge Gaps</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Clusters that could be linked</div>${intel.gaps.map(g => `<div class="graph-intel-gap">${escapeHtml(g.a)} &harr; ${escapeHtml(g.b)} <span style="opacity:0.6">(${g.edges} links)</span></div>`).join('')}</div>` : ''}
     `;
 }
@@ -6224,6 +6238,10 @@ function toggleGraphIntel() {
     const intel = computeGraphIntelligence();
     renderGraphIntel(intel);
     panel.classList.add('open');
+    // Event delegation for orphan node clicks
+    panel.querySelectorAll('.graph-intel-orphan').forEach(el => {
+        el.addEventListener('click', () => graphZoomToNode(el.dataset.node));
+    });
 }
 
 // =============================================
