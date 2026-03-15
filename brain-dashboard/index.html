@@ -4366,7 +4366,7 @@ function _initGraphInner(graph, container) {
         const c = edgeTypeColors[e.type] || edgeTypeColors.shared_tags;
         // Phase 2: weight-based opacity
         const w = Math.min(e.weight || 1, 3);
-        const baseTypeOp = e.type === 'shared_tags' ? (isLight ? 0.25 : 0.12) : (e.type === 'wikilink' ? 0.6 : 0.45);
+        const baseTypeOp = e.type === 'shared_tags' ? (isLight ? 0.35 : 0.25) : (e.type === 'wikilink' ? 0.6 : 0.45);
         const opacity = Math.min(baseTypeOp * (0.5 + w * 0.5), 0.85);
         let mat, line;
         // Phase 3: dashed material for strong edges
@@ -4464,7 +4464,7 @@ function _initGraphInner(graph, container) {
     scene.add(ambientParticles);
 
     // -- Edge flow particles (dots flowing along connections) --
-    const flowableEdges = edges3d.filter(e => e.type !== 'shared_tags');
+    const flowableEdges = edges3d; // All edge types get particles
     const FLOW_COUNT = Math.min(flowableEdges.length * 2, 200);
     const flowGeo = new THREE.SphereGeometry(0.35, 6, 4);
     const flowBaseMat = new THREE.MeshBasicMaterial({ color: 0x74b9ff, transparent: true, opacity: 0.7 });
@@ -4743,7 +4743,7 @@ function _initGraphInner(graph, container) {
                 tooltip.style.display = 'none';
                 lineMeshes.forEach(l => {
                     const le = l.userData;
-                    l.material.opacity = le.type === 'shared_tags' ? 0.12 : (le.type === 'wikilink' ? 0.6 : 0.45);
+                    l.material.opacity = le.type === 'shared_tags' ? 0.25 : (le.type === 'wikilink' ? 0.6 : 0.45);
                     l.material.color.set(edgeTypeColors[le.type] || edgeTypeColors.shared_tags);
                 });
                 nodeMeshes.forEach(m => {
@@ -5011,7 +5011,7 @@ function _initGraphInner(graph, container) {
             targetLookAt.set(0, 0, 0); targetDist = 280; targetPhi = Math.PI * 0.35; autoRotate = true;
             lineMeshes.forEach(l => {
                 const le = l.userData;
-                l.material.opacity = le.type === 'shared_tags' ? 0.12 : (le.type === 'wikilink' ? 0.6 : 0.45);
+                l.material.opacity = le.type === 'shared_tags' ? 0.25 : (le.type === 'wikilink' ? 0.6 : 0.45);
             });
             nodeMeshes.forEach(m => {
                 m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5;
@@ -5256,7 +5256,7 @@ function applyPlayfulMode() {
     g3.lineMeshes.forEach(l => {
         const e = l.userData;
         l.material.color = new THREE.Color(edgeTypeColors[e.type] || edgeTypeColors.shared_tags);
-        l.material.opacity = e.type === 'shared_tags' ? (lit ? 0.2 : 0.12) : (e.type === 'wikilink' ? 0.6 : 0.45);
+        l.material.opacity = e.type === 'shared_tags' ? (lit ? 0.35 : 0.25) : (e.type === 'wikilink' ? 0.6 : 0.45);
     });
 }
 
@@ -6280,7 +6280,7 @@ function stopAutopilot() {
     if (btn) btn.style.color = '';
     if (g3.nodeMeshes) {
         g3.nodeMeshes.forEach(m => { m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5; });
-        g3.lineMeshes.forEach(l => { const e = l.userData; l.material.opacity = e.type === 'shared_tags' ? 0.12 : (e.type === 'wikilink' ? 0.6 : 0.45); });
+        g3.lineMeshes.forEach(l => { const e = l.userData; l.material.opacity = e.type === 'shared_tags' ? 0.25 : (e.type === 'wikilink' ? 0.6 : 0.45); });
     }
     if (g3._setAutoRotate) g3._setAutoRotate(true);
 }
