@@ -1388,8 +1388,8 @@
         }
         .graph-search {
             position: absolute;
-            bottom: 12px;
-            left: 12px;
+            top: 12px;
+            right: 12px;
             z-index: 6;
         }
         .graph-search-input {
@@ -1412,8 +1412,8 @@
         }
         .graph-search-results {
             position: absolute;
-            bottom: 32px;
-            left: 0;
+            top: 32px;
+            right: 0;
             background: rgba(12,16,28,0.95);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(99,102,241,0.2);
@@ -2248,7 +2248,6 @@
                 <span class="dot" style="background:var(--accent-green)"></span>
                 <span id="healthScoreLabel">--</span>
             </span>
-            <button class="graph-btn" onclick="toggleSettings()" title="Settings" aria-label="Open settings" style="font-size:14px">&#9881;</button>
         </div>
     </div>
     <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle" aria-label="Toggle dark/light mode" style="position:fixed;top:12px;right:12px;z-index:1000">&#9789;</button>
@@ -2306,14 +2305,6 @@
                 <div class="hud-line">MODE: <span class="hud-val" id="hudMode">PLAYFUL</span></div>
             </div>
 
-            <!-- Mode Switcher -->
-            <div class="graph-mode-switcher">
-                <button class="graph-mode-btn active" data-mode="playful" onclick="setGraphMode('playful')" title="Playful (default)">▶ Play</button>
-                <button class="graph-mode-btn" data-mode="crt" onclick="setGraphMode('crt')" title="CRT / Spy terminal">CRT</button>
-                <button class="graph-mode-btn" data-mode="thermal" onclick="setGraphMode('thermal')" title="Thermal imaging">Therm</button>
-                <button class="graph-mode-btn" data-mode="nightvision" onclick="setGraphMode('nightvision')" title="Night vision">NVis</button>
-            </div>
-
             <!-- Graph search -->
             <div class="graph-search" id="graphSearch">
                 <input type="text" class="graph-search-input" id="graphSearchInput" placeholder="Find node..." autocomplete="off" aria-label="Search graph nodes">
@@ -2351,12 +2342,6 @@
                 <span id="graphFullscreenStats" class="graph-stats-label"></span>
             </div>
             <div class="graph-fullscreen-controls" style="display:flex;align-items:center;gap:6px">
-                <div class="graph-mode-switcher" style="position:static;margin-right:8px">
-                    <button class="graph-mode-btn active" data-mode="playful" onclick="setGraphMode('playful')" title="Playful">&#9654; Play</button>
-                    <button class="graph-mode-btn" data-mode="crt" onclick="setGraphMode('crt')" title="CRT">CRT</button>
-                    <button class="graph-mode-btn" data-mode="thermal" onclick="setGraphMode('thermal')" title="Thermal">Therm</button>
-                    <button class="graph-mode-btn" data-mode="nightvision" onclick="setGraphMode('nightvision')" title="Night Vision">NVis</button>
-                </div>
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
                 <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot" aria-label="Autopilot">&#9992;</button>
