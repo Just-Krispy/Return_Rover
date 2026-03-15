@@ -21,20 +21,18 @@
     <meta name="color-scheme" content="dark light">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <link rel="canonical" href="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z'/><path d='M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z'/><path d='M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4'/><path d='M12 18v-5.5a4.5 4.5 0 0 0-3-4'/><path d='M12 12.5a4.5 4.5 0 0 1 3-4'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://unpkg.com">
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://fonts.gstatic.com">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="dns-prefetch" href="https://unpkg.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
-    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js" integrity="sha384-tTkFttkBclaU1cloKwOi9xk3pbao3VZxTjLNBt8iFABWDBQibbAbWpVmO28zMuxq" crossorigin="anonymous"></script>
+    <!-- Lucide replaced with inline SVGs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
     <!-- EffectComposer MUST load first (defines THREE.Pass base class) -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" integrity="sha384-GkidzTYmQg24v13sa3xhBBbvOLbVLO1QxfyKLdOWweQqNqS/iWwUst2T1fER2Xrg" crossorigin="anonymous"></script>
@@ -586,7 +584,7 @@
             justify-content: center;
             flex-shrink: 0;
         }
-        .activity-icon .lucide { width: 15px; height: 15px; }
+        .activity-icon svg { width: 15px; height: 15px; }
         .activity-icon.ingest  { background: rgba(74,222,128,0.1); color: var(--accent-green); }
         .activity-icon.search  { background: rgba(129,140,248,0.1); color: var(--accent-indigo); }
         .activity-icon.chat    { background: rgba(34,211,238,0.1); color: var(--accent-cyan); }
@@ -2237,7 +2235,7 @@
     <div class="header">
         <div class="header-left">
             <div class="header-brand">
-                <i data-lucide="brain" class="brand-icon"></i>
+                <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M12 18v-5.5a4.5 4.5 0 0 0-3-4"/><path d="M12 12.5a4.5 4.5 0 0 1 3-4"/></svg>
                 <div>
                     <h1>Second Brain</h1>
                     <p class="header-subtitle">Mission Control</p>
@@ -2260,7 +2258,7 @@
     <div class="floating-search" id="floatingSearch">
         <div class="floating-search-inner">
             <div class="floating-search-wrap">
-                <i data-lucide="search" class="floating-search-icon" style="width:16px;height:16px"></i>
+                <svg class="floating-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="text" class="floating-search-input" id="floatingSearchInput" placeholder="Search your vault..." aria-label="Search vault" autocomplete="off">
             </div>
         </div>
@@ -2270,12 +2268,12 @@
     <div class="card card--hero graph-hero-card" id="sec-graph" style="margin-bottom: 16px;">
         <div class="card-title graph-card-title">
             <span class="graph-title-glow">
-                <i data-lucide="network" class="icon"></i>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
                 <span>Knowledge Graph</span>
             </span>
             <span id="graphStats" class="graph-stats-label" style="display:none"></span>
             <button class="graph-expand-btn" onclick="openGraphFullscreen()" title="Expand to fullscreen">
-                <i data-lucide="maximize-2" style="width:14px;height:14px"></i>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
             </button>
         </div>
         <div id="graphContainer" class="graph-container">
@@ -2322,10 +2320,10 @@
             <div class="graph-controls">
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
-                <button class="graph-btn" onclick="graphShakeAll()" title="Shake it up!" style="font-size:16px">🎉</button>
+                <button class="graph-btn" onclick="graphShakeAll()" title="Shake it up!" aria-label="Shake it up"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
                 <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot scenic tour" aria-label="Toggle autopilot" id="autopilotBtn">&#9992;</button>
-                <button class="graph-btn" onclick="toggleGraphIntel()" title="Graph intelligence" aria-label="Graph analytics" id="intelBtn">&#128202;</button>
-                <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot graph" aria-label="Screenshot">&#128247;</button>
+                <button class="graph-btn" onclick="toggleGraphIntel()" title="Graph intelligence" aria-label="Graph analytics" id="intelBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+                <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot graph" aria-label="Screenshot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
             </div>
         </div>
         <div class="graph-legend" id="graphLegend">
@@ -2341,7 +2339,7 @@
     <div id="graphFullscreenModal" class="graph-fullscreen-modal" role="dialog" aria-label="Fullscreen Knowledge Graph" style="display:none">
         <div class="graph-fullscreen-header">
             <div class="graph-fullscreen-title">
-                <i data-lucide="network" style="width:20px;height:20px"></i>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
                 Knowledge Graph
                 <span id="graphFullscreenStats" class="graph-stats-label"></span>
             </div>
@@ -2349,8 +2347,8 @@
                 <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
                 <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
                 <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot" aria-label="Autopilot">&#9992;</button>
-                <button class="graph-btn" onclick="toggleGraphIntel()" title="Intelligence" aria-label="Analytics">&#128202;</button>
-                <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot" aria-label="Screenshot">&#128247;</button>
+                <button class="graph-btn" onclick="toggleGraphIntel()" title="Intelligence" aria-label="Analytics"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></button>
+                <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot" aria-label="Screenshot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
                 <button class="graph-btn graph-close-btn" onclick="closeGraphFullscreen()" title="Exit fullscreen (ESC)">&#10005;</button>
             </div>
         </div>
@@ -2363,7 +2361,7 @@
     <div class="stats-row" id="sec-stats">
         <div class="card stat-card stat-card--indigo">
             <div class="stat-card__header">
-                <i data-lucide="file-text" class="stat-card__icon"></i>
+                <svg class="stat-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 <span class="stat-label">Total Notes</span>
             </div>
             <div class="stat-value" id="statNotes">--</div>
@@ -2375,16 +2373,16 @@
         </div>
         <div class="card stat-card stat-card--cyan">
             <div class="stat-card__header">
-                <i data-lucide="search" class="stat-card__icon"></i>
+                <svg class="stat-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 <span class="stat-label">Chunks Indexed</span>
             </div>
             <div class="stat-value" id="statChunks">--</div>
             <div class="stat-sub">RAG search index</div>
-            <button class="btn-reindex" id="reindexBtn" onclick="triggerReindex()" title="Rebuild the RAG search index"><i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex</button>
+            <button class="btn-reindex" id="reindexBtn" onclick="triggerReindex()" title="Rebuild the RAG search index"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Reindex</button>
         </div>
         <div class="card stat-card stat-card--amber">
             <div class="stat-card__header">
-                <i data-lucide="message-circle" class="stat-card__icon"></i>
+                <svg class="stat-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                 <span class="stat-label">Questions Answered</span>
             </div>
             <div class="stat-value" id="statQuestions">--</div>
@@ -2392,7 +2390,7 @@
         </div>
         <div class="card stat-card stat-card--green">
             <div class="stat-card__header">
-                <i data-lucide="inbox" class="stat-card__icon"></i>
+                <svg class="stat-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
                 <span class="stat-label">Ingested Today</span>
             </div>
             <div class="stat-value" id="statToday">--</div>
@@ -2404,7 +2402,7 @@
     <div class="grid-2" id="sec-vault">
         <!-- VAULT STRUCTURE -->
         <div class="card card--primary">
-            <div class="card-title"><i data-lucide="folder-tree" class="icon"></i> Vault Structure (PARA)</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-1.4-1.8A1 1 0 0 0 14.5 2h-5a1 1 0 0 0-.8.4L7.3 4.2a1 1 0 0 1-.8.4H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1"/><path d="M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.8-.4l-1.4-1.8a1 1 0 0 0-.8-.4h-5a1 1 0 0 0-.8.4l-1.4 1.8a1 1 0 0 1-.8.4H4a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1z"/><path d="M3 10v4"/></svg> Vault Structure (PARA)</div>
             <div class="vault-bars" id="vaultBars"></div>
             <div class="vault-detail-panel" id="vaultDetail">
                 <h4 id="vaultDetailTitle">--</h4>
@@ -2414,17 +2412,17 @@
 
         <!-- ACTIVITY FEED -->
         <div class="card card--primary">
-            <div class="card-title"><i data-lucide="activity" class="icon"></i> Recent Activity</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Recent Activity</div>
             <div class="activity-list" id="activityFeed"></div>
         </div>
     </div>
 
     <!-- RAG SEARCH -->
     <div class="card card--primary full-width" id="sec-search">
-        <div class="card-title"><i data-lucide="search" class="icon"></i> Vault Search</div>
+        <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Vault Search</div>
         <div class="search-form">
             <input type="text" class="ask-input" id="searchInput" placeholder="Search your vault..." aria-label="Search vault" onkeydown="if(event.key==='Enter')searchVault()">
-            <button class="btn-primary" id="searchBtn" onclick="searchVault()" style="background:var(--accent-cyan);"><i data-lucide="search" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Search</button>
+            <button class="btn-primary" id="searchBtn" onclick="searchVault()" style="background:var(--accent-cyan);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search</button>
         </div>
         <div id="recentSearches" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
         <div id="searchResults" class="search-results" aria-live="polite">
@@ -2434,7 +2432,7 @@
 
     <!-- RESEARCH PIPELINE -->
     <div class="card card--secondary full-width" id="sec-research">
-        <div class="card-title"><i data-lucide="flask-conical" class="icon"></i> PawsitiveID Research Pipeline</div>
+        <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg> PawsitiveID Research Pipeline</div>
         <div class="research-stats" id="researchStats">
             <div class="research-stat"><div class="rs-val" id="rsNotes">--</div><div class="rs-label">Research Notes</div></div>
             <div class="research-stat"><div class="rs-val" id="rsJobs">--</div><div class="rs-label">NotebookLM Jobs</div></div>
@@ -2465,11 +2463,11 @@
     <div class="grid-2" id="sec-ask">
         <!-- ASK THE VAULT -->
         <div class="card card--hero">
-            <div class="card-title"><i data-lucide="message-square" class="icon"></i> Ask the Vault</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Ask the Vault</div>
             <div class="chat-session-bar">
                 <div class="chat-session-info">
                     <span class="chat-turn-indicator">
-                        <i data-lucide="message-circle" style="width:12px;height:12px"></i>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                         Turn <span class="turn-count" id="chatTurnCount">0</span>
                     </span>
                 </div>
@@ -2489,7 +2487,7 @@
 
         <!-- QUICK CAPTURE -->
         <div class="card card--primary">
-            <div class="card-title"><i data-lucide="bookmark-plus" class="icon"></i> Quick Capture</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="15" y1="10" x2="9" y2="10"/></svg> Quick Capture</div>
             <div class="capture-form">
                 <input type="url" class="capture-input" id="captureUrl" placeholder="URL to capture...">
                 <div class="capture-row">
@@ -2506,7 +2504,7 @@
 
     <!-- BRAINDUMP -->
     <div class="card card--primary full-width" id="sec-braindump">
-        <div class="card-title"><i data-lucide="zap" class="icon"></i> Braindump</div>
+        <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z"/></svg> Braindump</div>
         <div class="braindump-row braindump-row--mb">
             <input type="text" class="ask-input braindump-title" id="braindumpTitle" placeholder="Title (auto-generated if blank)" aria-label="Braindump title">
             <input type="text" class="ask-input braindump-tags" id="braindumpTags" placeholder="Tags (comma-sep)" aria-label="Braindump tags">
@@ -2516,7 +2514,7 @@
         </div>
         <div class="braindump-row braindump-row--mt">
             <button class="btn-primary" id="braindumpBtn" onclick="submitBraindump()" aria-label="Submit braindump" style="background:var(--accent-green)">
-                <i data-lucide="zap" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Dump to Vault
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z"/></svg>Dump to Vault
             </button>
             <span class="capture-feedback" id="braindumpFeedback"></span>
         </div>
@@ -2524,7 +2522,7 @@
 
     <!-- CHAT HISTORY -->
     <div class="card card--secondary full-width">
-        <div class="card-title"><i data-lucide="history" class="icon"></i> Chat History</div>
+        <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg> Chat History</div>
         <div class="chat-history-list" id="chatHistoryList">
             <div style="color:var(--text-tertiary);font-size:13px;padding:12px;text-align:center">
                 Ask questions above to build your history.
@@ -2535,7 +2533,7 @@
     <!-- TAG EXPLORER + VAULT QUALITY -->
     <div class="grid-2" id="sec-tags">
         <div class="card card--secondary">
-            <div class="card-title"><i data-lucide="tags" class="icon"></i> Tag Explorer</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"/><path d="M6 9.01V9"/><path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"/></svg> Tag Explorer</div>
             <div class="tag-stats-row" id="tagStats">
                 <div class="tag-stat-card"><div class="tag-stat-val" id="tagUnique">--</div><div class="tag-stat-label">Unique Tags</div></div>
                 <div class="tag-stat-card"><div class="tag-stat-val" id="tagWithTags">--</div><div class="tag-stat-label">Notes w/ Tags</div></div>
@@ -2547,7 +2545,7 @@
             </div>
         </div>
         <div class="card card--secondary">
-            <div class="card-title"><i data-lucide="shield-check" class="icon"></i> Vault Quality</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg> Vault Quality</div>
             <div class="tag-stats-row" id="qualityStats">
                 <div class="tag-stat-card"><div class="tag-stat-val" id="qualityAvg">--</div><div class="tag-stat-label">Avg Score</div></div>
                 <div class="tag-stat-card"><div class="tag-stat-val" id="qualityA">--</div><div class="tag-stat-label">A Tier (80+)</div></div>
@@ -2563,7 +2561,7 @@
     <div class="grid-2" id="sec-system">
         <!-- SYSTEM HEALTH -->
         <div class="card card--secondary">
-            <div class="card-title"><i data-lucide="heart-pulse" class="icon"></i> System Health</div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg> System Health</div>
             <div class="health-pills" id="healthGrid"></div>
             <div class="health-gauges" id="healthGauges">
                 <div class="health-gauge">
@@ -2601,14 +2599,14 @@
 
         <!-- AUTOMATION STATUS -->
         <div class="card card--secondary">
-            <div class="card-title"><i data-lucide="workflow" class="icon"></i> Automation Workflows (n8n) <span id="workflowCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
+            <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg> Automation Workflows (n8n) <span id="workflowCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
             <div class="workflow-list" id="workflowList"></div>
         </div>
     </div>
 
     <!-- TAG CLOUD -->
     <div class="card" style="margin-top:0">
-        <div class="card-title"><i data-lucide="tags" class="icon"></i> Knowledge Tags <span id="tagCloudCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
+        <div class="card-title"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H2v7l6.29 6.29c.94.94 2.48.94 3.42 0l3.58-3.58c.94-.94.94-2.48 0-3.42L9 5Z"/><path d="M6 9.01V9"/><path d="m15 5 6.3 6.3a2.4 2.4 0 0 1 0 3.4L17 19"/></svg> Knowledge Tags <span id="tagCloudCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
         <div id="tagCloudContainer" style="display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;min-height:40px;padding:4px 0"></div>
     </div>
 
@@ -2619,7 +2617,7 @@
 
 <!-- SCROLL TO TOP -->
 <button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">
-    <i data-lucide="chevron-up" style="width:20px;height:20px"></i>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
 </button>
 
 <!-- SECTION NAV DOTS -->
@@ -2637,7 +2635,7 @@
 <!-- KEYBOARD SHORTCUTS OVERLAY -->
 <div class="kb-overlay" id="kbOverlay" onclick="if(event.target===this)closeKbOverlay()">
     <div class="kb-panel">
-        <h3><i data-lucide="keyboard" style="width:18px;height:18px"></i> Keyboard Shortcuts</h3>
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-4px;margin-right:6px"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><path d="M6 8h.001"/><path d="M10 8h.001"/><path d="M14 8h.001"/><path d="M18 8h.001"/><path d="M8 12h.001"/><path d="M12 12h.001"/><path d="M16 12h.001"/><path d="M7 16h10"/></svg>Keyboard Shortcuts</h3>
         <div class="kb-row"><span class="kb-action">Show this panel</span><kbd>?</kbd></div>
         <div class="kb-row"><span class="kb-action">Focus vault search</span><kbd>/</kbd></div>
         <div class="kb-row"><span class="kb-action">Focus ask the vault</span><kbd>A</kbd></div>
@@ -2657,7 +2655,7 @@
 <div class="note-preview-panel" id="notePreviewPanel" role="dialog" aria-label="Note preview">
     <div class="note-preview-header">
         <span class="note-preview-title" id="notePreviewTitle">--</span>
-        <button style="font-size:12px;padding:4px 10px;background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:6px;color:var(--accent-cyan);cursor:pointer;margin-right:8px" onclick="const t=document.getElementById('notePreviewTitle').textContent;closeNotePreview();viewInGraph(t)" title="View in Graph">&#127760; Graph</button><button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
+        <button style="font-size:12px;padding:4px 10px;background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:6px;color:var(--accent-cyan);cursor:pointer;margin-right:8px" onclick="const t=document.getElementById('notePreviewTitle').textContent;closeNotePreview();viewInGraph(t)" title="View in Graph"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:3px"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Graph</button><button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
     </div>
     <div class="note-preview-meta" id="notePreviewMeta"></div>
     <div class="note-preview-body" id="notePreviewBody"></div>
@@ -2790,7 +2788,6 @@ applyTheme(getTheme());
 // =============================================
 function openKbOverlay() {
     document.getElementById('kbOverlay').classList.add('open');
-    lucide.createIcons();
 }
 function closeKbOverlay() {
     document.getElementById('kbOverlay').classList.remove('open');
@@ -2808,7 +2805,6 @@ function toggleSettings() {
         document.getElementById('settingsRefresh').value = REFRESH_INTERVAL / 1000;
         document.getElementById('settingsMaxSearches').value = MAX_RECENT_SEARCHES;
         overlay.classList.add('open');
-        lucide.createIcons();
     }
 }
 
@@ -3199,13 +3195,14 @@ function renderMarkdownBasic(md) {
 function renderActivity(items) {
     const container = document.getElementById('activityFeed');
     container.innerHTML = '';
-    const icons = {
-        ingest: 'download',
-        search: 'search',
-        chat: 'message-circle',
-        move: 'folder-input',
-        capture: 'bookmark'
+    const iconSvgs = {
+        ingest: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+        search: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+        chat: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>',
+        move: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"/><path d="M2 13h10"/><path d="m9 16 3-3-3-3"/></svg>',
+        capture: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
     };
+    const defaultIcon = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>';
 
     items.forEach(item => {
         const el = document.createElement('div');
@@ -3213,7 +3210,7 @@ function renderActivity(items) {
         el.style.cursor = 'pointer';
         const ago = timeAgo(new Date(item.ts));
         el.innerHTML = `
-            <div class="activity-icon ${item.type}"><i data-lucide="${icons[item.type] || 'circle'}"></i></div>
+            <div class="activity-icon ${item.type}">${iconSvgs[item.type] || defaultIcon}</div>
             <div class="activity-body">
                 <div class="activity-text">${item.text}</div>
                 <div class="activity-time">${ago}</div>
@@ -3222,7 +3219,6 @@ function renderActivity(items) {
         el.addEventListener('click', () => handleActivityClick(item));
         container.appendChild(el);
     });
-    lucide.createIcons();
 }
 
 function handleActivityClick(item) {
@@ -3962,20 +3958,50 @@ const PLAYFUL_COLORS = [
     '#74b9ff', '#e17055', '#00cec9', '#fdcb6e', '#e056fd'
 ];
 
-// ---- EMOJI ICONS by tag/folder ----
-const NODE_EMOJIS = {
-    'podcast': '🎙️', 'ai': '🤖', 'research': '🔬', 'neuroscience': '🧠',
-    'cybersecurity': '🛡️', 'security': '🔒', 'productivity': '⚡',
-    'education': '📚', 'infrastructure': '⚙️', 'synthesis': '🔮',
-    'business': '💼', 'agriculture': '🌾', 'startups': '🚀',
-    'Resources': '📦', 'Areas': '🗂️', 'Projects': '🎯', 'Inbox': '📥'
+// ---- SVG ICONS by tag/folder ----
+// Small inline SVGs for HTML contexts (tooltips, search results)
+const NODE_ICON_SVGS = {
+    'podcast': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>',
+    'ai': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M12 18v-5.5a4.5 4.5 0 0 0-3-4"/><path d="M12 12.5a4.5 4.5 0 0 1 3-4"/></svg>',
+    'research': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg>',
+    'neuroscience': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M12 18v-5.5a4.5 4.5 0 0 0-3-4"/><path d="M12 12.5a4.5 4.5 0 0 1 3-4"/></svg>',
+    'cybersecurity': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    'security': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    'productivity': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 10 10-12h-9l1-10z"/></svg>',
+    'education': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    'infrastructure': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    'synthesis': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    'business': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+    'agriculture': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-7l-2-2"/><path d="M17 8v.8A6 6 0 0 1 13.8 14v0a2 2 0 0 1-3.6 0v0A6 6 0 0 1 7 8.8V8"/><path d="M12 2a4 4 0 0 0-4 4"/><path d="M12 2a4 4 0 0 1 4 4"/></svg>',
+    'startups': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>',
+    'Resources': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    'Areas': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>',
+    'Projects': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+    'Inbox': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>'
+};
+const NODE_ICON_DEFAULT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+
+// Simple Unicode symbols for canvas texture rendering (3D graph sprites)
+const NODE_CANVAS_SYMBOLS = {
+    'podcast': '\u266A', 'ai': '\u2699', 'research': '\u2697', 'neuroscience': '\u2638',
+    'cybersecurity': '\u26E8', 'security': '\u26BF', 'productivity': '\u26A1',
+    'education': '\u2261', 'infrastructure': '\u2699', 'synthesis': '\u2726',
+    'business': '\u2616', 'agriculture': '\u2698', 'startups': '\u2708',
+    'Resources': '\u25A6', 'Areas': '\u25A3', 'Projects': '\u25C9', 'Inbox': '\u2709'
 };
 
-function getNodeEmoji(node) {
+function getNodeIcon(node) {
     for (const tag of (node.tags || [])) {
-        if (NODE_EMOJIS[tag]) return NODE_EMOJIS[tag];
+        if (NODE_ICON_SVGS[tag]) return NODE_ICON_SVGS[tag];
     }
-    return NODE_EMOJIS[node.folder] || '✨';
+    return NODE_ICON_SVGS[node.folder] || NODE_ICON_DEFAULT;
+}
+
+function getNodeCanvasSymbol(node) {
+    for (const tag of (node.tags || [])) {
+        if (NODE_CANVAS_SYMBOLS[tag]) return NODE_CANVAS_SYMBOLS[tag];
+    }
+    return NODE_CANVAS_SYMBOLS[node.folder] || '\u2726';
 }
 
 // ---- SPARKLE SYSTEM ----
@@ -4100,7 +4126,7 @@ function _initGraphInner(graph, container) {
             }).join('');
         }
         legendEl.innerHTML = legendItems +
-            '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click for sparkles ✨ drag to orbit · scroll to zoom · shake 🎉</span>';
+            '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click for sparkles <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> drag to orbit &middot; scroll to zoom &middot; shake <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>';
         // Event delegation for legend filter clicks (safe — no inline onclick)
         legendEl.querySelectorAll('.graph-legend-item.filterable').forEach(el => {
             el.addEventListener('click', () => toggleGraphFilter(el, el.dataset.filter));
@@ -4232,7 +4258,8 @@ function _initGraphInner(graph, container) {
             _bounceVel: 0, _bouncePos: 0,
             _wiggle: 0, _wiggleDecay: 0,
             _scaleTarget: 1, _scale: 1,
-            _emoji: getNodeEmoji(n)
+            _iconSvg: getNodeIcon(n),
+            _canvasSymbol: getNodeCanvasSymbol(n)
         };
         nodeMap[n.id] = nd;
         return nd;
@@ -4289,15 +4316,16 @@ function _initGraphInner(graph, container) {
         map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
     });
 
-    // Create emoji texture for sprite labels
-    function createEmojiTexture(emoji) {
+    // Create symbol texture for sprite labels (replaces emoji)
+    function createSymbolTexture(symbol) {
         const c = document.createElement('canvas');
         c.width = 64; c.height = 64;
         const ctx = c.getContext('2d');
-        ctx.font = '48px serif';
+        ctx.font = '42px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(emoji, 32, 36);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillText(symbol, 32, 36);
         return new THREE.CanvasTexture(c);
     }
 
@@ -4324,14 +4352,14 @@ function _initGraphInner(graph, container) {
         scene.add(glow);
         mesh.userData._glow = glow;
 
-        // Emoji sprite floating above node
-        const emojiTex = createEmojiTexture(n._emoji);
-        const emojiMat = new THREE.SpriteMaterial({ map: emojiTex, transparent: true, depthWrite: false });
-        const emojiSprite = new THREE.Sprite(emojiMat);
-        emojiSprite.scale.set(n.radius * 2.5, n.radius * 2.5, 1);
-        emojiSprite.position.set(n.x, n.y + n.radius + 3, n.z);
-        scene.add(emojiSprite);
-        mesh.userData._emojiSprite = emojiSprite;
+        // Symbol sprite floating above node
+        const symbolTex = createSymbolTexture(n._canvasSymbol);
+        const symbolMat = new THREE.SpriteMaterial({ map: symbolTex, transparent: true, depthWrite: false });
+        const symbolSprite = new THREE.Sprite(symbolMat);
+        symbolSprite.scale.set(n.radius * 2.5, n.radius * 2.5, 1);
+        symbolSprite.position.set(n.x, n.y + n.radius + 3, n.z);
+        scene.add(symbolSprite);
+        mesh.userData._emojiSprite = symbolSprite;
     });
 
     // Build node lookup map (O(1) instead of O(n) find per access)
@@ -4664,7 +4692,7 @@ function _initGraphInner(graph, container) {
                 const neighborIds = nd._neighbors ? [...nd._neighbors].slice(0, 3) : [];
                 const neighborNames = neighborIds.map(id => `<span class="tt-neighbor">${id}</span>`).join(', ');
                 const communityLabel = nodeGroupMap[nd.id] || '';
-                tooltip.innerHTML = `<span style="font-size:16px;margin-right:4px">${nd._emoji}</span><strong>${escapeHtml(nd.id)}</strong>
+                tooltip.innerHTML = `<span style="margin-right:4px;display:inline-flex;vertical-align:-3px">${nd._iconSvg}</span><strong>${escapeHtml(nd.id)}</strong>
                     <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
                     ${communityLabel ? '<div class="tt-community">' + communityLabel + '</div>' : ''}
                     <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
@@ -5327,7 +5355,7 @@ function initGraphSearch() {
         matches.forEach(n => {
             const div = document.createElement('div');
             div.className = 'graph-search-result';
-            div.textContent = n._emoji + ' ' + n.id;
+            div.innerHTML = '<span style="display:inline-flex;vertical-align:-3px;margin-right:4px">' + n._iconSvg + '</span>' + escapeHtml(n.id);
             div.addEventListener('click', () => {
                 graphZoomToNode(n.id);
                 input.value = '';
@@ -5718,37 +5746,32 @@ async function triggerReindex() {
     if (btn.disabled) return;
     btn.disabled = true;
     btn.classList.add('running');
-    btn.innerHTML = '<i data-lucide="loader" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;animation:spin 1s linear infinite"></i>Reindexing...';
-    lucide.createIcons();
+    btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px;animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Reindexing...';
     try {
         const resp = await fetch(`${API_GATEWAY}/api/rag/index?force=true`, { signal: AbortSignal.timeout(60000) });
         const data = await resp.json();
-        btn.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Done!';
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px"><polyline points="20 6 9 17 4 12"/></svg>Done!';
         btn.style.color = 'var(--accent-green)';
         btn.style.borderColor = 'var(--accent-green)';
-        lucide.createIcons();
         showToast(`Reindex complete — ${data.total_chunks || '?'} chunks indexed`, 'success');
         // Update chunks count
         if (data.total_chunks) document.getElementById('statChunks').textContent = data.total_chunks;
         setTimeout(() => {
             btn.disabled = false;
             btn.classList.remove('running');
-            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex';
+            btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Reindex';
             btn.style.color = '';
             btn.style.borderColor = '';
-            lucide.createIcons();
         }, 3000);
     } catch (err) {
-        btn.innerHTML = '<i data-lucide="alert-circle" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Failed';
+        btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Failed';
         btn.style.color = 'var(--accent-red)';
-        lucide.createIcons();
         setTimeout(() => {
             btn.disabled = false;
             btn.classList.remove('running');
-            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex';
+            btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-1px;margin-right:4px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Reindex';
             btn.style.color = '';
             btn.style.borderColor = '';
-            lucide.createIcons();
         }, 3000);
     }
 }
@@ -6067,8 +6090,7 @@ function initFloatingSearch() {
 //  INIT
 // =============================================
 (async function init() {
-    // Initialize Lucide icons (wrapped for resilience)
-    try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { console.warn('Lucide icons failed:', e); }
+    // Icons are now inline SVGs — no external icon library needed
 
     // Start the "last updated" live ticker
     startLastUpdatedTicker();
@@ -6383,7 +6405,7 @@ document.addEventListener('keydown', function(e) {
 <!-- SETTINGS PANEL -->
 <div class="kb-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()" role="dialog" aria-label="Settings">
     <div class="kb-panel" style="max-width:420px">
-        <h3><i data-lucide="settings" style="width:18px;height:18px"></i> Dashboard Settings</h3>
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-4px;margin-right:6px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Dashboard Settings</h3>
         <div style="margin:16px 0">
             <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">API Gateway URL</label>
             <input type="text" id="settingsGateway" class="ask-input" placeholder="https://your-vps:port" style="width:100%;margin-bottom:12px">
