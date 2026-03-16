@@ -4530,16 +4530,24 @@ function _initGraphInner(graph, container) {
         orbitTheta += (targetTheta - orbitTheta) * 0.08;
         orbitPhi += (targetPhi - orbitPhi) * 0.08;
         orbitDist += (targetDist - orbitDist) * 0.06;
-        currentLookAt.lerp(targetLookAt, 0.06);
+        
+        // Faster lerp for autopilot — snap to target quickly to avoid "staring at space"
+        const lerpSpeed = autopilotActive ? 0.15 : 0.06;
+        currentLookAt.lerp(targetLookAt, lerpSpeed);
+        
         orbitPhi = Math.max(0.1, Math.min(Math.PI - 0.1, orbitPhi));
         orbitDist = Math.max(40, Math.min(800, orbitDist));
 
+        // Update camera position to orbit around lookAt target
         camera.position.set(
             currentLookAt.x + orbitDist * Math.sin(orbitPhi) * Math.sin(orbitTheta),
             currentLookAt.y + orbitDist * Math.cos(orbitPhi),
             currentLookAt.z + orbitDist * Math.sin(orbitPhi) * Math.cos(orbitTheta)
         );
+        
+        // Ensure camera points at lookAt target
         camera.lookAt(currentLookAt);
+        camera.updateMatrixWorld();
     }
 
     // -- Playful node physics update --
@@ -6428,7 +6436,16 @@ function autopilotVisitNext() {
     if (nameLabel) nameLabel.textContent = cleanName;
     const mesh = g3.nodeMeshes.find(m => m.userData.id === node.id);
     if (!mesh) { autopilotTimer = setTimeout(autopilotVisitNext, 500); return; }
-    if (g3.targetLookAt) g3.targetLookAt.set(mesh.position.x, mesh.position.y, mesh.position.z);
+    
+    // Set both target AND current lookAt to the node position to snap camera immediately
+    // This prevents the "staring at empty space" issue
+    if (g3.targetLookAt) {
+        g3.targetLookAt.set(mesh.position.x, mesh.position.y, mesh.position.z);
+        // Also update currentLookAt to force camera to converge faster
+        if (g3.currentLookAt) {
+            g3.currentLookAt.copy(g3.targetLookAt);
+        }
+    }
     if (g3.targetDist !== undefined) g3.targetDist = 60 + Math.max(0, 30 - (node.connections || 0) * 3);
     // Highlight node + neighbors
     const neighborIds = new Set();
