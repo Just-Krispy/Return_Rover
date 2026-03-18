@@ -3918,6 +3918,12 @@ const DEMO_GRAPH = {
 let g3 = {}; // all Three.js state in one object
 let hoveredNode = null;
 
+// Autopilot state (must be declared before initGraph which calls animate→updateCamera)
+let autopilotActive = false;
+let autopilotTimer = null;
+let autopilotQueue = [];
+let autopilotIndex = 0;
+
 // ---- SOUND EFFECTS (Web Audio API - tiny synth bloops) ----
 const SFX = (() => {
     let ctx = null;
@@ -6387,10 +6393,6 @@ function toggleGraphIntel() {
 // =============================================
 //  AUTOPILOT / SCENIC TOUR
 // =============================================
-let autopilotActive = false;
-let autopilotTimer = null;
-let autopilotQueue = [];
-let autopilotIndex = 0;
 
 function toggleAutopilot() { autopilotActive ? stopAutopilot() : startAutopilot(); }
 
