@@ -4286,6 +4286,8 @@ const DEMO_GRAPH = {
         {id:'Anthropic Supply Chain',folder:'Resources',word_count:220,connections:3,tags:['ai','security']},
         {id:'YT - Second Brain',folder:'Resources',word_count:250,connections:3,tags:['productivity']},
         {id:'YT - Obsidian',folder:'Resources',word_count:220,connections:3,tags:['productivity']},
+        {id:'Cuban Missile Crisis',folder:'Resources',word_count:3420,connections:6,tags:['history','game-theory','crisis']},
+        {id:'Bay of Pigs',folder:'Resources',word_count:2150,connections:4,tags:['history','game-theory','crisis']},
         {id:'Liv Stats Card',folder:'Areas',word_count:707,connections:2,tags:['education']},
         {id:'Archer Summary',folder:'Areas',word_count:127,connections:2,tags:['infrastructure']},
         {id:'Vault Report',folder:'Areas',word_count:180,connections:3,tags:['infrastructure']},
@@ -4306,8 +4308,11 @@ const DEMO_GRAPH = {
         {source:'Weekly Synthesis',target:'GPT-5.4',weight:1,type:'semantic'},
         {source:'Liv Stats Card',target:'Learning Report',weight:2,type:'shared_tags'},
         {source:'Archer Summary',target:'Vault Report',weight:2,type:'wikilink'},
+        {source:'Cuban Missile Crisis',target:'Bay of Pigs',weight:3,type:'wikilink'},
+        {source:'Cuban Missile Crisis',target:'Weekly Synthesis',weight:1,type:'semantic'},
+        {source:'Bay of Pigs',target:'Weekly Synthesis',weight:1,type:'semantic'},
     ],
-    stats: {total_nodes:15,total_edges:13,orphan_nodes:0}
+    stats: {total_nodes:17,total_edges:16,orphan_nodes:0}
 };
 
 let g3 = {}; // all Three.js state in one object
@@ -6972,6 +6977,209 @@ document.getElementById('analyze-cassandra-btn')?.addEventListener('click', func
         console.error('Failed to copy:', err);
         showToast('Failed to copy text. Please try again.', 'error', 3000);
     });
+});
+
+// ==== RICH CONTEXT PANEL FUNCTIONS ====
+
+let currentContextNode = null;
+
+// Enhanced node data with rich context (example crisis nodes)
+const RICH_NODE_DATA = {
+    'Cuban Missile Crisis': {
+        icon: '☢️',
+        subtitle: 'October 1962 • Nuclear Standoff',
+        description: 'The Cuban Missile Crisis was a 13-day confrontation between the United States and Soviet Union concerning Soviet ballistic missiles in Cuba. Closest the Cold War came to nuclear war.',
+        stats: {
+            'Duration': '13 days',
+            'Key Players': 'US, USSR, Cuba',
+            'Outcome': 'Peaceful Resolution',
+            'Casualties': '0 direct'
+        },
+        timeline: [
+            { date: 'Oct 14, 1962', event: 'Discovery', desc: 'U-2 spy plane photographs Soviet missile sites in Cuba' },
+            { date: 'Oct 22, 1962', event: 'Blockade', desc: 'Kennedy announces naval blockade of Cuba' },
+            { date: 'Oct 24, 1962', event: 'Tension Peaks', desc: 'Soviet ships approach quarantine line' },
+            { date: 'Oct 27, 1962', event: 'Black Saturday', desc: 'U-2 shot down, negotiations intensify' },
+            { date: 'Oct 28, 1962', event: 'Resolution', desc: 'Khrushchev agrees to remove missiles' }
+        ],
+        gameTheory: {
+            summary: 'Classic game of Chicken - both sides faced catastrophic losses if neither backed down, but backing down meant losing credibility.',
+            nash: 'The Nash equilibrium was avoiding mutual destruction through coordinated de-escalation and backchannel negotiations.'
+        },
+        media: {
+            images: [
+                { url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400', caption: 'Missile Site Aerial Photo' },
+                { url: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=400', caption: 'Kennedy Address' }
+            ],
+            links: [
+                { text: 'JFK Library Archive', url: 'https://www.jfklibrary.org/learn/about-jfk/jfk-in-history/cuban-missile-crisis' },
+                { text: 'Nuclear Threat Today', url: 'https://www.cfr.org/backgrounder/cuban-missile-crisis' }
+            ]
+        }
+    },
+    'Bay of Pigs': {
+        icon: '🏝️',
+        subtitle: 'April 1961 • Failed Invasion',
+        description: 'A failed CIA-backed invasion attempt by Cuban exiles to overthrow Fidel Castro\'s revolutionary government.',
+        stats: {
+            'Duration': '3 days',
+            'Casualties': '~176 killed',
+            'Captured': '~1,200',
+            'Outcome': 'Complete Failure'
+        },
+        timeline: [
+            { date: 'Apr 15, 1961', event: 'Air Strikes', desc: 'CIA planes attack Cuban airfields' },
+            { date: 'Apr 17, 1961', event: 'Invasion', desc: '1,400 exiles land at Bay of Pigs' },
+            { date: 'Apr 19, 1961', event: 'Defeat', desc: 'Cuban forces crush invasion force' },
+            { date: 'Dec 1962', event: 'Release', desc: 'Prisoners exchanged for $53M in supplies' }
+        ],
+        gameTheory: {
+            summary: 'Information asymmetry and overconfidence led to catastrophic miscalculation. CIA assumed popular uprising would support invasion.',
+            nash: 'Optimal strategy would have been full commitment or no action - the middle path of limited support ensured failure.'
+        },
+        media: {
+            images: [
+                { url: 'https://images.unsplash.com/photo-1589519160732-57fc498494f8?w=400', caption: 'Cuban Coast' }
+            ],
+            links: [
+                { text: 'CIA Declassified Report', url: 'https://www.cia.gov/readingroom/collection/bay-pigs-release' },
+                { text: 'Historical Analysis', url: 'https://history.state.gov/milestones/1961-1968/bay-of-pigs' }
+            ]
+        }
+    }
+};
+
+function openContextPanel(nodeData) {
+    currentContextNode = nodeData;
+    
+    // Get rich data or use basic node data
+    const richData = RICH_NODE_DATA[nodeData.id] || {};
+    
+    // Populate header
+    document.getElementById('contextIcon').textContent = richData.icon || nodeData._emoji || '📄';
+    document.getElementById('contextTitle').textContent = nodeData.id;
+    document.getElementById('contextSubtitle').textContent = richData.subtitle || `${nodeData.folder} • ${nodeData.word_count || 0} words`;
+    
+    // Populate overview
+    const statsHtml = Object.entries(richData.stats || {
+        'Words': nodeData.word_count || 0,
+        'Connections': nodeData.connections || 0,
+        'Folder': nodeData.folder
+    }).map(([label, value]) => `
+        <div class="overview-stat">
+            <div class="overview-stat-label">${label}</div>
+            <div class="overview-stat-value">${value}</div>
+        </div>
+    `).join('');
+    document.getElementById('overviewStats').innerHTML = statsHtml;
+    
+    document.getElementById('overviewDescription').textContent = 
+        richData.description || `Knowledge node from ${nodeData.folder} with ${nodeData.connections || 0} connections.`;
+    
+    // Populate timeline
+    if (richData.timeline && richData.timeline.length > 0) {
+        const timelineHtml = richData.timeline.map(item => `
+            <div class="timeline-item">
+                <div class="timeline-date">${item.date}</div>
+                <div class="timeline-event">${item.event}</div>
+                <div class="timeline-desc">${item.desc}</div>
+            </div>
+        `).join('');
+        document.getElementById('timelineContent').innerHTML = timelineHtml;
+        document.getElementById('sectionTimeline').style.display = 'block';
+    } else {
+        document.getElementById('sectionTimeline').style.display = 'none';
+    }
+    
+    // Populate analysis
+    if (richData.gameTheory) {
+        const analysisHtml = `
+            <div class="analysis-card">
+                <div class="analysis-label">Game Theory Summary</div>
+                <div class="analysis-text">${richData.gameTheory.summary}</div>
+            </div>
+            <div class="analysis-card">
+                <div class="analysis-label">Nash Equilibrium</div>
+                <div class="analysis-text">${richData.gameTheory.nash}</div>
+            </div>
+        `;
+        document.getElementById('analysisContent').innerHTML = analysisHtml;
+        document.getElementById('sectionAnalysis').style.display = 'block';
+    } else {
+        document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-secondary);font-size:13px">No analysis available yet. Use the button below to analyze with Nash.</p>';
+        document.getElementById('sectionAnalysis').style.display = 'block';
+    }
+    
+    // Populate media
+    if (richData.media) {
+        if (richData.media.images && richData.media.images.length > 0) {
+            const imagesHtml = richData.media.images.map(img => `
+                <div class="media-item" onclick="window.open('${img.url}', '_blank')">
+                    <img src="${img.url}" alt="${img.caption}" loading="lazy">
+                    <div class="media-item-label">${img.caption}</div>
+                </div>
+            `).join('');
+            document.getElementById('mediaImages').innerHTML = imagesHtml;
+        } else {
+            document.getElementById('mediaImages').innerHTML = '';
+        }
+        
+        if (richData.media.links && richData.media.links.length > 0) {
+            const linksHtml = richData.media.links.map(link => `
+                <a href="${link.url}" target="_blank" rel="noopener" class="media-link">
+                    <i data-lucide="external-link" class="link-icon"></i>
+                    ${link.text}
+                </a>
+            `).join('');
+            document.getElementById('mediaLinks').innerHTML = linksHtml;
+        } else {
+            document.getElementById('mediaLinks').innerHTML = '';
+        }
+        
+        document.getElementById('sectionMedia').style.display = 'block';
+    } else {
+        document.getElementById('sectionMedia').style.display = 'none';
+    }
+    
+    // Show panel
+    const overlay = document.getElementById('contextPanelOverlay');
+    overlay.classList.add('open');
+    
+    // Re-render lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeContextPanel() {
+    document.getElementById('contextPanelOverlay').classList.remove('open');
+    currentContextNode = null;
+}
+
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section.classList.toggle('collapsed');
+}
+
+function analyzeWithNash() {
+    if (!currentContextNode) return;
+    
+    const textToCopy = `Analyze this crisis using game theory:\n\n${currentContextNode.id}\n\nProvide: 1) Key players and their strategies, 2) Payoff matrix, 3) Nash equilibrium, 4) Historical outcome vs optimal strategy`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        window.open('https://just-krispy.github.io/cassandra-ai-mvp/', '_blank');
+        showToast('Analysis prompt copied! Paste into Nash.', 'success', 3000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        showToast('Failed to copy. Please try again.', 'error', 3000);
+    });
+}
+
+// Close panel on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('contextPanelOverlay').classList.contains('open')) {
+        closeContextPanel();
+    }
 });
 
 })();
