@@ -43,7 +43,6 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" integrity="sha384-nhO9toQuMo5osCuA0l+YFpSqscZWxDu251Bnho2gD3kSPv1neEwHg0LyEmrA+mPj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" integrity="sha384-mY+ii969jnDCI2HjRHftH2NZVkIO5ZGUkcnGCg3oVJ3kVstWQXwerYWBg+nbUG4R" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" integrity="sha384-aVQ2QnWkoxhOefDB0YZB64OPVzujvccydpcC7UqMDJUK0ChwA382zOHmrWHGDRRa" crossorigin="anonymous"></script>
-    <script src="camera-transitions.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -2227,400 +2226,6 @@
                 min-width: 44px;
             }
         }
-
-        /* ==== RICH CONTEXT PANEL ==== */
-        .context-panel-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease-out;
-        }
-
-        .context-panel-overlay.open {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        .context-panel {
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: min(600px, 90vw);
-            background: rgba(24, 24, 27, 0.95);
-            backdrop-filter: blur(24px) saturate(180%);
-            border-left: 1px solid var(--border-accent);
-            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
-            transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 10000;
-        }
-
-        [data-theme="light"] .context-panel {
-            background: rgba(255, 255, 255, 0.95);
-            border-left-color: var(--border-default);
-            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .context-panel-overlay.open .context-panel {
-            transform: translateX(0);
-        }
-
-        .context-panel-header {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: inherit;
-            backdrop-filter: inherit;
-            padding: 24px;
-            border-bottom: 1px solid var(--border-subtle);
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .context-panel-title {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .context-panel-title h2 {
-            font-size: var(--fs-xl);
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .context-panel-title .node-icon {
-            font-size: 28px;
-            line-height: 1;
-        }
-
-        .context-panel-subtitle {
-            font-size: var(--fs-sm);
-            color: var(--text-tertiary);
-            margin-top: 4px;
-        }
-
-        .context-panel-close {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--bg-inset);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            transition: all 0.2s;
-        }
-
-        .context-panel-close:hover {
-            background: var(--bg-surface-hover);
-            color: var(--text-primary);
-            transform: scale(1.05);
-        }
-
-        .context-panel-content {
-            padding: 0 24px 24px;
-        }
-
-        .context-section {
-            margin-bottom: 28px;
-        }
-
-        .context-section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            cursor: pointer;
-            user-select: none;
-            padding: 8px 0;
-        }
-
-        .context-section-header h3 {
-            font-size: var(--fs-md);
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .context-section-header .section-icon {
-            width: 16px;
-            height: 16px;
-            color: var(--accent-indigo);
-        }
-
-        .context-section-toggle {
-            width: 20px;
-            height: 20px;
-            color: var(--text-tertiary);
-            transition: transform 0.2s;
-        }
-
-        .context-section.collapsed .context-section-toggle {
-            transform: rotate(-90deg);
-        }
-
-        .context-section-body {
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-            max-height: 2000px;
-            opacity: 1;
-        }
-
-        .context-section.collapsed .context-section-body {
-            max-height: 0;
-            opacity: 0;
-        }
-
-        /* Overview Section */
-        .overview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .overview-stat {
-            background: var(--bg-inset);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 12px;
-        }
-
-        .overview-stat-label {
-            font-size: var(--fs-xs);
-            color: var(--text-tertiary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
-        }
-
-        .overview-stat-value {
-            font-size: var(--fs-lg);
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .overview-description {
-            font-size: var(--fs-sm);
-            line-height: 1.6;
-            color: var(--text-secondary);
-            background: var(--bg-inset);
-            border-left: 3px solid var(--accent-indigo);
-            padding: 12px 16px;
-            border-radius: var(--radius-sm);
-        }
-
-        /* Timeline Section */
-        .timeline {
-            position: relative;
-            padding-left: 24px;
-        }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 8px;
-            bottom: 8px;
-            width: 2px;
-            background: linear-gradient(180deg, var(--accent-indigo), transparent);
-        }
-
-        .timeline-item {
-            position: relative;
-            padding: 12px 0;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -28px;
-            top: 18px;
-            width: 8px;
-            height: 8px;
-            background: var(--accent-indigo);
-            border-radius: 50%;
-            box-shadow: 0 0 0 3px var(--bg-base), 0 0 8px var(--accent-indigo);
-        }
-
-        .timeline-date {
-            font-size: var(--fs-xs);
-            color: var(--accent-cyan);
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .timeline-event {
-            font-size: var(--fs-sm);
-            color: var(--text-primary);
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
-
-        .timeline-desc {
-            font-size: var(--fs-sm);
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        /* Analysis Section */
-        .analysis-card {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: var(--radius-md);
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-
-        .analysis-label {
-            font-size: var(--fs-xs);
-            color: var(--accent-indigo);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .analysis-text {
-            font-size: var(--fs-sm);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        .nash-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
-            color: white;
-            font-weight: 600;
-            font-size: var(--fs-sm);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .nash-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-        }
-
-        /* Media Section */
-        .media-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .media-item {
-            position: relative;
-            aspect-ratio: 16/9;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            background: var(--bg-inset);
-            border: 1px solid var(--border-subtle);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .media-item:hover {
-            transform: scale(1.02);
-        }
-
-        .media-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .media-item-label {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            color: white;
-            font-size: var(--fs-xs);
-            padding: 8px;
-        }
-
-        .media-links {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .media-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            background: var(--bg-inset);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            text-decoration: none;
-            font-size: var(--fs-sm);
-            transition: all 0.2s;
-        }
-
-        .media-link:hover {
-            background: var(--bg-surface-hover);
-            border-color: var(--accent-indigo);
-        }
-
-        .media-link .link-icon {
-            width: 16px;
-            height: 16px;
-            color: var(--accent-indigo);
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-            .context-panel {
-                width: 100vw;
-            }
-            
-            .context-panel-header {
-                padding: 20px 16px;
-            }
-            
-            .context-panel-content {
-                padding: 0 16px 16px;
-            }
-            
-            .overview-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            
-            .media-grid {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 </head>
 <body>
@@ -4313,12 +3918,6 @@ const DEMO_GRAPH = {
 let g3 = {}; // all Three.js state in one object
 let hoveredNode = null;
 
-// Autopilot state (must be declared before initGraph which calls animate→updateCamera)
-let autopilotActive = false;
-let autopilotTimer = null;
-let autopilotQueue = [];
-let autopilotIndex = 0;
-
 // ---- SOUND EFFECTS (Web Audio API - tiny synth bloops) ----
 const SFX = (() => {
     let ctx = null;
@@ -4917,45 +4516,38 @@ function _initGraphInner(graph, container) {
         setTimeout(() => { flowParticles.forEach(fp => { fp.active = true; }); }, 500);
     }, entryOrder.length * 35 + 200);
 
-    // -- Cinematic Camera System (Google Earth-style transitions) --
-    const cinematicCamera = new CinematicCamera(camera, scene);
-    
-    // Initialize with default position
-    cinematicCamera.theta = 0;
-    cinematicCamera.phi = Math.PI * 0.35;
-    cinematicCamera.distance = 280;
-    cinematicCamera.lookAt.set(0, 0, 0);
-    cinematicCamera.targetTheta = 0;
-    cinematicCamera.targetPhi = Math.PI * 0.35;
-    cinematicCamera.targetDistance = 280;
-    cinematicCamera.targetLookAt.set(0, 0, 0);
-    cinematicCamera.autoRotate = true;
-    
+    // -- Orbital camera controls (custom, smooth like Google Earth) --
+    let orbitTheta = 0, orbitPhi = Math.PI * 0.35, orbitDist = 280;
+    let targetTheta = orbitTheta, targetPhi = orbitPhi, targetDist = orbitDist;
+    let targetLookAt = new THREE.Vector3(0, 0, 0);
+    let currentLookAt = new THREE.Vector3(0, 0, 0);
+    let autoRotate = true;
     let isDragging = false, lastMouse = {x:0,y:0};
     hoveredNode = null;
     let clickCount = {}; // track clicks per node for easter eggs
 
-    // Compatibility aliases for existing code
-    let orbitTheta = 0, orbitPhi = Math.PI * 0.35, orbitDist = 280;
-    let targetTheta = 0, targetPhi = Math.PI * 0.35, targetDist = 280;
-    let targetLookAt = new THREE.Vector3(0, 0, 0);
-    let currentLookAt = new THREE.Vector3(0, 0, 0);
-    let autoRotate = true;
-
     function updateCamera() {
-        // Cinematic camera handles all updates
-        cinematicCamera.update();
+        orbitTheta += (targetTheta - orbitTheta) * 0.08;
+        orbitPhi += (targetPhi - orbitPhi) * 0.08;
+        orbitDist += (targetDist - orbitDist) * 0.06;
         
-        // Sync compatibility aliases
-        orbitTheta = cinematicCamera.theta;
-        orbitPhi = cinematicCamera.phi;
-        orbitDist = cinematicCamera.distance;
-        currentLookAt.copy(cinematicCamera.lookAt);
-        targetTheta = cinematicCamera.targetTheta;
-        targetPhi = cinematicCamera.targetPhi;
-        targetDist = cinematicCamera.targetDistance;
-        targetLookAt.copy(cinematicCamera.targetLookAt);
-        autoRotate = cinematicCamera.autoRotate;
+        // Faster lerp for autopilot — snap to target quickly to avoid "staring at space"
+        const lerpSpeed = autopilotActive ? 0.15 : 0.06;
+        currentLookAt.lerp(targetLookAt, lerpSpeed);
+        
+        orbitPhi = Math.max(0.1, Math.min(Math.PI - 0.1, orbitPhi));
+        orbitDist = Math.max(40, Math.min(800, orbitDist));
+
+        // Update camera position to orbit around lookAt target
+        camera.position.set(
+            currentLookAt.x + orbitDist * Math.sin(orbitPhi) * Math.sin(orbitTheta),
+            currentLookAt.y + orbitDist * Math.cos(orbitPhi),
+            currentLookAt.z + orbitDist * Math.sin(orbitPhi) * Math.cos(orbitTheta)
+        );
+        
+        // Ensure camera points at lookAt target
+        camera.lookAt(currentLookAt);
+        camera.updateMatrixWorld();
     }
 
     // -- Playful node physics update --
@@ -5050,14 +4642,14 @@ function _initGraphInner(graph, container) {
     canvas.addEventListener('mousedown', (e) => {
         isDragging = true;
         lastMouse = {x: e.clientX, y: e.clientY};
-        cinematicCamera.autoRotate = false;
         autoRotate = false;
     });
     canvas.addEventListener('mousemove', (e) => {
         if (isDragging) {
             const dx = e.clientX - lastMouse.x;
             const dy = e.clientY - lastMouse.y;
-            cinematicCamera.handleDrag(dx, dy);
+            targetTheta -= dx * 0.005;
+            targetPhi += dy * 0.005;
             lastMouse = {x: e.clientX, y: e.clientY};
         } else {
             const rect = canvas.getBoundingClientRect();
@@ -5189,14 +4781,9 @@ function _initGraphInner(graph, container) {
             if (sparkleCtx) {
                 spawnSparkles(e.clientX - rect.left, e.clientY - rect.top, 25, sparkleCtx);
             }
-            // Cinematic fly to node
-            const targetPos = new THREE.Vector3(hoveredNode.x, hoveredNode._baseY, hoveredNode.z);
-            cinematicCamera.flyTo(
-                cinematicCamera.theta, // Keep current rotation
-                Math.PI * 0.4,  // Slight elevation
-                80,  // Close zoom
-                targetPos
-            );
+            // Fly to node
+            targetLookAt.set(hoveredNode.x, hoveredNode._baseY, hoveredNode.z);
+            targetDist = 80;
             autoRotate = false;
             // Easter egg: click same node 5 times
             clickCount[hoveredNode.id] = (clickCount[hoveredNode.id] || 0) + 1;
@@ -5246,7 +4833,7 @@ function _initGraphInner(graph, container) {
     });
     canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
-        cinematicCamera.handleZoom(e.deltaY);
+        targetDist *= e.deltaY > 0 ? 1.12 : 0.88;
     }, { passive: false });
 
     // Touch support
@@ -5310,14 +4897,9 @@ function _initGraphInner(graph, container) {
                     spawnSparkles(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, 25, sparkleCtx);
                 }
                 
-                // Cinematic fly to node
-                const targetPos = new THREE.Vector3(nd.x, nd._baseY, nd.z);
-                cinematicCamera.flyTo(
-                    cinematicCamera.theta, // Keep current rotation initially
-                    Math.PI * 0.4,  // Slight elevation change
-                    80,  // Zoom distance
-                    targetPos
-                );
+                // Fly to node
+                targetLookAt.set(nd.x, nd._baseY, nd.z);
+                targetDist = 80;
                 autoRotate = false;
                 
                 // Easter egg tracking
@@ -5345,7 +4927,6 @@ function _initGraphInner(graph, container) {
                 // Touch missed nodes - allow drag
                 touchStartNode = null;
                 isDragging = true;
-                cinematicCamera.autoRotate = false;
                 autoRotate = false;
                 lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
             }
@@ -5360,14 +4941,14 @@ function _initGraphInner(graph, container) {
         if (e.touches.length === 1 && isDragging) {
             const dx = e.touches[0].clientX - lastMouse.x;
             const dy = e.touches[0].clientY - lastMouse.y;
-            cinematicCamera.handleDrag(dx, dy);
+            targetTheta -= dx * 0.005;
+            targetPhi += dy * 0.005;
             lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
         } else if (e.touches.length === 2 && touchStartDist) {
             const dx = e.touches[0].clientX - e.touches[1].clientX;
             const dy = e.touches[0].clientY - e.touches[1].clientY;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            const zoomFactor = touchStartDist / dist;
-            cinematicCamera.targetDistance *= zoomFactor;
+            targetDist *= touchStartDist / dist;
             touchStartDist = dist;
         }
     }, { passive: false });
@@ -5564,11 +5145,10 @@ function _initGraphInner(graph, container) {
         nodeMeshes, nodeMeshMap, lineMeshes, nodes3d, edges3d, visible: true, communityMeta,
         labelSprites, halos, ambientParticles, flowParticles,
         colorTransition: { active: false, from: {}, to: {}, progress: 0, duration: 0.5 },
-        _setAutoRotate(v) { cinematicCamera.autoRotate = v; autoRotate = v; },
-        _getAutoRotate() { return cinematicCamera.autoRotate; },
+        _setAutoRotate(v) { autoRotate = v; },
+        _getAutoRotate() { return autoRotate; },
         _resetCamera() {
-            cinematicCamera.reset(false); // Cinematic fly-back home
-            autoRotate = true;
+            targetLookAt.set(0, 0, 0); targetDist = 280; targetPhi = Math.PI * 0.35; autoRotate = true;
             lineMeshes.forEach(l => {
                 const le = l.userData;
                 l.material.opacity = le.type === 'shared_tags' ? 0.25 : (le.type === 'wikilink' ? 0.6 : 0.45);
@@ -6807,6 +6387,10 @@ function toggleGraphIntel() {
 // =============================================
 //  AUTOPILOT / SCENIC TOUR
 // =============================================
+let autopilotActive = false;
+let autopilotTimer = null;
+let autopilotQueue = [];
+let autopilotIndex = 0;
 
 function toggleAutopilot() { autopilotActive ? stopAutopilot() : startAutopilot(); }
 
@@ -6853,15 +6437,16 @@ function autopilotVisitNext() {
     const mesh = g3.nodeMeshes.find(m => m.userData.id === node.id);
     if (!mesh) { autopilotTimer = setTimeout(autopilotVisitNext, 500); return; }
     
-    // Cinematic fly to node with faster transition for autopilot tour
-    const nodePos = new THREE.Vector3(mesh.position.x, mesh.position.y, mesh.position.z);
-    const zoomDist = 60 + Math.max(0, 30 - (node.connections || 0) * 3);
-    cinematicCamera.flyTo(
-        cinematicCamera.theta, // Maintain orbital angle
-        Math.PI * 0.38,  // Slight elevation
-        zoomDist,
-        nodePos
-    );
+    // Set both target AND current lookAt to the node position to snap camera immediately
+    // This prevents the "staring at empty space" issue
+    if (g3.targetLookAt) {
+        g3.targetLookAt.set(mesh.position.x, mesh.position.y, mesh.position.z);
+        // Also update currentLookAt to force camera to converge faster
+        if (g3.currentLookAt) {
+            g3.currentLookAt.copy(g3.targetLookAt);
+        }
+    }
+    if (g3.targetDist !== undefined) g3.targetDist = 60 + Math.max(0, 30 - (node.connections || 0) * 3);
     // Highlight node + neighbors
     const neighborIds = new Set();
     g3.edges3d.forEach(e => {
@@ -6923,13 +6508,9 @@ function viewInGraph(noteName) {
                     return id.includes(clean.toLowerCase()) || clean.toLowerCase().includes(id);
                 });
                 if (mesh) {
-                    cinematicCamera.flyTo(
-                        cinematicCamera.theta,
-                        Math.PI * 0.4,
-                        80,
-                        mesh.position
-                    );
-                    showToast('Flying to: ' + clean, 'success', 2000);
+                    if (g3.targetLookAt) g3.targetLookAt.copy(mesh.position);
+                    if (g3.targetDist !== undefined) g3.targetDist = 80;
+                    showToast('Zoomed to: ' + clean, 'success', 2000);
                 } else showToast('Node not found in graph: ' + clean, 'info', 3000);
             }
         }, 500);
@@ -6977,88 +6558,6 @@ document.getElementById('analyze-cassandra-btn')?.addEventListener('click', func
 })();
 </script>
 
-
-<!-- RICH CONTEXT PANEL -->
-<div class="context-panel-overlay" id="contextPanelOverlay" onclick="if(event.target===this)closeContextPanel()">
-    <div class="context-panel" id="contextPanel">
-        <div class="context-panel-header">
-            <div class="context-panel-title">
-                <h2>
-                    <span class="node-icon" id="contextIcon">🎯</span>
-                    <span id="contextTitle">Node Details</span>
-                </h2>
-                <p class="context-panel-subtitle" id="contextSubtitle"></p>
-            </div>
-            <button class="context-panel-close" onclick="closeContextPanel()" aria-label="Close panel">
-                <i data-lucide="x" style="width:20px;height:20px"></i>
-            </button>
-        </div>
-        
-        <div class="context-panel-content">
-            <!-- OVERVIEW -->
-            <div class="context-section" id="sectionOverview">
-                <div class="context-section-header" onclick="toggleSection('sectionOverview')">
-                    <h3>
-                        <i data-lucide="info" class="section-icon"></i>
-                        Overview
-                    </h3>
-                    <i data-lucide="chevron-down" class="context-section-toggle"></i>
-                </div>
-                <div class="context-section-body">
-                    <div class="overview-grid" id="overviewStats"></div>
-                    <p class="overview-description" id="overviewDescription"></p>
-                </div>
-            </div>
-            
-            <!-- TIMELINE -->
-            <div class="context-section" id="sectionTimeline">
-                <div class="context-section-header" onclick="toggleSection('sectionTimeline')">
-                    <h3>
-                        <i data-lucide="calendar" class="section-icon"></i>
-                        Timeline
-                    </h3>
-                    <i data-lucide="chevron-down" class="context-section-toggle"></i>
-                </div>
-                <div class="context-section-body">
-                    <div class="timeline" id="timelineContent"></div>
-                </div>
-            </div>
-            
-            <!-- ANALYSIS -->
-            <div class="context-section" id="sectionAnalysis">
-                <div class="context-section-header" onclick="toggleSection('sectionAnalysis')">
-                    <h3>
-                        <i data-lucide="brain" class="section-icon"></i>
-                        Analysis
-                    </h3>
-                    <i data-lucide="chevron-down" class="context-section-toggle"></i>
-                </div>
-                <div class="context-section-body">
-                    <div id="analysisContent"></div>
-                    <button class="nash-button" onclick="analyzeWithNash()">
-                        <i data-lucide="sparkles" style="width:16px;height:16px"></i>
-                        Analyze with Nash
-                    </button>
-                </div>
-            </div>
-            
-            <!-- MEDIA -->
-            <div class="context-section" id="sectionMedia">
-                <div class="context-section-header" onclick="toggleSection('sectionMedia')">
-                    <h3>
-                        <i data-lucide="image" class="section-icon"></i>
-                        Media & Resources
-                    </h3>
-                    <i data-lucide="chevron-down" class="context-section-toggle"></i>
-                </div>
-                <div class="context-section-body">
-                    <div class="media-grid" id="mediaImages"></div>
-                    <div class="media-links" id="mediaLinks" style="margin-top:12px"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- SETTINGS PANEL -->
 <div class="kb-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()" role="dialog" aria-label="Settings">
