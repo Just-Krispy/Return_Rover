@@ -5662,6 +5662,16 @@ function _initGraphInner(graph, container) {
         }
     }
 
+    // Initialize Guided Tours system
+    if (typeof TourEngine !== 'undefined') {
+        try {
+            initTourEngine(scene, camera, cinematicCamera);
+            console.log('[tours] Guided tours system initialized with', TOURS.length, 'tours');
+        } catch (e) {
+            console.warn('[tours] Failed to initialize:', e);
+        }
+    }
+
     // Apply saved filter state on init
     if (graphHiddenGroups.size > 0 && g3._applyFilter) {
         g3._applyFilter(graphHiddenGroups);
