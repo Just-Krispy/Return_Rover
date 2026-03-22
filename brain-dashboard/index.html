@@ -44,6 +44,10 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" integrity="sha384-mY+ii969jnDCI2HjRHftH2NZVkIO5ZGUkcnGCg3oVJ3kVstWQXwerYWBg+nbUG4R" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" integrity="sha384-aVQ2QnWkoxhOefDB0YZB64OPVzujvccydpcC7UqMDJUK0ChwA382zOHmrWHGDRRa" crossorigin="anonymous"></script>
     <script src="camera-transitions.js"></script>
+    <script src="js/connections-system.js"></script>
+    <script src="js/connection-controls.js"></script>
+    <link rel="stylesheet" href="css/time-slider.css">
+    <script src="js/time-slider.js"></script>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -2622,6 +2626,10 @@
             }
         }
     </style>
+    
+    <!-- Nash Sidebar Integration -->
+    <link rel="stylesheet" href="css/nash-sidebar.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
@@ -4317,6 +4325,7 @@ const DEMO_GRAPH = {
 
 let g3 = {}; // all Three.js state in one object
 let hoveredNode = null;
+let timeSlider = null; // Time slider for historical playback
 
 // Autopilot state (must be declared before initGraph which calls animate→updateCamera)
 let autopilotActive = false;
@@ -5424,14 +5433,22 @@ function _initGraphInner(graph, container) {
     // -- Animation loop (with playful physics) --
     console.log('[graph] all phases done, starting animation...');
     const startTime = performance.now();
+    let lastTime = performance.now();
     function animate() {
         g3.rafId = requestAnimationFrame(animate);
         if (g3.visible === false) return; // skip render when off-screen
-        const time = (performance.now() - startTime) / 1000;
+        const now = performance.now();
+        const deltaTime = now - lastTime;
+        lastTime = now;
+        const time = (now - startTime) / 1000;
         if (autoRotate) targetTheta += 0.0015;
         updateCamera();
         updatePlayfulNodes(time);
         updateFlowParticles();
+        // Update connections system animations
+        if (connectionsSystem) {
+            connectionsSystem.animate(deltaTime);
+        }
         // Phase 3: animate dashed edges
         lineMeshes.forEach(l => {
             if (l.userData._dashed) l.material.dashOffset -= 0.01 * (l.userData._dashWeight || 1);
@@ -5564,10 +5581,23 @@ function _initGraphInner(graph, container) {
     if (hudLinks) hudLinks.textContent = edges3d.length;
     if (hudClusters) hudClusters.textContent = (graph.communities || []).length || '—';
 
+    // Initialize Connections System
+    let connectionsSystem, connectionControls;
+    if (typeof ConnectionsSystem !== 'undefined') {
+        try {
+            connectionsSystem = new ConnectionsSystem(scene, camera, renderer);
+            connectionControls = new ConnectionControls(connectionsSystem);
+            console.log('[graph] Connections system initialized with', Object.keys(connectionsSystem.connectionTypes).length, 'connection types');
+        } catch (e) {
+            console.warn('[graph] Connections system failed to initialize:', e);
+        }
+    }
+
     // Store state
     g3 = { renderer, scene, camera, composer, bloomPass, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
         nodeMeshes, nodeMeshMap, lineMeshes, nodes3d, edges3d, visible: true, communityMeta,
         labelSprites, halos, ambientParticles, flowParticles,
+        connectionsSystem, connectionControls,
         colorTransition: { active: false, from: {}, to: {}, progress: 0, duration: 0.5 },
         _setAutoRotate(v) { cinematicCamera.autoRotate = v; autoRotate = v; },
         _getAutoRotate() { return cinematicCamera.autoRotate; },
@@ -6966,17 +6996,13 @@ document.getElementById('analyze-cassandra-btn')?.addEventListener('click', func
         return;
     }
     
-    // Build the node text
-    const nodeText = `# ${selectedNode.id}\n\n${selectedNode.content || 'No content available'}`;
-    
-    // Copy to clipboard and open Nash
-    navigator.clipboard.writeText(nodeText).then(() => {
-        window.open('https://just-krispy.github.io/cassandra-ai-mvp/', '_blank');
-        showToast('Node text copied! Paste it into Nash to analyze.', 'success', 3000);
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-        showToast('Failed to copy text. Please try again.', 'error', 3000);
-    });
+    // Open Nash sidebar with selected node
+    if (window.nashSidebar) {
+        window.nashSidebar.open(selectedNode);
+    } else {
+        console.error('Nash sidebar not initialized');
+        showToast('Nash sidebar not available', 'error', 2000);
+    }
 });
 
 // ==== RICH CONTEXT PANEL FUNCTIONS ====
@@ -7164,15 +7190,13 @@ function toggleSection(sectionId) {
 function analyzeWithNash() {
     if (!currentContextNode) return;
     
-    const textToCopy = `Analyze this crisis using game theory:\n\n${currentContextNode.id}\n\nProvide: 1) Key players and their strategies, 2) Payoff matrix, 3) Nash equilibrium, 4) Historical outcome vs optimal strategy`;
-    
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        window.open('https://just-krispy.github.io/cassandra-ai-mvp/', '_blank');
-        showToast('Analysis prompt copied! Paste into Nash.', 'success', 3000);
-    }).catch(err => {
-        console.error('Failed to copy:', err);
-        showToast('Failed to copy. Please try again.', 'error', 3000);
-    });
+    // Open Nash sidebar with current node
+    if (window.nashSidebar) {
+        window.nashSidebar.open(currentContextNode);
+    } else {
+        console.error('Nash sidebar not initialized');
+        showToast('Nash sidebar not available', 'error', 2000);
+    }
 }
 
 // Close panel on Escape key
@@ -7287,5 +7311,9 @@ document.addEventListener('keydown', (e) => {
         </div>
     </div>
 </div>
+
+<!-- Nash Sidebar Script -->
+<script src="js/nash-sidebar.js"></script>
+
 </body>
 </html>

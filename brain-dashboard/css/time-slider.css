@@ -1,0 +1,403 @@
+/**
+ * Time Slider Styles - Glass Morphism Design
+ * Historical playback system (1900-2026)
+ */
+
+.time-slider-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+    pointer-events: auto;
+}
+
+/* Controls */
+.timeline-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.timeline-btn {
+    background: rgba(51, 65, 85, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    color: #e2e8f0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+}
+
+.timeline-btn:hover {
+    background: rgba(71, 85, 105, 0.8);
+    border-color: rgba(148, 163, 184, 0.5);
+    transform: scale(1.05);
+}
+
+.timeline-btn:active {
+    transform: scale(0.95);
+}
+
+.timeline-play-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.timeline-speed-btn {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 42px;
+}
+
+.timeline-step-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Timeline wrapper */
+.timeline-wrapper {
+    position: relative;
+    width: 700px;
+    height: 80px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Era backgrounds */
+.timeline-eras {
+    position: absolute;
+    top: 28px;
+    left: 20px;
+    right: 20px;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+}
+
+.timeline-era {
+    position: absolute;
+    height: 100%;
+    transition: opacity 0.3s ease;
+}
+
+.timeline-era:hover {
+    opacity: 0.8;
+}
+
+/* Progress bar */
+.timeline-progress {
+    position: absolute;
+    top: 28px;
+    left: 20px;
+    height: 8px;
+    background: linear-gradient(90deg, 
+        rgba(59, 130, 246, 0.6) 0%, 
+        rgba(139, 92, 246, 0.6) 50%, 
+        rgba(249, 115, 22, 0.6) 100%);
+    border-radius: 4px 0 0 4px;
+    pointer-events: none;
+    transition: width 0.15s ease-out;
+    z-index: 2;
+}
+
+/* Tick marks for key events */
+.timeline-ticks {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    height: 24px;
+    pointer-events: none;
+}
+
+.timeline-tick {
+    position: absolute;
+    width: 2px;
+    height: 24px;
+    border-left: 2px solid;
+    opacity: 0.7;
+    transform: translateX(-1px);
+    transition: opacity 0.2s ease;
+}
+
+.timeline-tick::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -3px;
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    box-shadow: 0 0 4px currentColor;
+}
+
+/* Slider */
+.timeline-slider {
+    position: absolute;
+    top: 24px;
+    left: 20px;
+    right: 20px;
+    width: calc(100% - 40px);
+    height: 16px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    z-index: 3;
+}
+
+/* Slider track - WebKit */
+.timeline-slider::-webkit-slider-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(51, 65, 85, 0.4);
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* Slider track - Firefox */
+.timeline-slider::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(51, 65, 85, 0.4);
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+/* Slider thumb - WebKit */
+.timeline-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 12px rgba(59, 130, 246, 0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 16px rgba(59, 130, 246, 0.8);
+}
+
+.timeline-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+}
+
+/* Slider thumb - Firefox */
+.timeline-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    cursor: grab;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 12px rgba(59, 130, 246, 0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-slider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 16px rgba(59, 130, 246, 0.8);
+}
+
+.timeline-slider::-moz-range-thumb:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+}
+
+/* Date label */
+.timeline-date-label {
+    position: absolute;
+    top: -32px;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #e2e8f0;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.2s ease, left 0.15s ease-out;
+    z-index: 5;
+}
+
+.timeline-date-label::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid rgba(15, 23, 42, 0.95);
+}
+
+/* Year markers */
+.timeline-markers {
+    position: absolute;
+    bottom: 4px;
+    left: 20px;
+    right: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.timeline-marker {
+    position: absolute;
+    transform: translateX(-50%);
+    color: rgba(148, 163, 184, 0.6);
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .timeline-wrapper {
+        width: calc(100vw - 40px);
+        max-width: 500px;
+    }
+    
+    .timeline-controls {
+        padding: 6px 10px;
+        gap: 6px;
+    }
+    
+    .timeline-btn {
+        min-width: 32px;
+        height: 32px;
+        padding: 6px;
+    }
+    
+    .timeline-slider::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .timeline-slider::-moz-range-thumb {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .timeline-marker {
+        font-size: 9px;
+    }
+    
+    /* Hide some year markers on mobile */
+    .timeline-marker:nth-child(odd):not(:first-child):not(:last-child) {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .timeline-wrapper {
+        width: calc(100vw - 24px);
+    }
+    
+    .timeline-date-label {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+    
+    .timeline-speed-btn {
+        font-size: 11px;
+        min-width: 38px;
+    }
+}
+
+/* Smooth transitions for visibility changes */
+.crisis-marker {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Keyboard focus styles */
+.timeline-slider:focus {
+    outline: none;
+}
+
+.timeline-slider:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+}
+
+.timeline-slider:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+}
+
+.timeline-btn:focus {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+}
+
+/* Animation for tick marks on hover */
+.timeline-tick:hover {
+    opacity: 1;
+    transform: translateX(-1px) scale(1.2);
+}
+
+/* Pulse animation for current year indicator */
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 12px rgba(59, 130, 246, 0.5);
+    }
+    50% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.8);
+    }
+}
+
+.timeline-slider::-webkit-slider-thumb {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.timeline-slider::-moz-range-thumb {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Disable animation when dragging */
+.timeline-slider:active::-webkit-slider-thumb {
+    animation: none;
+}
+
+.timeline-slider:active::-moz-range-thumb {
+    animation: none;
+}

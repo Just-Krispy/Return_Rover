@@ -1,0 +1,317 @@
+<!-- Live Data UI Components -->
+<!-- Add this to the main index.html file -->
+
+<!-- Live Data Control Panel -->
+<div class="live-data-panel" id="live-data-panel">
+    <div class="live-data-header">
+        <div class="live-data-title">
+            <span class="live-indicator"></span>
+            Live Intelligence
+        </div>
+        <button class="manual-refresh-btn" id="manual-refresh-btn">
+            <svg class="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            Refresh
+        </button>
+    </div>
+
+    <!-- Data Source Status -->
+    <div class="data-sources">
+        <div class="data-source-item">
+            <div class="source-info">
+                <div class="source-icon">☢️</div>
+                <div class="source-details">
+                    <div class="source-name">IAEA Reports</div>
+                    <div class="source-status">Iran enrichment data</div>
+                </div>
+            </div>
+            <span class="source-badge active">Active</span>
+        </div>
+
+        <div class="data-source-item">
+            <div class="source-info">
+                <div class="source-icon">🛢️</div>
+                <div class="source-details">
+                    <div class="source-name">Oil Prices</div>
+                    <div class="source-status">Brent Crude live</div>
+                </div>
+            </div>
+            <span class="source-badge active">Active</span>
+        </div>
+
+        <div class="data-source-item">
+            <div class="source-info">
+                <div class="source-icon">✈️</div>
+                <div class="source-details">
+                    <div class="source-name">Flight Tracking</div>
+                    <div class="source-status">ADS-B military aircraft</div>
+                </div>
+            </div>
+            <span class="source-badge active">Active</span>
+        </div>
+
+        <div class="data-source-item">
+            <div class="source-info">
+                <div class="source-icon">🚢</div>
+                <div class="source-details">
+                    <div class="source-name">Shipping Traffic</div>
+                    <div class="source-status">Strait of Hormuz</div>
+                </div>
+            </div>
+            <span class="source-badge active">Active</span>
+        </div>
+
+        <div class="data-source-item">
+            <div class="source-info">
+                <div class="source-icon">📰</div>
+                <div class="source-details">
+                    <div class="source-name">News Alerts</div>
+                    <div class="source-status">Breaking geopolitical</div>
+                </div>
+            </div>
+            <span class="source-badge active">Active</span>
+        </div>
+    </div>
+
+    <!-- Data Filters -->
+    <div class="data-filters">
+        <div class="filter-title">Filter Data Sources</div>
+        <div class="filter-options">
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter-source="iaea" checked>
+                <span class="filter-label">IAEA Reports</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter-source="oil" checked>
+                <span class="filter-label">Oil Prices</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter-source="flight" checked>
+                <span class="filter-label">Flight Tracking</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter-source="shipping" checked>
+                <span class="filter-label">Shipping Traffic</span>
+            </label>
+            <label class="filter-option">
+                <input type="checkbox" class="filter-checkbox" data-filter-source="news" checked>
+                <span class="filter-label">News Alerts</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Last Updated Timestamp -->
+    <div class="last-updated" id="last-updated">
+        Last updated: --:--:--
+    </div>
+</div>
+
+<!-- Data Detail Panel (Shows when clicking a node) -->
+<div class="data-detail-panel" id="data-detail-panel">
+    <div class="detail-header">
+        <div class="detail-title" id="detail-title">Node Details</div>
+        <button class="detail-close-btn" id="detail-close-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+    </div>
+    <div class="detail-content" id="detail-content">
+        <!-- Dynamically populated based on clicked node -->
+        <div class="detail-section">
+            <div class="detail-section-title">Current Status</div>
+            <div class="detail-metric">
+                <span class="metric-label">Enrichment Level</span>
+                <span class="metric-value">60% <span class="metric-trend escalating">↑ Escalating</span></span>
+            </div>
+            <div class="detail-metric">
+                <span class="metric-label">Stockpile</span>
+                <span class="metric-value">114.1 kg</span>
+            </div>
+            <div class="detail-metric">
+                <span class="metric-label">Breakout Time</span>
+                <span class="metric-value">12 days</span>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-section-title">Historical Trend</div>
+            <div class="historical-chart">
+                <div class="chart-placeholder">
+                    Chart visualization (enrichment over time)
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <div class="detail-section-title">Related Intelligence</div>
+            <div class="detail-metric">
+                <span class="metric-label">Last IAEA Inspection</span>
+                <span class="metric-value">March 15, 2026</span>
+            </div>
+            <div class="detail-metric">
+                <span class="metric-label">Facility Status</span>
+                <span class="metric-value">Active</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Ticker (Bottom of screen) -->
+<div class="live-ticker-container">
+    <div class="ticker-label">LIVE</div>
+    <div class="ticker-scroll">
+        <div class="live-ticker" id="live-ticker">
+            <!-- Dynamically populated with real-time updates -->
+            <div class="ticker-item">
+                <span class="ticker-icon">☢️</span>
+                <span class="ticker-text">IAEA: Iran enrichment at 60% — near weapons-grade</span>
+                <span class="ticker-trend escalating">↑</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-icon">🛢️</span>
+                <span class="ticker-text">Brent Crude: $85.40 (+2.1%)</span>
+                <span class="ticker-trend up">↑</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-icon">✈️</span>
+                <span class="ticker-text">Military flights detected: Persian Gulf (8 aircraft)</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-icon">🚢</span>
+                <span class="ticker-text">Strait of Hormuz: 21 daily transits (15 oil tankers)</span>
+            </div>
+            <div class="ticker-item">
+                <span class="ticker-icon">📰</span>
+                <span class="ticker-text">Breaking: NATO exercises begin in Baltic Sea</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Node Tooltip (Hover preview) -->
+<div class="data-node-tooltip" id="data-node-tooltip">
+    <div class="tooltip-title" id="tooltip-title">Natanz Facility</div>
+    <div class="tooltip-details" id="tooltip-details">
+        <div>Enrichment: 60%</div>
+        <div>Stockpile: 114.1 kg</div>
+        <div>Trend: Escalating ↑</div>
+    </div>
+</div>
+
+<!-- Integration Script -->
+<script>
+// Initialize Live Data Manager when Three.js scene is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for main app to initialize
+    window.addEventListener('sceneReady', (event) => {
+        const { scene, camera } = event.detail;
+        
+        // Initialize live data manager
+        window.liveDataManager = new LiveDataManager(scene, camera, window.dataLayersManager);
+        
+        // Start auto-refresh (every 5 minutes)
+        window.liveDataManager.startAutoRefresh();
+        
+        console.log('Live Data Integration initialized');
+    });
+
+    // Close detail panel button
+    document.getElementById('detail-close-btn')?.addEventListener('click', () => {
+        document.getElementById('data-detail-panel').classList.remove('active');
+    });
+
+    // Node click handler (to be integrated with raycasting)
+    window.addEventListener('nodeClicked', (event) => {
+        const { node } = event.detail;
+        showNodeDetails(node);
+    });
+
+    function showNodeDetails(node) {
+        const detailPanel = document.getElementById('data-detail-panel');
+        const detailTitle = document.getElementById('detail-title');
+        const detailContent = document.getElementById('detail-content');
+        
+        if (!node.userData) return;
+        
+        // Populate detail panel based on node type
+        detailTitle.textContent = node.userData.name || 'Node Details';
+        
+        // Generate detailed content
+        let html = '';
+        
+        if (node.userData.type === 'iaea') {
+            html = `
+                <div class="detail-section">
+                    <div class="detail-section-title">Current Status</div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Enrichment Level</span>
+                        <span class="metric-value">${node.userData.value} <span class="metric-trend ${node.userData.trend}">${node.userData.trend === 'escalating' ? '↑' : '→'} ${node.userData.trend}</span></span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Stockpile</span>
+                        <span class="metric-value">${node.userData.stockpile}</span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Facility Status</span>
+                        <span class="metric-value">${node.userData.status}</span>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <div class="detail-section-title">Historical Trend</div>
+                    <div class="historical-chart">
+                        <div class="chart-placeholder">
+                            Enrichment level over time (last 30 days)
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (node.userData.type === 'flight') {
+            html = `
+                <div class="detail-section">
+                    <div class="detail-section-title">Flight Information</div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Callsign</span>
+                        <span class="metric-value">${node.userData.callsign}</span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Altitude</span>
+                        <span class="metric-value">${node.userData.altitude}</span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Velocity</span>
+                        <span class="metric-value">${node.userData.velocity}</span>
+                    </div>
+                </div>
+            `;
+        } else if (node.userData.type === 'shipping') {
+            html = `
+                <div class="detail-section">
+                    <div class="detail-section-title">Shipping Traffic</div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Region</span>
+                        <span class="metric-value">${node.userData.region}</span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Daily Transits</span>
+                        <span class="metric-value">${node.userData.dailyTransits}</span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Oil Tankers Today</span>
+                        <span class="metric-value">${node.userData.oilTankers}</span>
+                    </div>
+                    <div class="detail-metric">
+                        <span class="metric-label">Congestion Level</span>
+                        <span class="metric-value">${node.userData.congestion} <span class="metric-trend ${node.userData.trend}">${node.userData.trend === 'increasing' ? '↑' : '→'}</span></span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        detailContent.innerHTML = html;
+        detailPanel.classList.add('active');
+    }
+});
+</script>
