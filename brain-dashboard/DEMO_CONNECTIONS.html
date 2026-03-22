@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Visualization Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #09090b;
+            color: #fafafa;
+            padding: 40px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #a78bfa, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            font-size: 16px;
+            color: #a1a1aa;
+            margin-bottom: 32px;
+        }
+        .connection-card {
+            background: rgba(24, 24, 27, 0.6);
+            border: 1px solid rgba(63, 63, 70, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.2s;
+        }
+        .connection-card:hover {
+            background: rgba(24, 24, 27, 0.9);
+            border-color: rgba(99, 99, 112, 0.8);
+            transform: translateX(4px);
+        }
+        .connection-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .color-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .glow {
+            box-shadow: 0 0 12px currentColor;
+        }
+        .connection-type {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #a1a1aa;
+        }
+        .connection-path {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .arrow {
+            color: #71717a;
+        }
+        .connection-desc {
+            color: #a1a1aa;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .visual-note {
+            font-size: 12px;
+            color: #71717a;
+            margin-top: 8px;
+            font-style: italic;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 48px 0 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(63, 63, 70, 0.6);
+        }
+        .cta {
+            background: linear-gradient(135deg, #a78bfa, #22d3ee);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 600;
+            margin-top: 32px;
+            transition: transform 0.2s;
+        }
+        .cta:hover {
+            transform: scale(1.05);
+        }
+        .legend {
+            background: rgba(24, 24, 27, 0.6);
+            border: 1px solid rgba(63, 63, 70, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 32px;
+        }
+        .legend-title {
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        .line-sample {
+            width: 40px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        .dashed {
+            background-image: repeating-linear-gradient(
+                90deg,
+                currentColor 0,
+                currentColor 6px,
+                transparent 6px,
+                transparent 12px
+            );
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Connection Visualization System</h1>
+        <p class="subtitle">Revealing hidden relationships in the Second Brain globe</p>
+
+        <h2 class="section-title">🔮 Historical Echoes (1914 → 1939 → 2026)</h2>
+        
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot glow" style="background: #22d3ee; color: #22d3ee;"></div>
+                <span class="connection-type">Echo</span>
+            </div>
+            <div class="connection-path">
+                <span>1914: WWI Outbreak</span>
+                <span class="arrow">→</span>
+                <span>1939: WWII Outbreak</span>
+            </div>
+            <div class="connection-desc">
+                Alliance chains → localized crisis → world war (25 year gap)
+            </div>
+            <div class="visual-note">
+                Glowing cyan line with 8 animated particles flowing from Paris to Poland
+            </div>
+        </div>
+
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot glow" style="background: #22d3ee; color: #22d3ee;"></div>
+                <span class="connection-type">Echo</span>
+            </div>
+            <div class="connection-path">
+                <span>1939: WWII Begins</span>
+                <span class="arrow">→</span>
+                <span>2026: Ukraine/Taiwan Crisis</span>
+            </div>
+            <div class="connection-desc">
+                Appeasement → territorial expansion → major power war? (87 year echo)
+            </div>
+            <div class="visual-note">
+                Glowing cyan line with pulse animation, lifted high above globe surface
+            </div>
+        </div>
+
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot glow" style="background: #22d3ee; color: #22d3ee;"></div>
+                <span class="connection-type">Echo</span>
+            </div>
+            <div class="connection-path">
+                <span>1914: Alliance Cascade</span>
+                <span class="arrow">→</span>
+                <span>2026: NATO Article 5?</span>
+            </div>
+            <div class="connection-desc">
+                Alliance obligations → unintended escalation → global conflict
+            </div>
+            <div class="visual-note">
+                Shows how treaty obligations can trigger escalation spirals across generations
+            </div>
+        </div>
+
+        <h2 class="section-title">🔗 Other Connection Types</h2>
+
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot" style="background: #a78bfa;"></div>
+                <span class="connection-type">Causal Link</span>
+            </div>
+            <div class="connection-path">
+                <span>Treaty of Versailles</span>
+                <span class="arrow">→</span>
+                <span>Hitler Rise</span>
+                <span class="arrow">→</span>
+                <span>WWII</span>
+            </div>
+            <div class="connection-desc">
+                Direct cause-and-effect: Harsh reparations → economic collapse → political extremism → global war
+            </div>
+        </div>
+
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot" style="background: #60a5fa;"></div>
+                <span class="connection-type">Alliance Network</span>
+            </div>
+            <div class="connection-path">
+                <span>USA (Washington)</span>
+                <span class="arrow">↔</span>
+                <span>Israel (Jerusalem)</span>
+            </div>
+            <div class="connection-desc">
+                Strategic partnership: military aid, intelligence sharing, UN support
+            </div>
+        </div>
+
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot" style="background: #f87171;"></div>
+                <span class="connection-type">Influence Flow</span>
+            </div>
+            <div class="connection-path">
+                <span>Iran (Tehran)</span>
+                <span class="arrow">→</span>
+                <span>Hezbollah (Beirut)</span>
+            </div>
+            <div class="connection-desc">
+                Funding, weapons, training → 100k+ rockets aimed at Israel
+            </div>
+        </div>
+
+        <div class="connection-card">
+            <div class="connection-header">
+                <div class="color-dot" style="background: #fbbf24;"></div>
+                <span class="connection-type">Pattern Thread</span>
+            </div>
+            <div class="connection-path">
+                <span>Munich 1938</span>
+                <span class="arrow">→</span>
+                <span>Syria 2013</span>
+                <span class="arrow">→</span>
+                <span>Crimea 2014</span>
+            </div>
+            <div class="connection-desc">
+                Appeasement pattern: avoiding confrontation → emboldening aggressor
+            </div>
+            <div class="visual-note">
+                Dashed orange line showing recurring historical pattern
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-title">Visual Legend</div>
+            <div class="legend-item">
+                <div class="line-sample" style="background: #a78bfa;"></div>
+                <span>Solid Purple = Causal Links</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample" style="background: #60a5fa;"></div>
+                <span>Solid Blue = Alliance Networks</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample" style="background: #f87171;"></div>
+                <span>Solid Red = Influence Flows</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample dashed" style="color: #fbbf24;"></div>
+                <span>Dashed Orange = Pattern Threads</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample glow" style="background: #22d3ee; box-shadow: 0 0 8px #22d3ee;"></div>
+                <span>Glowing Cyan = Historical Echoes</span>
+            </div>
+        </div>
+
+        <a href="index.html" class="cta">🚀 Launch Dashboard</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Slider Test - Historical Playback 1900-2026</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="css/time-slider.css">
+    <script src="js/time-slider.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #09090b;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 400px;
+            z-index: 100;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+        .instructions {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+        .instructions code {
+            background: rgba(51, 65, 85, 0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .event-list {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .event-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: rgba(51, 65, 85, 0.4);
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .event-year {
+            font-weight: 600;
+            color: #3b82f6;
+        }
+        .event-severity {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(248, 113, 113, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="info">
+        <h1>⏰ Time Slider Test</h1>
+        <div class="subtitle">Historical Playback System (1900-2026)</div>
+        <div class="instructions">
+            <strong>Controls:</strong><br>
+            • <code>Space</code> - Play/Pause<br>
+            • <code>← →</code> - Step backward/forward<br>
+            • <code>Drag slider</code> - Scrub through time<br>
+            • <code>Speed button</code> - 1x, 2x, 5x, 10x<br><br>
+            Watch the globe as historical crises appear and disappear based on the selected year. Cuban Missile Crisis (1962), Ukraine War (2022), and other major events are animated in real-time.
+        </div>
+        <div class="event-list">
+            <strong>Active Events:</strong>
+            <div id="activeEvents"></div>
+        </div>
+    </div>
+
+    <script>
+        // Setup Three.js scene
+        const container = document.getElementById('container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x07090f);
+        scene.fog = new THREE.FogExp2(0x07090f, 0.0014);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+        camera.position.set(0, 60, 280);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Add lights
+        scene.add(new THREE.AmbientLight(0x445577, 0.8));
+        const pointLight = new THREE.PointLight(0xa78bfa, 1.0, 800);
+        pointLight.position.set(0, 100, 100);
+        scene.add(pointLight);
+
+        // Create Earth-like sphere
+        const earthGeo = new THREE.SphereGeometry(50, 64, 64);
+        const earthMat = new THREE.MeshPhongMaterial({
+            color: 0x1e40af,
+            emissive: 0x0c1e3a,
+            emissiveIntensity: 0.3,
+            shininess: 30,
+            transparent: true,
+            opacity: 0.6
+        });
+        const earth = new THREE.Mesh(earthGeo, earthMat);
+        scene.add(earth);
+
+        // Add atmosphere glow
+        const glowGeo = new THREE.SphereGeometry(52, 64, 64);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: 0x3b82f6,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(glow);
+
+        // Historical crisis data
+        const crises = [
+            { name: "WWI Outbreak", lat: 48.8566, lon: 2.3522, year: 1914, outcome: "negative", severity: 10 },
+            { name: "WWII Outbreak", lat: 52.2297, lon: 21.0122, year: 1939, outcome: "negative", severity: 10 },
+            { name: "D-Day Landing", lat: 49.3708, lon: -0.8981, year: 1944, outcome: "positive", severity: 9 },
+            { name: "Atomic Bombings", lat: 34.3853, lon: 132.4553, year: 1945, outcome: "negative", severity: 10 },
+            { name: "Cuban Missile Crisis", lat: 23.1136, lon: -82.3666, year: 1962, outcome: "positive", severity: 9 },
+            { name: "Vietnam War Peak", lat: 21.0285, lon: 105.8542, year: 1968, outcome: "negative", severity: 8 },
+            { name: "Fall of Berlin Wall", lat: 52.5200, lon: 13.4050, year: 1989, outcome: "positive", severity: 8 },
+            { name: "9/11 Attacks", lat: 40.7128, lon: -74.0060, year: 2001, outcome: "negative", severity: 10 },
+            { name: "Ukraine Invasion", lat: 50.4501, lon: 30.5234, year: 2022, outcome: "negative", severity: 10 }
+        ];
+
+        // Convert lat/lon to 3D position on sphere
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = (radius * Math.sin(phi) * Math.sin(theta));
+            const y = (radius * Math.cos(phi));
+            return new THREE.Vector3(x, y, z);
+        }
+
+        // Create crisis markers
+        const crisisSprites = [];
+        crises.forEach(crisis => {
+            const position = latLonToVector3(crisis.lat, crisis.lon, 52);
+            const color = crisis.outcome === "positive" ? 0xfbbd23 : 0xf87171;
+            
+            // Create sprite
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, crisis.outcome === "positive" ? '#fbbd23' : '#f87171');
+            gradient.addColorStop(0.5, crisis.outcome === "positive" ? 'rgba(251, 189, 35, 0.5)' : 'rgba(248, 113, 113, 0.5)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0,
+                blending: THREE.AdditiveBlending
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.position.copy(position);
+            sprite.scale.set(crisis.severity * 0.8, crisis.severity * 0.8, 1);
+            sprite.userData = { crisis };
+            scene.add(sprite);
+            crisisSprites.push(sprite);
+        });
+
+        // Create mock data layers for time slider
+        const mockDataLayers = {
+            layers: {
+                historicalCrises: {
+                    sprites: crisisSprites
+                }
+            }
+        };
+
+        // Initialize time slider
+        const timeSlider = new TimeSlider(scene, camera, mockDataLayers);
+        console.log('[test] Time slider initialized');
+
+        // Update active events display
+        function updateActiveEvents() {
+            const activeEvents = crises
+                .filter(c => c.year <= timeSlider.currentYear)
+                .sort((a, b) => b.year - a.year)
+                .slice(0, 5);
+            
+            const html = activeEvents.map(e => `
+                <div class="event-item">
+                    <div>
+                        <span class="event-year">${e.year}</span> - ${e.name}
+                    </div>
+                    <div class="event-severity">Severity: ${e.severity}/10</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('activeEvents').innerHTML = html || '<div style="color: #71717a; font-size: 12px;">No events yet...</div>';
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate Earth slowly
+            earth.rotation.y += 0.001;
+            glow.rotation.y += 0.001;
+            
+            // Update time slider
+            timeSlider.update();
+            
+            // Update active events every 30 frames
+            if (Math.random() < 0.033) {
+                updateActiveEvents();
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start animation
+        updateActiveEvents();
+        animate();
+    </script>
+</body>
+</html>
