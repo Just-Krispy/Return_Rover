@@ -5453,6 +5453,10 @@ function _initGraphInner(graph, container) {
         if (connectionsSystem) {
             connectionsSystem.animate(deltaTime);
         }
+        // Update time slider (historical playback)
+        if (timeSlider) {
+            timeSlider.update();
+        }
         // Phase 3: animate dashed edges
         lineMeshes.forEach(l => {
             if (l.userData._dashed) l.material.dashOffset -= 0.01 * (l.userData._dashWeight || 1);
@@ -5639,6 +5643,24 @@ function _initGraphInner(graph, container) {
             lineMeshes.forEach(l => { l.visible = true; });
         }
     };
+
+    // Initialize Time Slider for historical playback
+    if (typeof TimeSlider !== 'undefined' && !timeSlider) {
+        try {
+            // Create a simple data layers object for time slider integration
+            const mockDataLayers = {
+                layers: {
+                    historicalCrises: {
+                        sprites: [] // Will be populated with crisis markers
+                    }
+                }
+            };
+            timeSlider = new TimeSlider(scene, camera, mockDataLayers);
+            console.log('[time-slider] Historical playback initialized (1900-2026)');
+        } catch (e) {
+            console.warn('[time-slider] Failed to initialize:', e);
+        }
+    }
 
     // Apply saved filter state on init
     if (graphHiddenGroups.size > 0 && g3._applyFilter) {
