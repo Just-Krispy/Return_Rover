@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nash Sidebar Test</title>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="css/nash-sidebar.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-surface-hover: #27272a;
+            --bg-inset: #0f0f12;
+            --border-default: #27272a;
+            --border-subtle: #1f1f23;
+            --border-accent: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --accent-indigo: #818cf8;
+            --accent-cyan: #22d3ee;
+            --accent-amber: #fbbf24;
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+            --accent-pink: #f472b6;
+            --accent-purple: #a78bfa;
+            --accent-blue: #60a5fa;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.15);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.25);
+            --fs-xs: 10px;
+            --fs-sm: 12px;
+            --fs-base: 14px;
+            --fs-md: 16px;
+            --fs-lg: clamp(18px, 2vw, 20px);
+            --fs-xl: clamp(20px, 2.5vw, 24px);
+            --fs-2xl: clamp(26px, 3vw, 30px);
+            --font-mono: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+            --transition-fast: 0.15s ease;
+            --transition-med: 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            --transition-slow: 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            padding: 40px;
+            line-height: 1.5;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: var(--fs-2xl);
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .test-btn {
+            padding: 12px 24px;
+            background: var(--accent-purple);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: var(--fs-base);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-btn:hover {
+            background: var(--accent-pink);
+            transform: translateY(-2px);
+        }
+
+        .test-info {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-info h3 {
+            font-size: var(--fs-lg);
+            margin-bottom: 12px;
+            color: var(--accent-cyan);
+        }
+
+        .test-info ul {
+            margin-left: 20px;
+            color: var(--text-secondary);
+        }
+
+        .test-info li {
+            margin: 8px 0;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
+            padding: 12px 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 99999;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .toast.success { border-left: 4px solid var(--accent-green); }
+        .toast.error { border-left: 4px solid var(--accent-red); }
+        .toast.info { border-left: 4px solid var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+<div class="test-container">
+    <h1>🧠 Nash Sidebar Test</h1>
+    <p>Test the Nash integration sidebar with mock data</p>
+
+    <div class="test-buttons">
+        <button class="test-btn" onclick="testCubanMissileCrisis()">
+            <i data-lucide="target" style="width:18px;height:18px"></i>
+            Cuban Missile Crisis
+        </button>
+        <button class="test-btn" onclick="testBayOfPigs()">
+            <i data-lucide="anchor" style="width:18px;height:18px"></i>
+            Bay of Pigs
+        </button>
+        <button class="test-btn" onclick="testCustomNode()">
+            <i data-lucide="edit" style="width:18px;height:18px"></i>
+            Custom Node
+        </button>
+    </div>
+
+    <div class="test-info">
+        <h3>Test Checklist</h3>
+        <ul>
+            <li>✓ Sidebar slides in smoothly from right</li>
+            <li>✓ Loading state shows spinner and progress bar</li>
+            <li>✓ Results render with proper sections</li>
+            <li>✓ Sections are collapsible (click headers)</li>
+            <li>✓ Export button downloads markdown file</li>
+            <li>✓ Copy button copies to clipboard</li>
+            <li>✓ ESC key closes sidebar</li>
+            <li>✓ Click outside overlay closes sidebar</li>
+            <li>✓ Close button works</li>
+            <li>✓ Icons render properly</li>
+            <li>✓ Mobile responsive (resize window)</li>
+        </ul>
+    </div>
+
+    <div class="test-info">
+        <h3>Console Logs</h3>
+        <p>Open browser console (F12) to see initialization logs and any errors.</p>
+    </div>
+</div>
+
+<script src="js/nash-sidebar.js"></script>
+
+<script>
+// Mock RICH_NODE_DATA for testing
+window.RICH_NODE_DATA = {
+    'Cuban Missile Crisis': {
+        icon: '☢️',
+        subtitle: 'Cold War Crisis • October 1962',
+        description: 'The Cuban Missile Crisis was a 13-day confrontation between the United States and the Soviet Union over Soviet ballistic missiles deployed in Cuba. It is often considered the closest the Cold War came to escalating into a full-scale nuclear war.',
+        timeline: [
+            { date: 'Oct 14, 1962', event: 'Discovery', desc: 'U-2 spy plane discovers missile sites' },
+            { date: 'Oct 16, 1962', event: 'EXCOMM Convened', desc: 'Kennedy establishes crisis team' },
+            { date: 'Oct 22, 1962', event: 'Naval Blockade', desc: 'Kennedy announces quarantine' },
+            { date: 'Oct 24, 1962', event: 'Standoff', desc: 'Soviet ships approach blockade' },
+            { date: 'Oct 28, 1962', event: 'Resolution', desc: 'Khrushchev agrees to remove missiles' }
+        ],
+        gameTheory: {
+            summary: 'Classic brinkmanship scenario',
+            nash: 'Blockade + Withdrawal was the Nash equilibrium'
+        }
+    },
+    'Bay of Pigs': {
+        icon: '🏝️',
+        subtitle: 'Failed Invasion • April 1961',
+        description: 'The Bay of Pigs Invasion was a failed military invasion of Cuba undertaken by the CIA-sponsored paramilitary group Brigade 2506.',
+        timeline: [
+            { date: 'Apr 15, 1961', event: 'Airstrikes', desc: 'Initial bombing runs' },
+            { date: 'Apr 17, 1961', event: 'Landing', desc: 'Brigade 2506 lands at Bay of Pigs' },
+            { date: 'Apr 19, 1961', event: 'Defeat', desc: 'Cuban forces overwhelm invaders' }
+        ]
+    }
+};
+
+// Test functions
+function testCubanMissileCrisis() {
+    const nodeData = {
+        id: 'Cuban Missile Crisis',
+        content: 'Test content for Cuban Missile Crisis analysis'
+    };
+    window.nashSidebar.open(nodeData);
+}
+
+function testBayOfPigs() {
+    const nodeData = {
+        id: 'Bay of Pigs',
+        content: 'Test content for Bay of Pigs analysis'
+    };
+    window.nashSidebar.open(nodeData);
+}
+
+function testCustomNode() {
+    const nodeData = {
+        id: 'Custom Test Node',
+        content: 'This is a custom node without rich data. Should still work with basic analysis.'
+    };
+    window.nashSidebar.open(nodeData);
+}
+
+// Toast function (required by nash-sidebar.js)
+function showToast(message, type = 'info', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// Initialize lucide icons
+lucide.createIcons();
+</script>
+
+</body>
+</html>
