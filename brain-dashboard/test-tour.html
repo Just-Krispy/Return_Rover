@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour System Test - Second Brain</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="js/tours.js"></script>
+    <link rel="stylesheet" href="css/tours.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg-base: #09090b;
+            --bg-surface: #18181b;
+            --bg-surface-hover: #27272a;
+            --bg-inset: #0f0f12;
+            --border-default: #27272a;
+            --border-subtle: #1f1f23;
+            --border-accent: #3f3f46;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --accent-indigo: #818cf8;
+            --accent-cyan: #22d3ee;
+            --accent-amber: #fbbf24;
+            --accent-green: #4ade80;
+            --accent-red: #f87171;
+            --accent-pink: #f472b6;
+            --accent-purple: #a78bfa;
+            --accent-blue: #60a5fa;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --radius-sm: 6px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow-md: 0 2px 8px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.15);
+            --shadow-lg: 0 4px 12px rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.25);
+            --fs-xs: 10px;
+            --fs-sm: 12px;
+            --fs-base: 14px;
+            --fs-md: 16px;
+            --fs-lg: 18px;
+            --fs-xl: 20px;
+            --fs-2xl: 26px;
+            --transition-fast: 0.15s ease;
+            --transition-med: 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+            --transition-slow: 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        body {
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+
+        #scene-container {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .test-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        .test-info h3 {
+            font-size: var(--fs-lg);
+            margin-bottom: 8px;
+            color: var(--accent-cyan);
+        }
+
+        .test-info ul {
+            font-size: var(--fs-sm);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            list-style: none;
+        }
+
+        .test-info li {
+            margin-bottom: 4px;
+        }
+
+        .test-info li::before {
+            content: '✓ ';
+            color: var(--accent-green);
+        }
+    </style>
+</head>
+<body>
+
+<div id="scene-container"></div>
+
+<div class="test-info">
+    <h3>🎬 Tour Test Mode</h3>
+    <ul>
+        <li>4 tours loaded</li>
+        <li>Click 🎬 to start</li>
+        <li>Test "Road to WWI"</li>
+        <li>5 stops, ~3 minutes</li>
+        <li>Press Space to pause</li>
+        <li>Arrow keys navigate</li>
+    </ul>
+</div>
+
+<!-- Tour UI -->
+<button id="tour-trigger-btn" title="Start a guided tour" aria-label="Start guided tour">
+  🎬
+</button>
+
+<div id="tour-menu" role="dialog" aria-labelledby="tour-menu-title">
+  <div id="tour-menu-header">
+    <h2 id="tour-menu-title">Guided Tours</h2>
+    <p id="tour-menu-subtitle">Explore history through cinematic journeys with narrated context</p>
+  </div>
+  <div id="tour-grid"></div>
+  <div style="text-align: center; margin-top: 20px;">
+    <button class="tour-btn" onclick="closeTourMenu()">Close</button>
+  </div>
+</div>
+
+<div id="tour-controls">
+  <div class="tour-controls-container">
+    <div id="tour-progress-container">
+      <div id="tour-progress-track">
+        <div id="tour-progress-bar"></div>
+      </div>
+      <span id="tour-progress-text">0 / 0</span>
+    </div>
+    <h3 id="tour-stop-title"></h3>
+    <div id="tour-button-row">
+      <div class="tour-button-group">
+        <button class="tour-btn" id="tour-prev-btn" onclick="tourEngine.previousStop()">← Previous</button>
+        <button class="tour-btn primary" id="tour-play-pause-btn" onclick="togglePlayPause()">
+          <span id="play-pause-icon">⏸</span> <span id="play-pause-text">Pause</span>
+        </button>
+        <button class="tour-btn" id="tour-next-btn" onclick="tourEngine.nextStop()">Next →</button>
+      </div>
+      <div class="tour-button-group">
+        <div id="tour-speed-control">
+          <button class="speed-btn active" onclick="setSpeed(1.0)" data-speed="1.0">1x</button>
+          <button class="speed-btn" onclick="setSpeed(1.5)" data-speed="1.5">1.5x</button>
+          <button class="speed-btn" onclick="setSpeed(2.0)" data-speed="2.0">2x</button>
+        </div>
+        <button class="tour-btn danger" onclick="exitTour()">Exit Tour</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tour-context-panel">
+  <button class="context-close" onclick="hideContextPanel()">✕</button>
+  <h3 class="context-title"></h3>
+  <div class="context-content"></div>
+</div>
+
+<script>
+// Simple 3D scene for testing
+const container = document.getElementById('scene-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07090f);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+camera.position.set(0, 60, 280);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+container.appendChild(renderer.domElement);
+
+// Add a simple Earth sphere
+const geometry = new THREE.SphereGeometry(100, 64, 64);
+const texture = new THREE.TextureLoader().load('data:image/svg+xml;base64,' + btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">
+  <rect width="512" height="512" fill="#1a3a52"/>
+  <circle cx="256" cy="256" r="200" fill="#2d5a7b" opacity="0.3"/>
+  <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#60a5fa" font-size="48" font-family="Arial">🌍</text>
+</svg>
+`));
+const material = new THREE.MeshBasicMaterial({ 
+  color: 0x2d5a7b,
+  wireframe: false
+});
+const earth = new THREE.Mesh(geometry, material);
+scene.add(earth);
+
+// Simple lighting
+const light = new THREE.AmbientLight(0x404040, 2);
+scene.add(light);
+
+// Animation loop
+function animate() {
+  requestAnimationFrame(animate);
+  earth.rotation.y += 0.001;
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize handler
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Mock camera controls for tour engine
+const mockControls = {
+  autoRotate: false,
+  reset: () => {
+    camera.position.set(0, 60, 280);
+    camera.lookAt(0, 0, 0);
+  }
+};
+
+// Tour system
+let tourEngine = null;
+
+function initTours() {
+  const grid = document.getElementById('tour-grid');
+  if (!grid) return;
+
+  grid.innerHTML = TOURS.map(tour => `
+    <div class="tour-card" 
+         style="--tour-color: ${tour.color}"
+         onclick="startTour('${tour.id}')">
+      <div class="tour-card-header">
+        <span class="tour-icon">${tour.icon}</span>
+        <h3 class="tour-card-title">${tour.title}</h3>
+      </div>
+      <p class="tour-description">${tour.description}</p>
+      <div class="tour-card-footer">
+        <span class="tour-duration">${tour.duration}</span>
+        <span class="tour-stops-count">📍 ${tour.stops.length} stops</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openTourMenu() {
+  document.getElementById('tour-menu').classList.add('visible');
+  document.getElementById('tour-trigger-btn').classList.add('hidden');
+}
+
+function closeTourMenu() {
+  document.getElementById('tour-menu').classList.remove('visible');
+  document.getElementById('tour-trigger-btn').classList.remove('hidden');
+}
+
+function startTour(tourId) {
+  if (!tourEngine) {
+    console.error('Tour engine not initialized');
+    return;
+  }
+  closeTourMenu();
+  tourEngine.startTour(tourId, () => openTourMenu());
+}
+
+function togglePlayPause() {
+  if (!tourEngine) return;
+  const icon = document.getElementById('play-pause-icon');
+  const text = document.getElementById('play-pause-text');
+  
+  if (tourEngine.isPaused) {
+    tourEngine.resume();
+    icon.textContent = '⏸';
+    text.textContent = 'Pause';
+  } else {
+    tourEngine.pause();
+    icon.textContent = '▶';
+    text.textContent = 'Resume';
+  }
+}
+
+function setSpeed(rate) {
+  if (!tourEngine) return;
+  tourEngine.setSpeed(rate);
+  document.querySelectorAll('.speed-btn').forEach(btn => {
+    btn.classList.toggle('active', parseFloat(btn.dataset.speed) === rate);
+  });
+}
+
+function exitTour() {
+  if (confirm('Exit the current tour?')) {
+    tourEngine?.endTour();
+    openTourMenu();
+  }
+}
+
+function hideContextPanel() {
+  document.getElementById('tour-context-panel').classList.remove('visible');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (!tourEngine?.isPlaying) return;
+  
+  switch (e.key) {
+    case ' ':
+      e.preventDefault();
+      togglePlayPause();
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      tourEngine.previousStop();
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      tourEngine.nextStop();
+      break;
+    case 'Escape':
+      exitTour();
+      break;
+  }
+});
+
+// Initialize
+window.addEventListener('load', () => {
+  tourEngine = new TourEngine(scene, camera, mockControls);
+  initTours();
+  document.getElementById('tour-trigger-btn').addEventListener('click', openTourMenu);
+  console.log('✓ Tour system initialized');
+  console.log('✓ Tours available:', TOURS.length);
+  console.log('✓ Click 🎬 button to start');
+});
+</script>
+
+</body>
+</html>
