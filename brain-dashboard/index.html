@@ -5460,13 +5460,9 @@ function _initGraphInner(graph, container) {
         updatePlayfulNodes(time);
         updateFlowParticles();
         // Update connections system animations
-        if (connectionsSystem) {
-            connectionsSystem.animate(deltaTime);
-        }
+        // connectionsSystem removed (class was never defined)
         // Update time slider (historical playback)
-        if (timeSlider) {
-            timeSlider.update();
-        }
+        // timeSlider removed
         // Phase 3: animate dashed edges
         lineMeshes.forEach(l => {
             if (l.userData._dashed) l.material.dashOffset -= 0.01 * (l.userData._dashWeight || 1);
@@ -5600,12 +5596,12 @@ function _initGraphInner(graph, container) {
     if (hudClusters) hudClusters.textContent = (graph.communities || []).length || '—';
 
     // Initialize Connections System
-    let connectionsSystem, connectionControls;
+    // connectionsSystem/connectionControls removed (classes never defined)
     if (typeof ConnectionsSystem !== 'undefined') {
         try {
-            connectionsSystem = new ConnectionsSystem(scene, camera, renderer);
-            connectionControls = new ConnectionControls(connectionsSystem);
-            console.log('[graph] Connections system initialized with', Object.keys(connectionsSystem.connectionTypes).length, 'connection types');
+            // ConnectionsSystem removed (class never defined)
+            // ConnectionControls removed (class never defined)
+            // connections log removed
         } catch (e) {
             console.warn('[graph] Connections system failed to initialize:', e);
         }
@@ -5615,7 +5611,7 @@ function _initGraphInner(graph, container) {
     g3 = { renderer, scene, camera, composer, bloomPass, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
         nodeMeshes, nodeMeshMap, lineMeshes, nodes3d, edges3d, visible: true, communityMeta,
         labelSprites, halos, ambientParticles, flowParticles,
-        connectionsSystem, connectionControls,
+        // connectionsSystem removed
         colorTransition: { active: false, from: {}, to: {}, progress: 0, duration: 0.5 },
         _setAutoRotate(v) { cinematicCamera.autoRotate = v; autoRotate = v; },
         _getAutoRotate() { return cinematicCamera.autoRotate; },
@@ -5665,7 +5661,7 @@ function _initGraphInner(graph, container) {
                     }
                 }
             };
-            timeSlider = new TimeSlider(scene, camera, mockDataLayers);
+            // TimeSlider removed (class never defined)
             console.log('[time-slider] Historical playback initialized (1900-2026)');
         } catch (e) {
             console.warn('[time-slider] Failed to initialize:', e);
@@ -7544,11 +7540,11 @@ function togglePlayPause() {
   const text = document.getElementById('play-pause-text');
 
   if (tourEngine.isPaused) {
-    tourEngine.resume();
+    // tourEngine removed
     icon.textContent = '⏸';
     text.textContent = 'Pause';
   } else {
-    tourEngine.pause();
+    // tourEngine removed
     icon.textContent = '▶';
     text.textContent = 'Resume';
   }
@@ -7557,7 +7553,7 @@ function togglePlayPause() {
 // Set playback speed
 function setSpeed(rate) {
   if (!tourEngine) return;
-  tourEngine.setSpeed(rate);
+  // tourEngine removed
 
   // Update active button
   document.querySelectorAll('.speed-btn').forEach(btn => {
@@ -7590,11 +7586,11 @@ document.addEventListener('keydown', (e) => {
       break;
     case 'ArrowLeft':
       e.preventDefault();
-      tourEngine.previousStop();
+      // tourEngine removed
       break;
     case 'ArrowRight':
       e.preventDefault();
-      tourEngine.nextStop();
+      // tourEngine removed
       break;
     case 'Escape':
       exitTour();
@@ -7604,7 +7600,7 @@ document.addEventListener('keydown', (e) => {
 
 // Initialize tour engine when scene is ready
 function initTourEngine(scene, camera, controls) {
-  tourEngine = new TourEngine(scene, camera, controls);
+  // TourEngine removed (class never defined)
   initTours();
   
   // Attach click handler to trigger button
