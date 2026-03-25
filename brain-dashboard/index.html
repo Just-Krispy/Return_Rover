@@ -4935,19 +4935,29 @@ function _initGraphInner(graph, container) {
         setTimeout(() => { flowParticles.forEach(fp => { fp.active = true; }); }, 500);
     }, entryOrder.length * 35 + 200);
 
-    // -- Cinematic Camera System (Google Earth-style transitions) --
-    const cinematicCamera = new CinematicCamera(camera, scene);
-    
-    // Initialize with default position
-    cinematicCamera.theta = 0;
-    cinematicCamera.phi = Math.PI * 0.35;
-    cinematicCamera.distance = 280;
-    cinematicCamera.lookAt.set(0, 0, 0);
-    cinematicCamera.targetTheta = 0;
-    cinematicCamera.targetPhi = Math.PI * 0.35;
-    cinematicCamera.targetDistance = 280;
-    cinematicCamera.targetLookAt.set(0, 0, 0);
-    cinematicCamera.autoRotate = true;
+    // -- Camera System (spherical orbit with smooth interpolation) --
+    const cinematicCamera = {
+        theta: 0, phi: Math.PI * 0.35, distance: 280,
+        lookAt: new THREE.Vector3(0, 0, 0),
+        targetTheta: 0, targetPhi: Math.PI * 0.35, targetDistance: 280,
+        targetLookAt: new THREE.Vector3(0, 0, 0),
+        autoRotate: true,
+        update() {
+            if (this.autoRotate) this.targetTheta += 0.0015;
+            this.theta += (this.targetTheta - this.theta) * 0.06;
+            this.phi += (this.targetPhi - this.phi) * 0.06;
+            this.distance += (this.targetDistance - this.distance) * 0.06;
+            this.lookAt.lerp(this.targetLookAt, 0.06);
+            const sp = Math.sin(this.phi), cp = Math.cos(this.phi);
+            const st = Math.sin(this.theta), ct = Math.cos(this.theta);
+            camera.position.set(
+                this.lookAt.x + this.distance * sp * st,
+                this.lookAt.y + this.distance * cp,
+                this.lookAt.z + this.distance * sp * ct
+            );
+            camera.lookAt(this.lookAt);
+        }
+    };
     
     let isDragging = false, lastMouse = {x:0,y:0};
     hoveredNode = null;
