@@ -43,11 +43,11 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js" integrity="sha384-nhO9toQuMo5osCuA0l+YFpSqscZWxDu251Bnho2gD3kSPv1neEwHg0LyEmrA+mPj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js" integrity="sha384-mY+ii969jnDCI2HjRHftH2NZVkIO5ZGUkcnGCg3oVJ3kVstWQXwerYWBg+nbUG4R" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js" integrity="sha384-aVQ2QnWkoxhOefDB0YZB64OPVzujvccydpcC7UqMDJUK0ChwA382zOHmrWHGDRRa" crossorigin="anonymous"></script>
-    <script src="camera-transitions.js"></script>
-    <script src="js/connections-system.js"></script>
-    <script src="js/connection-controls.js"></script>
-    <link rel="stylesheet" href="css/time-slider.css">
-    <script src="js/time-slider.js"></script>
+    <!-- camera-transitions.js removed -->
+    <!-- removed: js/connections-system.js -->
+    <!-- removed: js/connection-controls.js -->
+    <!-- removed: stylesheet -->
+    <!-- removed: js/time-slider.js -->
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -2628,12 +2628,12 @@
     </style>
     
     <!-- Nash Sidebar Integration -->
-    <link rel="stylesheet" href="css/nash-sidebar.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- removed: stylesheet -->
+    <!-- removed: https://cdn.jsdelivr.net/npm/marked/marked.min.js -->
     
     <!-- Guided Tours System -->
-    <link rel="stylesheet" href="css/tours.css">
-    <script src="js/tours.js"></script>
+    <!-- removed: stylesheet -->
+    <!-- removed: js/tours.js -->
 </head>
 <body>
 
@@ -2655,9 +2655,7 @@
             <button id="analyze-cassandra-btn" class="mode-badge demo" style="cursor:pointer;border:1px solid var(--border-accent);background:var(--bg-surface);padding:4px 12px;font-size:12px;transition:all 0.2s" title="Analyze selected node in Nash">
                 🧠 Nash It
             </button>
-            <span id="modeBadge" class="mode-badge demo">
-                <span id="modeLabel">DEMO</span>
-            </span>
+<!-- mode badge removed -->
             <span id="healthScoreBadge" class="mode-badge demo" style="display:none;font-size:11px;padding:3px 10px" title="Vault health score">
                 <span class="dot" style="background:var(--accent-green)"></span>
                 <span id="healthScoreLabel">--</span>
@@ -3379,8 +3377,8 @@ function setMode(live) {
     isLive = live;
     const badge = document.getElementById('modeBadge');
     const label = document.getElementById('modeLabel');
-    badge.className = live ? 'mode-badge live' : 'mode-badge demo';
-    label.textContent = live ? 'LIVE' : 'DEMO';
+    if (badge) badge.className = live ? 'mode-badge live' : 'mode-badge demo';
+    if (label) label.textContent = live ? 'LIVE' : 'DEMO';
 }
 
 function updateRefreshTime() {
@@ -7355,259 +7353,9 @@ document.addEventListener('keydown', (e) => {
 </div>
 
 <!-- Nash Sidebar Script -->
-<script src="js/nash-sidebar.js"></script>
+<!-- removed: js/nash-sidebar.js -->
 
-<!-- ========== GUIDED TOURS UI ========== -->
-
-<!-- Tour Trigger Button -->
-<button id="tour-trigger-btn" title="Start a guided tour" aria-label="Start guided tour">
-  🎬
-</button>
-
-<!-- Tour Menu (Modal) -->
-<div id="tour-menu" role="dialog" aria-labelledby="tour-menu-title">
-  <div id="tour-menu-header">
-    <h2 id="tour-menu-title">Guided Tours</h2>
-    <p id="tour-menu-subtitle">Explore history through cinematic journeys with narrated context</p>
-  </div>
-
-  <div id="tour-grid"></div>
-
-  <div style="text-align: center; margin-top: 20px;">
-    <button class="tour-btn" onclick="closeTourMenu()" aria-label="Close tour menu">
-      Close
-    </button>
-  </div>
-</div>
-
-<!-- Tour Controls (Bottom Bar) -->
-<div id="tour-controls" role="region" aria-label="Tour controls">
-  <div class="tour-controls-container">
-    <!-- Progress Bar -->
-    <div id="tour-progress-container">
-      <div id="tour-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-        <div id="tour-progress-bar"></div>
-      </div>
-      <span id="tour-progress-text">0 / 0</span>
-    </div>
-
-    <!-- Current Stop Title -->
-    <h3 id="tour-stop-title"></h3>
-
-    <!-- Control Buttons -->
-    <div id="tour-button-row">
-      <div class="tour-button-group">
-        <button class="tour-btn" id="tour-prev-btn" onclick="tourEngine.previousStop()" aria-label="Previous stop">
-          <span>←</span> Previous
-        </button>
-        <button class="tour-btn primary" id="tour-play-pause-btn" onclick="togglePlayPause()" aria-label="Play/Pause">
-          <span id="play-pause-icon">⏸</span> <span id="play-pause-text">Pause</span>
-        </button>
-        <button class="tour-btn" id="tour-next-btn" onclick="tourEngine.nextStop()" aria-label="Next stop">
-          Next <span>→</span>
-        </button>
-      </div>
-
-      <div class="tour-button-group">
-        <!-- Speed Control -->
-        <div id="tour-speed-control" role="group" aria-label="Playback speed">
-          <button class="speed-btn active" onclick="setSpeed(1.0)" data-speed="1.0">1x</button>
-          <button class="speed-btn" onclick="setSpeed(1.5)" data-speed="1.5">1.5x</button>
-          <button class="speed-btn" onclick="setSpeed(2.0)" data-speed="2.0">2x</button>
-        </div>
-
-        <button class="tour-btn danger" onclick="exitTour()" aria-label="Exit tour">
-          Exit Tour
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Context Panel (Sidebar) -->
-<div id="tour-context-panel" role="complementary" aria-label="Tour context information">
-  <button class="context-close" onclick="hideContextPanel()" aria-label="Close context panel">
-    ✕
-  </button>
-  <h3 class="context-title"></h3>
-  <div class="context-content"></div>
-</div>
-
-<script>
-// ========== TOUR UI INTERACTIONS ==========
-
-let tourEngine = null;
-
-// Initialize tour system
-function initTours() {
-  // Populate tour grid
-  const grid = document.getElementById('tour-grid');
-  if (!grid) return;
-
-  grid.innerHTML = TOURS.map(tour => `
-    <div class="tour-card" 
-         style="--tour-color: ${tour.color}"
-         onclick="startTour('${tour.id}')"
-         role="button"
-         tabindex="0"
-         aria-label="Start ${tour.title} tour">
-      <div class="tour-card-header">
-        <span class="tour-icon">${tour.icon}</span>
-        <h3 class="tour-card-title">${tour.title}</h3>
-      </div>
-      <p class="tour-description">${tour.description}</p>
-      <div class="tour-card-footer">
-        <span class="tour-duration">${tour.duration}</span>
-        <span class="tour-stops-count">
-          📍 ${tour.stops.length} stops
-        </span>
-      </div>
-    </div>
-  `).join('');
-
-  // Check for saved progress
-  const progress = tourEngine?.loadProgress();
-  if (progress && Date.now() - progress.timestamp < 86400000) { // 24h
-    const tour = TOURS.find(t => t.id === progress.tourId);
-    if (tour) {
-      const card = grid.querySelector(`[onclick="startTour('${tour.id}')"]`);
-      if (card) {
-        const footer = card.querySelector('.tour-card-footer');
-        footer.innerHTML += `<span class="tour-resume">Resume →</span>`;
-      }
-    }
-  }
-}
-
-// Open tour menu
-function openTourMenu() {
-  const menu = document.getElementById('tour-menu');
-  const trigger = document.getElementById('tour-trigger-btn');
-  if (menu) {
-    menu.classList.add('visible');
-    menu.setAttribute('aria-hidden', 'false');
-  }
-  if (trigger) trigger.classList.add('hidden');
-}
-
-// Close tour menu
-function closeTourMenu() {
-  const menu = document.getElementById('tour-menu');
-  const trigger = document.getElementById('tour-trigger-btn');
-  if (menu) {
-    menu.classList.remove('visible');
-    menu.setAttribute('aria-hidden', 'true');
-  }
-  if (trigger) trigger.classList.remove('hidden');
-}
-
-// Start a tour
-function startTour(tourId) {
-  if (!tourEngine) {
-    console.error('Tour engine not initialized');
-    return;
-  }
-
-  closeTourMenu();
-  
-  tourEngine.startTour(tourId, () => {
-    // On tour complete
-    openTourMenu();
-  });
-
-  // Enable auto-hide controls after 3 seconds of inactivity
-  let hideTimeout;
-  const controls = document.getElementById('tour-controls');
-  const resetHideTimer = () => {
-    controls?.classList.remove('auto-hide');
-    clearTimeout(hideTimeout);
-    hideTimeout = setTimeout(() => {
-      controls?.classList.add('auto-hide');
-    }, 3000);
-  };
-
-  controls?.addEventListener('mousemove', resetHideTimer);
-  controls?.addEventListener('click', resetHideTimer);
-  resetHideTimer();
-}
-
-// Play/Pause toggle
-function togglePlayPause() {
-  if (!tourEngine) return;
-
-  const btn = document.getElementById('play-pause-btn');
-  const icon = document.getElementById('play-pause-icon');
-  const text = document.getElementById('play-pause-text');
-
-  if (tourEngine.isPaused) {
-    // tourEngine removed
-    icon.textContent = '⏸';
-    text.textContent = 'Pause';
-  } else {
-    // tourEngine removed
-    icon.textContent = '▶';
-    text.textContent = 'Resume';
-  }
-}
-
-// Set playback speed
-function setSpeed(rate) {
-  if (!tourEngine) return;
-  // tourEngine removed
-
-  // Update active button
-  document.querySelectorAll('.speed-btn').forEach(btn => {
-    btn.classList.toggle('active', parseFloat(btn.dataset.speed) === rate);
-  });
-}
-
-// Exit tour
-function exitTour() {
-  if (confirm('Exit the current tour? Progress will be saved.')) {
-    tourEngine?.endTour();
-    openTourMenu();
-  }
-}
-
-// Hide context panel
-function hideContextPanel() {
-  const panel = document.getElementById('tour-context-panel');
-  panel?.classList.remove('visible');
-}
-
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-  if (!tourEngine?.isPlaying) return;
-
-  switch (e.key) {
-    case ' ':
-      e.preventDefault();
-      togglePlayPause();
-      break;
-    case 'ArrowLeft':
-      e.preventDefault();
-      // tourEngine removed
-      break;
-    case 'ArrowRight':
-      e.preventDefault();
-      // tourEngine removed
-      break;
-    case 'Escape':
-      exitTour();
-      break;
-  }
-});
-
-// Initialize tour engine when scene is ready
-function initTourEngine(scene, camera, controls) {
-  // TourEngine removed (class never defined)
-  initTours();
-  
-  // Attach click handler to trigger button
-  const trigger = document.getElementById('tour-trigger-btn');
-  trigger?.addEventListener('click', openTourMenu);
-}
-</script>
+<!-- Guided Tours UI removed (references undefined TourEngine class) -->
 
 </body>
 </html>
