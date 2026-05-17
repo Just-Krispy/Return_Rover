@@ -1,0 +1,12 @@
+{
+  "enabled": true,
+  "targetGold": 999999,
+  "refillBelow": 999000,
+  "enablePersistentGold": true,
+  "targetPersistentGold": 999999,
+  "persistentScanEveryTicks": 2,
+  "scanIntervalMs": 1000,
+  "enableActionHooks": true,
+  "maxHookRegisterAttempts": 600,
+  "debug": false
+}

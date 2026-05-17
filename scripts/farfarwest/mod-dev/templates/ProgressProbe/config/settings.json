@@ -1,0 +1,15 @@
+{
+  "enabled": false,
+  "discoveryOnly": true,
+  "runDelayMs": 4000,
+  "scanIntervalMs": 2000,
+  "maxAttempts": 8,
+  "maxPropertyLogsPerType": 180,
+  "maxFunctionLogsPerType": 200,
+  "maxDirectScalarLogs": 120,
+  "maxContainerLogs": 60,
+  "maxNestedStructScalarLogs": 120,
+  "maxNestedArrayStructEntries": 6,
+  "maxContainerEntries": 3,
+  "debug": false
+}
