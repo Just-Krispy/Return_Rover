@@ -132,6 +132,8 @@ local excludeFunctionTokens = {
     "delegate",
     "signature",
     "debug",
+    "hover",
+    "stop",
     "sound",
     "anim",
     "spawn",
@@ -540,6 +542,13 @@ local function functionName(func)
     return getNameOk and tostring(getName) or nil
 end
 
+local function functionFullName(func)
+    local ok, fullName = pcall(function()
+        return func:GetFullName()
+    end)
+    return ok and tostring(fullName) or ""
+end
+
 local function functionScore(name)
     local text = lower(name)
     if containsAny(text, excludeFunctionTokens) then
@@ -547,8 +556,10 @@ local function functionScore(name)
     end
 
     local score = 0
+    if text == "f_interact" then score = score + 10 end
     if string.find(text, "pickup", 1, true) or string.find(text, "pick_up", 1, true) then score = score + 8 end
     if string.find(text, "collect", 1, true) then score = score + 7 end
+    if string.find(text, "startinteract", 1, true) or string.find(text, "start_interact", 1, true) then score = score + 7 end
     if string.find(text, "take", 1, true) then score = score + 6 end
     if string.find(text, "loot", 1, true) then score = score + 5 end
     if string.find(text, "interact", 1, true) then score = score + 4 end
@@ -575,7 +586,7 @@ local function gatherPickupFunctions(actor)
                 if name then
                     local score = functionScore(name)
                     if score > 0 then
-                        table.insert(entries, { name = name, score = score })
+                        table.insert(entries, { name = name, fullName = functionFullName(func), score = score })
                     end
                 end
             end)
@@ -609,7 +620,7 @@ local function logCandidate(actor, functions)
     local functionNames = {}
     for index, entry in ipairs(functions) do
         if index > 6 then break end
-        table.insert(functionNames, entry.name)
+        table.insert(functionNames, entry.fullName ~= "" and entry.fullName or entry.name)
     end
 
     seenCandidateClasses[className] = true
@@ -620,6 +631,14 @@ local function logCandidate(actor, functions)
         table.concat(functionNames, ","),
         getFullName(actor)
     ))
+end
+
+local function tryCall(label, callback)
+    local ok, err = pcall(callback)
+    if ok then
+        return true, label
+    end
+    return false, tostring(err)
 end
 
 local function logDiscoveryActor(actor, reason, distance)
@@ -687,27 +706,38 @@ local function tryInvokePickup(actor, player, functions)
         return false, "no pickup-like functions"
     end
 
+    local lastError = nil
+
     for _, entry in ipairs(functions) do
         local methodOk, method = pcall(function()
             return actor[entry.name]
         end)
         if methodOk and type(method) == "function" then
             local variants = {
-                function() return method(actor, player) end,
-                function() return method(actor) end,
-                function() return method(actor, player, player) end,
-                function() return method(actor, player, actor) end,
+                { label = entry.name .. "()", call = function() return method(actor) end },
+                { label = entry.name .. "(player)", call = function() return method(actor, player) end },
+                { label = entry.name .. "(player,player)", call = function() return method(actor, player, player) end },
+                { label = entry.name .. "(nil,nil)", call = function() return method(actor, nil, nil) end },
+                { label = entry.name .. "(player,nil)", call = function() return method(actor, player, nil) end },
+                { label = entry.name .. "(nil,player)", call = function() return method(actor, nil, player) end },
+                { label = entry.name .. "(player,actor)", call = function() return method(actor, player, actor) end },
+                { label = entry.name .. "(actor,player)", call = function() return method(actor, actor, player) end },
+                { label = entry.name .. "(actor,actor)", call = function() return method(actor, actor, actor) end },
             }
 
             for _, variant in ipairs(variants) do
-                local callOk = pcall(variant)
-                if callOk then
-                    return true, entry.name
+                local ok, message = tryCall(variant.label, variant.call)
+                if ok then
+                    return true, message
                 end
+                lastError = message
             end
         end
     end
 
+    if settings.debug and lastError then
+        return false, "calls failed: " .. lastError
+    end
     return false, "calls failed"
 end
 

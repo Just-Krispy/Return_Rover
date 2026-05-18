@@ -166,7 +166,10 @@ function Write-ValidationSummary {
     $skippedLines = @($autoLines | Where-Object { $_ -match 'Auto pickup skipped:' })
     $summaryLines = @($autoLines | Where-Object { $_ -match 'Scan summary:' })
     $playerLines = @($autoLines | Where-Object { $_ -match 'Local player pawn detected:' })
-    $autoErrors = @($lines | Where-Object { $_ -match 'AutoPickup.*(error|failed|traceback)|Mods\\AutoPickup|\[AutoPickup\].*unavailable' })
+    $autoErrors = @($lines | Where-Object {
+        $_ -notmatch '\[AutoPickup\] Auto pickup skipped:' -and
+        ($_ -match 'AutoPickup.*(error|failed|traceback)|Mods\\AutoPickup|\[AutoPickup\].*unavailable')
+    })
 
     $discoveryClasses = Get-UniqueMatches -Lines $discoveryLines -Pattern 'class=([^\s]+)'
     $candidateClasses = Get-UniqueMatches -Lines $candidateLines -Pattern 'Candidate class:\s*([^\s]+)'
