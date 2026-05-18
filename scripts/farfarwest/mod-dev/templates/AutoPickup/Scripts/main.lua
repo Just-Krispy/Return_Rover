@@ -19,6 +19,8 @@ local settings = {
     debug = false,
 }
 
+local unpackArgs = table.unpack or unpack
+
 local UEHelpers = nil
 local tickCount = 0
 local actorsPropertyRegistered = false
@@ -41,6 +43,11 @@ local getFullName = nil
 local getClassName = nil
 local getAddressKey = nil
 local getLocation = nil
+local interactionHooksRegistered = {}
+local interactionHookFailures = {}
+local capturedInteractionTemplates = {}
+local loggedInteractionTemplates = {}
+local playerFunctionCache = {}
 
 local pickupTokens = {
     "pickup",
@@ -109,6 +116,14 @@ local functionTokens = {
     "loot",
     "interact",
     "use",
+}
+
+local playerFunctionTokens = {
+    "interact",
+    "pickup",
+    "collect",
+    "use",
+    "loot",
 }
 
 local overlapFunctionTokens = {
@@ -212,6 +227,16 @@ local function isValidObject(object)
         return object and object:IsValid()
     end)
     return ok and valid
+end
+
+local function unwrapParam(value)
+    local ok, got = pcall(function()
+        return value:get()
+    end)
+    if ok and got ~= nil then
+        return got
+    end
+    return value
 end
 
 local function requireUEHelpers()
@@ -542,11 +567,270 @@ local function functionName(func)
     return getNameOk and tostring(getName) or nil
 end
 
+local function propertyName(property)
+    local ok, name = pcall(function()
+        return property:GetFName():ToString()
+    end)
+    if ok and name then
+        return tostring(name)
+    end
+
+    local getNameOk, getName = pcall(function()
+        return property:GetName()
+    end)
+    return getNameOk and tostring(getName) or ""
+end
+
+local function propertyTypeName(property)
+    local ok, className = pcall(function()
+        return property:GetClass():GetFName():ToString()
+    end)
+    local typeName = ok and tostring(className) or "UnknownProperty"
+
+    if string.find(typeName, "ObjectProperty", 1, true)
+        or string.find(typeName, "ClassProperty", 1, true)
+        or string.find(typeName, "SoftObject", 1, true) then
+        local classOk, propertyClass = pcall(function()
+            return property.PropertyClass
+        end)
+        if classOk and isValidObject(propertyClass) then
+            local nameOk, propertyClassName = pcall(function()
+                return propertyClass:GetFName():ToString()
+            end)
+            if nameOk and propertyClassName then
+                typeName = string.format("%s<%s>", typeName, tostring(propertyClassName))
+            end
+        end
+    end
+
+    return typeName
+end
+
+local function gatherFunctionParamHints(func)
+    local hints = {}
+    pcall(function()
+        func:ForEachProperty(function(property)
+            local name = propertyName(property)
+            if name ~= "" and lower(name) ~= "returnvalue" then
+                table.insert(hints, {
+                    name = name,
+                    type = propertyTypeName(property),
+                })
+            end
+        end)
+    end)
+    return hints
+end
+
+local function formatFunctionParamHints(hints, limit)
+    local parts = {}
+    for index, hint in ipairs(hints or {}) do
+        if limit and index > limit then
+            break
+        end
+        table.insert(parts, tostring(hint.name) .. ":" .. tostring(hint.type))
+    end
+    return table.concat(parts, "|")
+end
+
 local function functionFullName(func)
     local ok, fullName = pcall(function()
         return func:GetFullName()
     end)
     return ok and tostring(fullName) or ""
+end
+
+local function captureInteractionTemplate(actor, functionName, params, hookPath)
+    local className = getClassName(actor)
+    if className == "" or functionName == "" then
+        return
+    end
+
+    local template = { n = 0 }
+    for index = 2, #params do
+        template.n = template.n + 1
+        template[template.n] = unwrapParam(params[index])
+    end
+
+    local key = className .. "::" .. functionName
+    capturedInteractionTemplates[key] = template
+
+    if settings.debug and not loggedInteractionTemplates[key] then
+        loggedInteractionTemplates[key] = true
+        Log(string.format("Captured interaction template: %s args=%d hook=%s", key, template.n, hookPath))
+    end
+end
+
+local function registerInteractionHook(hookPath)
+    if interactionHooksRegistered[hookPath] then
+        return
+    end
+
+    local functionName = string.match(tostring(hookPath), ":([^:]+)$") or ""
+    local ok, err = pcall(function()
+        RegisterHook(hookPath, function(...)
+            local params = { ... }
+            local context = unwrapParam(params[1])
+            if not isValidObject(context) then
+                return
+            end
+            captureInteractionTemplate(context, functionName, params, hookPath)
+        end)
+    end)
+
+    interactionHooksRegistered[hookPath] = ok
+    if not ok and settings.debug and not interactionHookFailures[hookPath] then
+        interactionHookFailures[hookPath] = true
+        Log("Failed to register interaction hook " .. tostring(hookPath) .. ": " .. tostring(err))
+    end
+end
+
+local function ensureInteractionHooks(functions)
+    for _, entry in ipairs(functions) do
+        local fullName = tostring(entry.fullName or "")
+        if fullName ~= "" then
+            local hookPath = string.gsub(fullName, "^Function%s+", "")
+            if string.find(hookPath, ":", 1, true) then
+                registerInteractionHook(hookPath)
+            end
+        end
+    end
+end
+
+local function normalizeTemplateArgs(template, player, actor)
+    local count = template.n or #template
+    local normalized = { n = count }
+
+    for index = 1, count do
+        local value = template[index]
+
+        if isValidObject(value) then
+            local classText = lower(getClassName(value) .. " " .. getFullName(value))
+            if string.find(classText, "player", 1, true)
+                or string.find(classText, "pawn", 1, true)
+                or string.find(classText, "mount", 1, true)
+                or string.find(classText, "hero", 1, true) then
+                value = player
+            elseif value == actor then
+                value = actor
+            end
+        end
+
+        normalized[index] = value
+    end
+
+    return normalized
+end
+
+local function getPlayerController(player)
+    local ok, controller = pcall(function()
+        return player:GetController()
+    end)
+    if ok and isValidObject(controller) then
+        return controller
+    end
+
+    local fallbackOk, fallbackController = pcall(function()
+        return player.Controller
+    end)
+    if fallbackOk and isValidObject(fallbackController) then
+        return fallbackController
+    end
+
+    return nil
+end
+
+local function getPlayerInteractionComponent(player)
+    for _, name in ipairs({ "CapsuleComponent", "RootComponent", "Mesh", "CharacterMovement" }) do
+        local ok, component = pcall(function()
+            return player[name]
+        end)
+        if ok and isValidObject(component) then
+            return component
+        end
+    end
+
+    local fallbackOk, fallbackComponent = pcall(function()
+        return player:GetRootComponent()
+    end)
+    if fallbackOk and isValidObject(fallbackComponent) then
+        return fallbackComponent
+    end
+
+    return nil
+end
+
+local function buildArgsFromParamHints(paramHints, player, actor)
+    if not paramHints or #paramHints == 0 then
+        return nil
+    end
+
+    local args = { n = 0 }
+    local cachedController = nil
+    local cachedComponent = nil
+
+    for _, hint in ipairs(paramHints) do
+        local nameText = lower(hint.name or "")
+        local typeText = lower(hint.type or "")
+        local value = nil
+
+        local expectsObject = string.find(typeText, "objectproperty", 1, true)
+            or string.find(typeText, "classproperty", 1, true)
+            or string.find(typeText, "softobject", 1, true)
+            or string.find(typeText, "actor", 1, true)
+            or string.find(typeText, "component", 1, true)
+
+        if expectsObject then
+            if string.find(nameText, "player", 1, true)
+                or string.find(nameText, "pawn", 1, true)
+                or string.find(nameText, "character", 1, true)
+                or string.find(nameText, "instigator", 1, true)
+                or string.find(nameText, "interactor", 1, true)
+                or string.find(typeText, "player", 1, true)
+                or string.find(typeText, "pawn", 1, true)
+                or string.find(typeText, "character", 1, true)
+                or string.find(typeText, "mount", 1, true) then
+                value = player
+            elseif string.find(nameText, "controller", 1, true)
+                or string.find(typeText, "controller", 1, true) then
+                if not cachedController then
+                    cachedController = getPlayerController(player)
+                end
+                value = cachedController
+            elseif string.find(nameText, "component", 1, true)
+                or string.find(typeText, "component", 1, true) then
+                if not cachedComponent then
+                    cachedComponent = getPlayerInteractionComponent(player)
+                end
+                value = cachedComponent
+            elseif string.find(nameText, "item", 1, true)
+                or string.find(nameText, "target", 1, true)
+                or string.find(nameText, "pickup", 1, true)
+                or string.find(typeText, "ammobox", 1, true)
+                or string.find(typeText, "healingbottle", 1, true)
+                or string.find(typeText, "actor", 1, true) then
+                value = actor
+            end
+        else
+            if string.find(typeText, "bool", 1, true) then
+                value = false
+            elseif string.find(typeText, "float", 1, true)
+                or string.find(typeText, "double", 1, true)
+                or string.find(typeText, "int", 1, true)
+                or string.find(typeText, "byte", 1, true) then
+                value = 0
+            elseif string.find(typeText, "nameproperty", 1, true)
+                or string.find(typeText, "strproperty", 1, true)
+                or string.find(typeText, "textproperty", 1, true) then
+                value = ""
+            end
+        end
+
+        args.n = args.n + 1
+        args[args.n] = value
+    end
+
+    return args
 end
 
 local function functionScore(name)
@@ -569,6 +853,94 @@ local function functionScore(name)
     return score
 end
 
+local function playerFunctionScore(name)
+    local text = lower(name)
+    if containsAny(text, excludeFunctionTokens) then
+        return 0
+    end
+    if not containsAny(text, playerFunctionTokens) then
+        return 0
+    end
+
+    local score = 0
+    if string.find(text, "interact", 1, true) then score = score + 8 end
+    if string.find(text, "pickup", 1, true) or string.find(text, "pick_up", 1, true) then score = score + 7 end
+    if string.find(text, "collect", 1, true) then score = score + 6 end
+    if string.find(text, "loot", 1, true) then score = score + 5 end
+    if string.find(text, "use", 1, true) then score = score + 4 end
+    return score
+end
+
+local function paramHintsTargetActors(paramHints)
+    for _, hint in ipairs(paramHints or {}) do
+        local nameText = lower(hint.name or "")
+        local typeText = lower(hint.type or "")
+        if string.find(nameText, "actor", 1, true)
+            or string.find(nameText, "item", 1, true)
+            or string.find(nameText, "pickup", 1, true)
+            or string.find(nameText, "target", 1, true)
+            or string.find(typeText, "objectproperty", 1, true)
+            or string.find(typeText, "actor", 1, true)
+            or string.find(typeText, "ammobox", 1, true)
+            or string.find(typeText, "healingbottle", 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+local function gatherPlayerInteractionFunctions(player)
+    local className = getClassName(player)
+    if className == "" then
+        return {}
+    end
+    if playerFunctionCache[className] then
+        return playerFunctionCache[className]
+    end
+
+    local entries = {}
+    local classOk, classObject = pcall(function()
+        return player:GetClass()
+    end)
+    if classOk and isValidObject(classObject) then
+        pcall(function()
+            classObject:ForEachFunction(function(func)
+                local name = functionName(func)
+                if not name then
+                    return
+                end
+
+                local score = playerFunctionScore(name)
+                if score <= 0 then
+                    return
+                end
+
+                local params = gatherFunctionParamHints(func)
+                if not paramHintsTargetActors(params) then
+                    return
+                end
+
+                table.insert(entries, {
+                    name = name,
+                    fullName = functionFullName(func),
+                    params = params,
+                    score = score,
+                })
+            end)
+        end)
+    end
+
+    table.sort(entries, function(left, right)
+        if left.score ~= right.score then
+            return left.score > right.score
+        end
+        return left.name < right.name
+    end)
+
+    playerFunctionCache[className] = entries
+    return entries
+end
+
 local function gatherPickupFunctions(actor)
     local className = getClassName(actor)
     if functionCache[className] then
@@ -587,6 +959,7 @@ local function gatherPickupFunctions(actor)
                     local score = functionScore(name)
                     if score > 0 then
                         table.insert(entries, { name = name, fullName = functionFullName(func), score = score })
+                        entries[#entries].params = gatherFunctionParamHints(func)
                     end
                 end
             end)
@@ -620,7 +993,11 @@ local function logCandidate(actor, functions)
     local functionNames = {}
     for index, entry in ipairs(functions) do
         if index > 6 then break end
-        table.insert(functionNames, entry.fullName ~= "" and entry.fullName or entry.name)
+        local label = entry.fullName ~= "" and entry.fullName or entry.name
+        if entry.params and #entry.params > 0 then
+            label = label .. "(" .. formatFunctionParamHints(entry.params, 3) .. ")"
+        end
+        table.insert(functionNames, label)
     end
 
     seenCandidateClasses[className] = true
@@ -713,6 +1090,30 @@ local function tryInvokePickup(actor, player, functions)
             return actor[entry.name]
         end)
         if methodOk and type(method) == "function" then
+            local hintedArgs = buildArgsFromParamHints(entry.params, player, actor)
+            if hintedArgs then
+                local ok, message = tryCall(entry.name .. "(signature-hints)", function()
+                    return method(actor, unpackArgs(hintedArgs, 1, hintedArgs.n))
+                end)
+                if ok then
+                    return true, message
+                end
+                lastError = message
+            end
+
+            local templateKey = getClassName(actor) .. "::" .. entry.name
+            local template = capturedInteractionTemplates[templateKey]
+            if template then
+                local normalizedTemplate = normalizeTemplateArgs(template, player, actor)
+                local ok, message = tryCall(entry.name .. "(hook-template)", function()
+                    return method(actor, unpackArgs(normalizedTemplate, 1, normalizedTemplate.n))
+                end)
+                if ok then
+                    return true, message
+                end
+                lastError = message
+            end
+
             local variants = {
                 { label = entry.name .. "()", call = function() return method(actor) end },
                 { label = entry.name .. "(player)", call = function() return method(actor, player) end },
@@ -726,6 +1127,44 @@ local function tryInvokePickup(actor, player, functions)
             }
 
             for _, variant in ipairs(variants) do
+                local ok, message = tryCall(variant.label, variant.call)
+                if ok then
+                    return true, message
+                end
+                lastError = message
+            end
+        end
+    end
+
+    local playerFunctions = gatherPlayerInteractionFunctions(player)
+    for index, playerEntry in ipairs(playerFunctions) do
+        if index > 10 then
+            break
+        end
+
+        local methodOk, method = pcall(function()
+            return player[playerEntry.name]
+        end)
+        if methodOk and type(method) == "function" then
+            local hintedArgs = buildArgsFromParamHints(playerEntry.params, player, actor)
+            if hintedArgs then
+                local ok, message = tryCall("player:" .. playerEntry.name .. "(signature-hints)", function()
+                    return method(player, unpackArgs(hintedArgs, 1, hintedArgs.n))
+                end)
+                if ok then
+                    return true, message
+                end
+                lastError = message
+            end
+
+            local playerVariants = {
+                { label = "player:" .. playerEntry.name .. "(actor)", call = function() return method(player, actor) end },
+                { label = "player:" .. playerEntry.name .. "(actor,player)", call = function() return method(player, actor, player) end },
+                { label = "player:" .. playerEntry.name .. "(player,actor)", call = function() return method(player, player, actor) end },
+                { label = "player:" .. playerEntry.name .. "(actor,nil)", call = function() return method(player, actor, nil) end },
+            }
+
+            for _, variant in ipairs(playerVariants) do
                 local ok, message = tryCall(variant.label, variant.call)
                 if ok then
                     return true, message
@@ -779,6 +1218,7 @@ local function inspectActorForPickup(actor, player, stats)
 
     stats.candidates = stats.candidates + 1
     local functions = gatherPickupFunctions(actor)
+    ensureInteractionHooks(functions)
     logCandidate(actor, functions)
 
     if not settings.autoPickup then
