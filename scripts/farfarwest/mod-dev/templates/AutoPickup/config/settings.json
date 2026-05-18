@@ -3,9 +3,15 @@
   "autoPickup": true,
   "scanIntervalMs": 350,
   "pickupRadius": 375,
+  "scanAllLoadedLevels": true,
+  "trackConstructedActors": true,
+  "maxLevelsPerTick": 12,
   "maxActorsPerTick": 450,
+  "maxTrackedActors": 240,
   "maxCandidatesPerTick": 8,
   "retryCooldownTicks": 8,
   "candidateLogLimit": 80,
+  "nearbyDiscoveryLogLimit": 80,
+  "debugSummaryEveryTicks": 20,
   "debug": false
 }
