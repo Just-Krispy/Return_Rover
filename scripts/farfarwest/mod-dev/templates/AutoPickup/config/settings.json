@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "autoPickup": true,
+  "scanIntervalMs": 350,
+  "pickupRadius": 375,
+  "maxActorsPerTick": 450,
+  "maxCandidatesPerTick": 8,
+  "retryCooldownTicks": 8,
+  "candidateLogLimit": 80,
+  "debug": false
+}
