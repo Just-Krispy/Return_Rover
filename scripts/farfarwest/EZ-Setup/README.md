@@ -8,11 +8,21 @@ This folder is for friends/family who are not technical.
 2. Run:
 
 ```powershell
-$desktop = [Environment]::GetFolderPath('Desktop')
-$script = Join-Path $desktop 'easy-desktop-brother-setup.ps1'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Just-Krispy/Return_Rover/main/scripts/farfarwest/easy-desktop-brother-setup.ps1' -OutFile $script -UseBasicParsing
-PowerShell -ExecutionPolicy Bypass -File $script
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+$s = "$env:USERPROFILE\Desktop\One-Click-Setup.ps1"
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Just-Krispy/Return_Rover/main/scripts/farfarwest/EZ-Setup/One-Click-Setup.ps1' -OutFile $s -UseBasicParsing
+& $s
 ```
+
+This avoids Windows' default `running scripts is disabled` block for the current PowerShell window only.
+
+## What It Does
+
+1. Finds Far Far West automatically.
+2. Downloads the latest setup tools from GitHub.
+3. Creates and opens `C:\FFW-Mods`.
+4. Waits for the 3 community mod `.pak` or `.zip` files to be dropped there.
+5. Installs, launches, and verifies the modpack.
 
 ## Use This Folder Directly
 
@@ -28,7 +38,7 @@ PowerShell -ExecutionPolicy Bypass -File .\Run-EZ-Setup.ps1
 ## Before Running
 
 1. Close Far Far West.
-2. Keep mod files in `C:\mods`, Downloads, or Desktop.
+2. Have the 3 community mod files ready: XP-Gold-Souls, Better Wandering Traders, and White Primary Pickup Glow.
 3. Do not place `Return_Rover-main` inside `ue4ss\Mods`.
 
 ## Optional: Custom Game Path
