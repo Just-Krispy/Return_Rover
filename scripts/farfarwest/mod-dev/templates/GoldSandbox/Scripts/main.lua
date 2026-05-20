@@ -7,6 +7,16 @@ local settings = {
     refillBelow = 999000,
     enablePersistentGold = true,
     targetPersistentGold = 999999,
+    enablePersistentSoul = true,
+    targetPersistentSoul = 999999,
+    refillBelowSoul = 999000,
+    enablePersistentTickets = true,
+    ticketWalletKey = "itemHero",
+    targetPersistentTickets = 99999,
+    refillBelowTickets = 99999,
+    enablePersistentXpFields = true,
+    targetPersistentXpFields = 999999,
+    refillBelowXpFields = 999000,
     persistentScanEveryTicks = 2,
     scanIntervalMs = 1000,
     enableActionHooks = true,
@@ -18,10 +28,40 @@ local tickCount = 0
 local hasLoggedTarget = false
 local hasLoggedWaiting = false
 local lastRefillSourceGold = nil
-local lastPersistentGoldSeen = nil
+local lastPersistentRefillSourceByKey = {}
+local lastPersistentRefillSourceByField = {}
+local loggedMissingXpFields = {}
+local loggedSeenXpFields = {}
+local hasLoggedXpFieldCandidates = false
 local actionHookRegisteredCount = 0
 local actionHookRegistered = {}
 local actionHookAttempts = {}
+
+local xpFieldCandidates = {
+    "totalXp",
+    "totalXP",
+    "totalxp",
+    "heroXp",
+    "heroXP",
+    "heroxp",
+    "itemXp",
+    "itemXP",
+    "itemxp",
+    "currentXp",
+    "currentXP",
+    "currentxp",
+    "xpTickets",
+    "XPTickets",
+    "xptickets",
+    "ticketXp",
+    "ticketXP",
+    "ticketxp",
+    "spellxp",
+    "weaponxp",
+    "weapxp",
+}
+
+local resolvedXpFieldCandidates = nil
 
 local actionHooks = {
     {
@@ -97,19 +137,50 @@ local function loadSettings()
         return value and tonumber(value) or current
     end
 
+    local function stringValue(key, current)
+        local value = string.match(content, '"' .. key .. '"%s*:%s*"([^"]+)"')
+        return value or current
+    end
+
     settings.enabled = boolValue("enabled", settings.enabled)
     settings.debug = boolValue("debug", settings.debug)
     settings.enableActionHooks = boolValue("enableActionHooks", settings.enableActionHooks)
     settings.enablePersistentGold = boolValue("enablePersistentGold", settings.enablePersistentGold)
+    settings.enablePersistentSoul = boolValue("enablePersistentSoul", settings.enablePersistentSoul)
+    settings.enablePersistentTickets = boolValue("enablePersistentTickets", settings.enablePersistentTickets)
+    settings.enablePersistentXpFields = boolValue("enablePersistentXpFields", settings.enablePersistentXpFields)
     settings.targetGold = numberValue("targetGold", settings.targetGold)
     settings.refillBelow = numberValue("refillBelow", settings.refillBelow)
     settings.targetPersistentGold = numberValue("targetPersistentGold", settings.targetPersistentGold)
+    settings.targetPersistentSoul = numberValue("targetPersistentSoul", settings.targetPersistentSoul)
+    settings.refillBelowSoul = numberValue("refillBelowSoul", settings.refillBelowSoul)
+    settings.targetPersistentTickets = numberValue("targetPersistentTickets", settings.targetPersistentTickets)
+    settings.refillBelowTickets = numberValue("refillBelowTickets", settings.refillBelowTickets)
+    settings.targetPersistentXpFields = numberValue("targetPersistentXpFields", settings.targetPersistentXpFields)
+    settings.refillBelowXpFields = numberValue("refillBelowXpFields", settings.refillBelowXpFields)
+    settings.ticketWalletKey = stringValue("ticketWalletKey", settings.ticketWalletKey)
     settings.persistentScanEveryTicks = numberValue("persistentScanEveryTicks", settings.persistentScanEveryTicks)
     settings.scanIntervalMs = numberValue("scanIntervalMs", settings.scanIntervalMs)
     settings.maxHookRegisterAttempts = numberValue("maxHookRegisterAttempts", settings.maxHookRegisterAttempts)
 
     if settings.refillBelow > settings.targetGold then
         settings.refillBelow = settings.targetGold
+    end
+
+    if settings.refillBelowSoul > settings.targetPersistentSoul then
+        settings.refillBelowSoul = settings.targetPersistentSoul
+    end
+
+    if settings.refillBelowTickets > settings.targetPersistentTickets then
+        settings.refillBelowTickets = settings.targetPersistentTickets
+    end
+
+    if settings.refillBelowXpFields > settings.targetPersistentXpFields then
+        settings.refillBelowXpFields = settings.targetPersistentXpFields
+    end
+
+    if settings.ticketWalletKey == "" then
+        settings.ticketWalletKey = "itemHero"
     end
 
     if settings.persistentScanEveryTicks < 1 then
@@ -126,6 +197,12 @@ end
 
 local function lower(value)
     return string.lower(tostring(value or ""))
+end
+
+local function normalizeWalletKey(value)
+    local key = lower(value)
+    key = string.gsub(key, "%s+", "")
+    return key
 end
 
 local function readableValue(value)
@@ -426,6 +503,53 @@ local persistentHints = {
     runtimeEntryAmount = "amount_5_BCEA82214D7F817FDA90DF805AF0C332",
 }
 
+local function resolveXpFieldCandidates()
+    if resolvedXpFieldCandidates then
+        return resolvedXpFieldCandidates
+    end
+
+    local unique = {}
+    for _, name in ipairs(xpFieldCandidates) do
+        unique[name] = true
+    end
+
+    local structOk, playerProgressStruct = pcall(function()
+        return StaticFindObject("UserDefinedStruct /Game/Player/SaveGames/S_PlayerProgress.S_PlayerProgress")
+    end)
+    if structOk and isValidObject(playerProgressStruct) then
+        pcall(function()
+            playerProgressStruct:ForEachProperty(function(property)
+                local name = propertyName(property)
+                if not name then
+                    return false
+                end
+
+                local lowered = lower(name)
+                local looksLikeXp = string.find(lowered, "xp", 1, true)
+                    or string.find(lowered, "ticket", 1, true)
+                    or string.find(lowered, "hero", 1, true)
+                if not looksLikeXp then
+                    return false
+                end
+
+                if isPropertyA(property, "IntProperty") or isPropertyA(property, "FloatProperty") then
+                    unique[name] = true
+                end
+
+                return false
+            end)
+        end)
+    end
+
+    resolvedXpFieldCandidates = {}
+    for name, _ in pairs(unique) do
+        table.insert(resolvedXpFieldCandidates, name)
+    end
+    table.sort(resolvedXpFieldCandidates)
+
+    return resolvedXpFieldCandidates
+end
+
 local resolvedRuntimeInventoryField = nil
 local resolvedRuntimeNameField = nil
 local resolvedRuntimeAmountField = nil
@@ -482,174 +606,446 @@ local function resolveRuntimeEntryFields()
     return resolvedRuntimeNameField, resolvedRuntimeAmountField
 end
 
-local function getPlayerProgressValue(gameInstance)
-    local directOk, directValue = pcall(function()
-        return gameInstance[persistentHints.playerProgress]
-    end)
-    if directOk and directValue then
-        return directValue
-    end
-
-    local saveOk, saveObject = pcall(function()
-        return gameInstance.SG_PlayerProgress
-    end)
-    if saveOk and isValidObject(saveObject) then
-        local saveProgressOk, saveProgressValue = pcall(function()
-            return saveObject[persistentHints.playerProgress]
+local function getPlayerProgressValue(gameInstance, preferSaveObject)
+    local function readDirect()
+        local directOk, directValue = pcall(function()
+            return gameInstance[persistentHints.playerProgress]
         end)
-        if saveProgressOk and saveProgressValue then
-            return saveProgressValue
+        if directOk and directValue then
+            return directValue
         end
+        return nil
     end
 
-    return nil
+    local function readSave()
+        local saveOk, saveObject = pcall(function()
+            return gameInstance.SG_PlayerProgress
+        end)
+        if saveOk and isValidObject(saveObject) then
+            local saveProgressOk, saveProgressValue = pcall(function()
+                return saveObject[persistentHints.playerProgress]
+            end)
+            if saveProgressOk and saveProgressValue then
+                return saveProgressValue
+            end
+        end
+
+        local saveInstance = findFirstValid("SG_PlayerProgress_C")
+        if isValidObject(saveInstance) then
+            local saveProgressOk, saveProgressValue = pcall(function()
+                return saveInstance[persistentHints.playerProgress]
+            end)
+            if saveProgressOk and saveProgressValue then
+                return saveProgressValue
+            end
+        end
+
+        return nil
+    end
+
+    if preferSaveObject then
+        return readSave() or readDirect()
+    end
+
+    return readDirect() or readSave()
 end
 
-local function setPersistentMenuGold(targetGold)
+local function setPersistentMenuWalletEntry(walletKey, targetAmount, refillBelowAmount)
+    local normalizedTargetKey = normalizeWalletKey(walletKey)
+    if normalizedTargetKey == "" then
+        return false, "wallet key is empty"
+    end
+
+    local targetValue = tonumber(targetAmount)
+    if type(targetValue) ~= "number" then
+        return false, "target amount is invalid"
+    end
+
+    local refillFloor = tonumber(refillBelowAmount) or targetValue
+    if refillFloor > targetValue then
+        refillFloor = targetValue
+    end
+
     local gameInstance = findFirstValid("BP_CanyonGameInstance_C")
     if not gameInstance then
         return false, "BP_CanyonGameInstance_C not found"
     end
 
-    local playerProgressValue = getPlayerProgressValue(gameInstance)
-    if not playerProgressValue then
-        return false, "playerProgress value unavailable"
-    end
+    local function applyToPlayerProgress(playerProgressValue)
+        if not playerProgressValue then
+            return false, false, nil, nil, nil
+        end
 
-    local runtimeInventoryField = resolveRuntimeInventoryFieldName()
+        local runtimeInventoryField = resolveRuntimeInventoryFieldName()
 
-    local runtimeArrayOk, runtimeArray = pcall(function()
-        return playerProgressValue[runtimeInventoryField]
-    end)
-    if (not runtimeArrayOk or not runtimeArray) and runtimeInventoryField ~= persistentHints.runtimeInventory then
-        runtimeInventoryField = persistentHints.runtimeInventory
-        runtimeArrayOk, runtimeArray = pcall(function()
+        local runtimeArrayOk, runtimeArray = pcall(function()
             return playerProgressValue[runtimeInventoryField]
         end)
-    end
-    if not runtimeArrayOk or not runtimeArray then
-        return false, "runtimeInventory value unavailable"
-    end
-
-    local nameField, amountField = resolveRuntimeEntryFields()
-    if not nameField or not amountField then
-        return false, "runtimeInventory entry fields missing"
-    end
-
-    local foundEntry = false
-    local changed = false
-    local oldValue = nil
-    local entryIndex = nil
-
-    pcall(function()
-        runtimeArray:ForEach(function(index, element)
-            local entry = element
-
-            local unwrapOk, unwrapped = pcall(function()
-                return element:get()
+        if (not runtimeArrayOk or not runtimeArray) and runtimeInventoryField ~= persistentHints.runtimeInventory then
+            runtimeInventoryField = persistentHints.runtimeInventory
+            runtimeArrayOk, runtimeArray = pcall(function()
+                return playerProgressValue[runtimeInventoryField]
             end)
-            if unwrapOk and unwrapped then
-                entry = unwrapped
-            end
+        end
+        if not runtimeArrayOk or not runtimeArray then
+            return false, false, nil, nil, nil
+        end
 
-            if not entry then
-                return false
-            end
+        local nameField, amountField = resolveRuntimeEntryFields()
+        if not nameField or not amountField then
+            return false, false, nil, nil, nil
+        end
 
-            local resolvedNameField = nameField
-            local resolvedAmountField = amountField
+        local foundEntry = false
+        local changed = false
+        local oldValue = nil
+        local lastSeenValue = nil
+        local entryIndex = nil
 
-            local nameOk, entryNameValue = pcall(function()
-                return entry[resolvedNameField]
-            end)
-            if (not nameOk or entryNameValue == nil) and resolvedNameField ~= persistentHints.runtimeEntryName then
-                resolvedNameField = persistentHints.runtimeEntryName
-                nameOk, entryNameValue = pcall(function()
+        pcall(function()
+            runtimeArray:ForEach(function(index, element)
+                local entry = element
+
+                local unwrapOk, unwrapped = pcall(function()
+                    return element:get()
+                end)
+                if unwrapOk and unwrapped then
+                    entry = unwrapped
+                end
+
+                if not entry then
+                    return nil
+                end
+
+                local resolvedNameField = nameField
+                local resolvedAmountField = amountField
+
+                local nameOk, entryNameValue = pcall(function()
                     return entry[resolvedNameField]
                 end)
-            end
-            if not nameOk or entryNameValue == nil then
-                return false
-            end
+                if (not nameOk or entryNameValue == nil) and resolvedNameField ~= persistentHints.runtimeEntryName then
+                    resolvedNameField = persistentHints.runtimeEntryName
+                    nameOk, entryNameValue = pcall(function()
+                        return entry[resolvedNameField]
+                    end)
+                end
+                if not nameOk or entryNameValue == nil then
+                    return nil
+                end
 
-            local loweredName = lower(readableValue(entryNameValue))
-            local isGoldCurrency = string.find(loweredName, "moneygold", 1, true)
-                or (string.find(loweredName, "money", 1, true) and string.find(loweredName, "gold", 1, true))
-            if not isGoldCurrency then
-                return false
-            end
+                local entryKey = normalizeWalletKey(readableValue(entryNameValue))
+                local keyMatches = entryKey == normalizedTargetKey
+                    or string.find(entryKey, normalizedTargetKey, 1, true) ~= nil
+                if not keyMatches then
+                    return nil
+                end
 
-            local amountOk, currentAmount = pcall(function()
-                return tonumber(entry[resolvedAmountField])
-            end)
-            if (not amountOk or type(currentAmount) ~= "number") and resolvedAmountField ~= persistentHints.runtimeEntryAmount then
-                resolvedAmountField = persistentHints.runtimeEntryAmount
-                amountOk, currentAmount = pcall(function()
+                local amountOk, currentAmount = pcall(function()
                     return tonumber(entry[resolvedAmountField])
                 end)
-            end
-            if not amountOk or type(currentAmount) ~= "number" then
-                return false
-            end
-
-            foundEntry = true
-            oldValue = currentAmount
-            entryIndex = tonumber(index) and (tonumber(index) - 1) or nil
-            lastPersistentGoldSeen = currentAmount
-
-            if currentAmount < targetGold then
-                local setOk = pcall(function()
-                    entry[resolvedAmountField] = targetGold
-                end)
-                if setOk then
-                    changed = true
-                    lastPersistentGoldSeen = targetGold
+                if (not amountOk or type(currentAmount) ~= "number") and resolvedAmountField ~= persistentHints.runtimeEntryAmount then
+                    resolvedAmountField = persistentHints.runtimeEntryAmount
+                    amountOk, currentAmount = pcall(function()
+                        return tonumber(entry[resolvedAmountField])
+                    end)
                 end
-            end
+                if not amountOk or type(currentAmount) ~= "number" then
+                    return nil
+                end
 
-            return true
+                foundEntry = true
+                oldValue = currentAmount
+                lastSeenValue = currentAmount
+                entryIndex = tonumber(index) and (tonumber(index) - 1) or nil
+
+                if currentAmount < refillFloor then
+                    local setOk = pcall(function()
+                        entry[resolvedAmountField] = targetValue
+                    end)
+                    if setOk then
+                        changed = true
+                        lastSeenValue = targetValue
+                    end
+                end
+
+                return true
+            end)
         end)
-    end)
+
+        return foundEntry, changed, oldValue, lastSeenValue, entryIndex
+    end
+
+    local preferSaveObject = normalizedTargetKey ~= normalizeWalletKey("moneyGold")
+    local primaryProgressValue = getPlayerProgressValue(gameInstance, preferSaveObject)
+    local secondaryProgressValue = getPlayerProgressValue(gameInstance, not preferSaveObject)
+
+    local primaryFound, primaryChanged, primaryOldValue, primaryLastSeenValue, primaryEntryIndex = applyToPlayerProgress(primaryProgressValue)
+
+    local secondaryFound = false
+    local secondaryChanged = false
+    local secondaryOldValue = nil
+    local secondaryLastSeenValue = nil
+    local secondaryEntryIndex = nil
+
+    if secondaryProgressValue and secondaryProgressValue ~= primaryProgressValue then
+        secondaryFound, secondaryChanged, secondaryOldValue, secondaryLastSeenValue, secondaryEntryIndex = applyToPlayerProgress(secondaryProgressValue)
+    end
+
+    local foundEntry = primaryFound or secondaryFound
+    local changed = primaryChanged or secondaryChanged
+    local oldValue = primaryOldValue or secondaryOldValue
+    local lastSeenValue = primaryLastSeenValue or secondaryLastSeenValue
+    local entryIndex = primaryEntryIndex or secondaryEntryIndex
 
     if not foundEntry then
-        return false, "moneyGold entry not found"
+        return false, tostring(walletKey) .. " entry not found"
     end
 
     if changed then
         local invoked = tryInvokeSaveMethods(gameInstance)
         local indexText = entryIndex and tostring(entryIndex) or "?"
         local saveText = #invoked > 0 and table.concat(invoked, ",") or "none"
-        return true, string.format("moneyGold[%s] %s -> %s (save=%s)", indexText, tostring(oldValue), tostring(targetGold), saveText)
+        return true, string.format("%s[%s] %s -> %s (save=%s)", tostring(walletKey), indexText, tostring(oldValue), tostring(targetValue), saveText), oldValue
     end
 
-    return true, string.format("moneyGold already %s", tostring(lastPersistentGoldSeen))
+    return true, string.format("%s already %s", tostring(walletKey), tostring(lastSeenValue)), nil
 end
 
-local function syncPersistentGold(reason, logNoChange)
-    if not settings.enablePersistentGold then
+local function syncPersistentWallet(reason, logNoChange, enabled, walletKey, targetAmount, refillBelowAmount, label)
+    if not enabled then
         return
     end
 
-    local callOk, persistentOk, persistentMessage = pcall(function()
-        return setPersistentMenuGold(settings.targetPersistentGold)
+    local callOk, persistentOk, persistentMessage, sourceAmount = pcall(function()
+        return setPersistentMenuWalletEntry(walletKey, targetAmount, refillBelowAmount)
     end)
+
+    local walletLabel = tostring(label or walletKey)
 
     if not callOk then
         if settings.debug then
-            Log("Persistent gold error (" .. tostring(reason) .. "): " .. tostring(persistentOk))
+            Log("Persistent " .. walletLabel .. " error (" .. tostring(reason) .. "): " .. tostring(persistentOk))
         end
         return
     end
 
     if persistentOk then
         if string.find(tostring(persistentMessage), "->", 1, true) then
-            Log("Persistent gold updated (" .. tostring(reason) .. "): " .. tostring(persistentMessage))
+            local sourceKey = normalizeWalletKey(walletKey)
+            if settings.debug or lastPersistentRefillSourceByKey[sourceKey] ~= sourceAmount then
+                Log("Persistent " .. walletLabel .. " updated (" .. tostring(reason) .. "): " .. tostring(persistentMessage))
+            end
+            lastPersistentRefillSourceByKey[sourceKey] = sourceAmount
         elseif logNoChange and settings.debug then
-            Log("Persistent gold check (" .. tostring(reason) .. "): " .. tostring(persistentMessage))
+            Log("Persistent " .. walletLabel .. " check (" .. tostring(reason) .. "): " .. tostring(persistentMessage))
         end
     elseif settings.debug then
-        Log("Persistent gold pending (" .. tostring(reason) .. "): " .. tostring(persistentMessage))
+        Log("Persistent " .. walletLabel .. " pending (" .. tostring(reason) .. "): " .. tostring(persistentMessage))
     end
+end
+
+local function setPersistentNumericField(fieldName, targetAmount, refillBelowAmount)
+    local targetFieldName = tostring(fieldName or "")
+    if targetFieldName == "" then
+        return false, "field name is empty"
+    end
+
+    local targetValue = tonumber(targetAmount)
+    if type(targetValue) ~= "number" then
+        return false, "target amount is invalid"
+    end
+
+    local refillFloor = tonumber(refillBelowAmount) or targetValue
+    if refillFloor > targetValue then
+        refillFloor = targetValue
+    end
+
+    local gameInstance = findFirstValid("BP_CanyonGameInstance_C") or findFirstValid("BP_GameInstance_C")
+
+    local sources = {}
+
+    if gameInstance then
+        table.insert(sources, { label = "gameInstance", value = gameInstance })
+
+        local primaryProgressValue = getPlayerProgressValue(gameInstance, true)
+        local secondaryProgressValue = getPlayerProgressValue(gameInstance, false)
+
+        if primaryProgressValue then
+            table.insert(sources, { label = "playerProgress(runtime)", value = primaryProgressValue })
+        end
+        if secondaryProgressValue and secondaryProgressValue ~= primaryProgressValue then
+            table.insert(sources, { label = "playerProgress(save)", value = secondaryProgressValue })
+        end
+
+        local saveGameOk, saveGame = pcall(function()
+            return gameInstance.currentSaveGame
+        end)
+        if saveGameOk and saveGame then
+            table.insert(sources, { label = "currentSaveGame", value = saveGame })
+        end
+    end
+
+    local extraSourceClasses = {
+        "BP_PlayerState_C",
+        "BP_CanyonPlayerState_C",
+        "BP_PlayerController_C",
+        "BP_CanyonPlayerController_C",
+        "BP_GameState_C",
+    }
+
+    for _, className in ipairs(extraSourceClasses) do
+        local sourceObject = findFirstValid(className)
+        if sourceObject then
+            table.insert(sources, { label = className, value = sourceObject })
+        end
+    end
+
+    if #sources == 0 then
+        return false, "persistent source objects not found"
+    end
+
+    local function applyToSource(source)
+        if not source or not source.value then
+            return false, false, nil, nil
+        end
+
+        local amountOk, currentAmount = pcall(function()
+            return tonumber(source.value[targetFieldName])
+        end)
+        if not amountOk or type(currentAmount) ~= "number" then
+            return false, false, nil, nil
+        end
+
+        local changed = false
+        local oldValue = currentAmount
+        local lastValue = currentAmount
+
+        if currentAmount < refillFloor then
+            local setOk = pcall(function()
+                source.value[targetFieldName] = targetValue
+            end)
+            if setOk then
+                changed = true
+                lastValue = targetValue
+            end
+        end
+
+        return true, changed, oldValue, lastValue, tostring(source.label)
+    end
+
+    local foundField = false
+    local changed = false
+    local unchangedDetails = {}
+    local changedDetails = {}
+    local sourceFingerprintParts = {}
+
+    for _, source in ipairs(sources) do
+        local sourceFound, sourceChanged, oldValue, lastValue, sourceLabel = applyToSource(source)
+        if sourceFound then
+            foundField = true
+            if sourceChanged then
+                changed = true
+                table.insert(changedDetails, string.format("%s %s -> %s", sourceLabel, tostring(oldValue), tostring(lastValue)))
+                table.insert(sourceFingerprintParts, string.format("%s:%s", sourceLabel, tostring(oldValue)))
+            else
+                table.insert(unchangedDetails, string.format("%s=%s", sourceLabel, tostring(lastValue)))
+            end
+        end
+    end
+
+    if not foundField then
+        return false, targetFieldName .. " field not found"
+    end
+
+    if changed then
+        local saveText = "none"
+        if gameInstance then
+            local invoked = tryInvokeSaveMethods(gameInstance)
+            if #invoked > 0 then
+                saveText = table.concat(invoked, ",")
+            end
+        end
+        local details = table.concat(changedDetails, "; ")
+        local fingerprint = #sourceFingerprintParts > 0 and table.concat(sourceFingerprintParts, "|") or targetFieldName
+        return true, string.format("%s %s (save=%s)", targetFieldName, details, saveText), fingerprint
+    end
+
+    local status = #unchangedDetails > 0 and table.concat(unchangedDetails, "; ") or "unchanged"
+    return true, string.format("%s already %s", targetFieldName, status), nil
+end
+
+local function syncPersistentXpFields(reason, logNoChange)
+    if not settings.enablePersistentXpFields then
+        return
+    end
+
+    local candidates = resolveXpFieldCandidates()
+    if (not hasLoggedXpFieldCandidates) and #candidates > 0 then
+        Log("XP field candidates: " .. table.concat(candidates, ", "))
+        hasLoggedXpFieldCandidates = true
+    end
+
+    for _, fieldName in ipairs(candidates) do
+        local callOk, fieldOk, fieldMessage, sourceAmount = pcall(function()
+            return setPersistentNumericField(fieldName, settings.targetPersistentXpFields, settings.refillBelowXpFields)
+        end)
+
+        if callOk and fieldOk then
+            if string.find(tostring(fieldMessage), "->", 1, true) then
+                if settings.debug or lastPersistentRefillSourceByField[fieldName] ~= sourceAmount then
+                    Log("Persistent xpField updated (" .. tostring(reason) .. "): " .. tostring(fieldMessage))
+                end
+                lastPersistentRefillSourceByField[fieldName] = sourceAmount
+            elseif logNoChange and settings.debug then
+                Log("Persistent xpField check (" .. tostring(reason) .. "): " .. tostring(fieldMessage))
+            elseif not loggedSeenXpFields[fieldName] then
+                Log("Persistent xpField seen (" .. tostring(reason) .. "): " .. tostring(fieldMessage))
+                loggedSeenXpFields[fieldName] = true
+            end
+        elseif callOk and (not fieldOk) then
+            local missingKey = tostring(fieldName) .. "|" .. tostring(fieldMessage)
+            if not loggedMissingXpFields[missingKey] then
+                Log("Persistent xpField missing (" .. tostring(reason) .. "): " .. tostring(fieldMessage))
+                loggedMissingXpFields[missingKey] = true
+            end
+        elseif not callOk and settings.debug then
+            Log("Persistent xpField error (" .. tostring(reason) .. "): " .. tostring(fieldOk))
+        end
+    end
+end
+
+local function syncPersistentWallets(reason, logNoChange)
+    syncPersistentWallet(
+        reason,
+        logNoChange,
+        settings.enablePersistentGold,
+        "moneyGold",
+        settings.targetPersistentGold,
+        settings.refillBelow,
+        "gold"
+    )
+
+    syncPersistentWallet(
+        reason,
+        logNoChange,
+        settings.enablePersistentSoul,
+        "moneySoul",
+        settings.targetPersistentSoul,
+        settings.refillBelowSoul,
+        "soul"
+    )
+
+    syncPersistentWallet(
+        reason,
+        logNoChange,
+        settings.enablePersistentTickets,
+        settings.ticketWalletKey,
+        settings.targetPersistentTickets,
+        settings.refillBelowTickets,
+        "ticket"
+    )
+
+    syncPersistentXpFields(reason, logNoChange)
 end
 
 local function findGameStateGold()
@@ -720,7 +1116,7 @@ end
 local function logActionHook(label)
     Log(string.format("Action hook fired: %s before=%s", label, formatGoldState()))
 
-    syncPersistentGold("hook:" .. tostring(label), false)
+    syncPersistentWallets("hook:" .. tostring(label), false)
 
     local delayOk = pcall(function()
         ExecuteWithDelay(250, function()
@@ -762,10 +1158,17 @@ end
 
 loadSettings()
 Log(string.format(
-    "Loaded lightweight max-gold build. targetGold=%s persistentGold=%s persistentTarget=%s scanIntervalMs=%s actionHooks=%s debug=%s.",
+    "Loaded wallet lock build. targetGold=%s persistentGold=%s targetPersistentGold=%s persistentSoul=%s targetPersistentSoul=%s persistentTicket=%s ticketKey=%s targetPersistentTickets=%s persistentXpFields=%s targetPersistentXpFields=%s scanIntervalMs=%s actionHooks=%s debug=%s.",
     tostring(settings.targetGold),
     tostring(settings.enablePersistentGold),
     tostring(settings.targetPersistentGold),
+    tostring(settings.enablePersistentSoul),
+    tostring(settings.targetPersistentSoul),
+    tostring(settings.enablePersistentTickets),
+    tostring(settings.ticketWalletKey),
+    tostring(settings.targetPersistentTickets),
+    tostring(settings.enablePersistentXpFields),
+    tostring(settings.targetPersistentXpFields),
     tostring(settings.scanIntervalMs),
     tostring(settings.enableActionHooks),
     tostring(settings.debug)
@@ -780,7 +1183,7 @@ LoopAsync(settings.scanIntervalMs, function()
     registerActionHooks()
 
     if tickCount % settings.persistentScanEveryTicks == 0 then
-        syncPersistentGold("tick", tickCount % 30 == 0)
+        syncPersistentWallets("tick", tickCount % 30 == 0)
     end
 
     local goldState = findGameStateGold()
