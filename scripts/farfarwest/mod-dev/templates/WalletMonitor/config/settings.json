@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "scanIntervalMs": 500,
+  "logEveryTicks": 10,
+  "enableActionHooks": true,
+  "trackAllWalletEntries": false,
+  "logAllRuntimeEntriesOnce": true,
+  "maxHookRegisterAttempts": 600,
+  "maxLoggedChangesPerTick": 32,
+  "debug": false
+}

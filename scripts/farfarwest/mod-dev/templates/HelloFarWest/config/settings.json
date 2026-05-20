@@ -1,0 +1,5 @@
+{
+  "enabled": true,
+  "debug": true,
+  "scanIntervalMs": 3000
+}

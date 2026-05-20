@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "discoveryOnly": true,
+  "unlockLocalCandidates": false,
+  "scanIntervalMs": 5000,
+  "maxLoggedCandidates": 80,
+  "maxUnlocksPerScan": 40,
+  "debug": true
+}

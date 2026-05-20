@@ -132,7 +132,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\farfarwest\mod-dev\install-de
 powershell -ExecutionPolicy Bypass -File .\scripts\farfarwest\mod-dev\install-dev-mod.ps1 -ModSource .\scripts\farfarwest\mod-dev\templates\GoldSandbox
 ```
 
-GoldSandbox keeps private-session gold near the configured target in `templates/GoldSandbox/config/settings.json`. It does not unlock paid/DLC cosmetics or online entitlements.
+GoldSandbox keeps private-session wallet resources near configured targets (gold, souls, and optional ticket key) in `templates/GoldSandbox/config/settings.json`. It does not unlock paid/DLC cosmetics or online entitlements.
 
 ## Install AutoPickup
 
