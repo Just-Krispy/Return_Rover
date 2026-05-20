@@ -88,6 +88,7 @@ if (Test-Path $mods) {
 
 Write-Host ''
 Say 'UE4SS script mod folders:'
+$presentMods = @()
 if (Test-Path $ue4ssMods) {
     $scriptMods = Get-ChildItem -Path $ue4ssMods -Directory -ErrorAction SilentlyContinue | Sort-Object Name
     if ($scriptMods.Count -eq 0) {
@@ -97,8 +98,58 @@ if (Test-Path $ue4ssMods) {
             $enabled = Test-Path (Join-Path $dir.FullName 'enabled.txt')
             $lua = Test-Path (Join-Path $dir.FullName 'Scripts\main.lua')
             Status $dir.Name ($enabled -and $lua) "enabled=$enabled lua=$lua"
+            if ($enabled -and $lua) { $presentMods += $dir.Name }
         }
     }
+}
+
+Write-Host ''
+Say 'UE4SS mods.txt check (most common silent failure):'
+$modsTxt = Join-Path $ue4ssMods 'mods.txt'
+if (-not (Test-Path $modsTxt)) {
+    Status 'mods.txt present' $false $modsTxt
+    Write-Host '  mods.txt is missing. UE4SS will not load any script mod even if enabled.txt is present.' -ForegroundColor Red
+    Write-Host '  Run Fix-Mods.cmd to repair.' -ForegroundColor Yellow
+} else {
+    Status 'mods.txt present' $true $modsTxt
+    $modsTxtRaw = Get-Content $modsTxt -Raw -ErrorAction SilentlyContinue
+    $missing = @()
+    foreach ($name in $presentMods) {
+        $pattern = "(?m)^\s*" + [regex]::Escape($name) + "\s*:\s*1\s*$"
+        if ($modsTxtRaw -notmatch $pattern) { $missing += $name }
+    }
+    if ($missing.Count -eq 0) {
+        Status 'all enabled mods listed in mods.txt as :1' $true ''
+    } else {
+        Status 'all enabled mods listed in mods.txt as :1' $false ("missing: " + ($missing -join ', '))
+        Write-Host '  Run Fix-Mods.cmd to repair.' -ForegroundColor Yellow
+    }
+}
+
+Write-Host ''
+Say 'UE4SS proxy DLL check:'
+$proxyCandidates = @('dwmapi.dll', 'xinput1_3.dll', 'd3d11.dll', 'd3d12.dll', 'dsound.dll')
+$proxyHits = @()
+foreach ($p in $proxyCandidates) {
+    if (Test-Path (Join-Path $win64 $p)) { $proxyHits += $p }
+}
+Status 'UE4SS proxy DLL next to game exe' ($proxyHits.Count -gt 0) ($proxyHits -join ', ')
+if ($proxyHits.Count -eq 0) {
+    Write-Host '  UE4SS itself is not installed - mods cannot load. Re-run the main installer.' -ForegroundColor Red
+}
+
+Write-Host ''
+Say 'UE4SS console visibility check (so you can SEE mods load):'
+$settingsIni = Join-Path $ue4ss 'UE4SS-settings.ini'
+if (Test-Path $settingsIni) {
+    $iniRaw = Get-Content $settingsIni -Raw
+    $guiOn = ($iniRaw -match '(?m)^\s*GuiConsoleVisible\s*=\s*1\s*$') -and ($iniRaw -match '(?m)^\s*GuiConsoleEnabled\s*=\s*1\s*$')
+    Status 'UE4SS GUI console enabled' $guiOn ''
+    if (-not $guiOn) {
+        Write-Host '  Run Fix-Mods.cmd to enable - it shows a live window proving mods loaded.' -ForegroundColor Yellow
+    }
+} else {
+    Status 'UE4SS-settings.ini present' $false $settingsIni
 }
 
 Write-Host ''

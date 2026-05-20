@@ -1,15 +1,38 @@
 Far Far West setup for Gavin
+============================
 
-1. Right-click the zip and choose Extract All.
+FIRST TIME SETUP
+----------------
+1. Right-click the zip and choose "Extract All".
 2. Open the extracted folder.
-3. Double-click Run-This-First.cmd.
-4. Click Yes if Windows asks for Administrator permission.
-5. If the Put-Mod-Files-Here folder opens, put these 3 files in it:
-   - XP-Gold-Souls
-   - Better Wandering Traders
-   - White Primary Pickup Glow
+3. Double-click  Run-This-First.cmd
+4. Click "Yes" if Windows asks for Administrator permission.
+5. If the "Put-Mod-Files-Here" folder opens, drop these 3 files into it:
+     - XP-Gold-Souls
+     - Better Wandering Traders
+     - White Primary Pickup Glow
 6. Go back to the black PowerShell window and press Enter.
-7. Wait for PASS - All mod files installed.
+7. Wait for the green "PASS - All mod files installed" line.
 
-Do not type paths. Do not paste instruction text into PowerShell.
-If something turns red, send Ryan one screenshot.
+
+IF MODS DO NOT WORK IN GAME
+---------------------------
+1. Close Far Far West if it is running.
+2. Double-click  Fix-Mods.cmd
+3. Click "Yes" if Windows asks for Administrator permission.
+4. Wait for it to launch the game.
+5. When the game opens, a small black UE4SS console window should
+   pop up alongside it, with green text like:
+       [AutoPickup] Loaded.
+       [GoldSandbox] Loaded.
+       [XPMod] Loaded.
+   If you see those lines, the mods ARE working.
+
+
+IF SOMETHING STILL DOES NOT WORK
+--------------------------------
+1. Double-click  Diagnose-Install.ps1  (or right-click -> Run with PowerShell)
+2. Take ONE screenshot of the whole window.
+3. Text it to Ryan.
+
+Do not type paths. Do not paste instructions into PowerShell.

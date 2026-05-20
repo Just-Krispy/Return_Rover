@@ -341,6 +341,32 @@ if (-not $SkipLocalQoLMods) {
     $installedScriptMods += Install-LocalScriptModTemplates -TemplatesRoot $templatesRoot -DestinationRoot $ue4ssModsPath -Names @('GoldSandbox', 'AutoPickup')
 }
 
+# Rebuild mods.txt so UE4SS actually loads the script mods. enabled.txt alone is not enough.
+if (Test-Path $ue4ssModsPath) {
+    $modDirs = Get-ChildItem -Path $ue4ssModsPath -Directory -ErrorAction SilentlyContinue | Sort-Object Name
+    $loadable = @()
+    foreach ($dir in $modDirs) {
+        $hasEnabled = Test-Path (Join-Path $dir.FullName 'enabled.txt')
+        $hasLua     = Test-Path (Join-Path $dir.FullName 'Scripts\main.lua')
+        $hasDll     = Test-Path (Join-Path $dir.FullName 'dlls\main.dll')
+        if ($hasEnabled -and ($hasLua -or $hasDll)) {
+            $loadable += $dir.Name
+        }
+    }
+
+    $modsTxtPath = Join-Path $ue4ssModsPath 'mods.txt'
+    $builtinTail = @('CheatManagerEnablerMod', 'ConsoleCommandsMod', 'ConsoleEnablerMod', 'SplitScreenMod', 'LineTraceMod', 'BPModLoaderMod', 'BPML_GenericFunctions', 'Keybinds')
+    $lines = @()
+    foreach ($name in $loadable) { $lines += "$name : 1" }
+    foreach ($builtin in $builtinTail) {
+        if (-not ($loadable -contains $builtin)) { $lines += "$builtin : 0" }
+    }
+    $lines += ''
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText($modsTxtPath, ($lines -join "`r`n"), $utf8NoBom)
+    Write-Output "Wrote mods.txt with $($loadable.Count) enabled mods: $($loadable -join ', ')"
+}
+
 $installedModPaks = @($installedPakFiles | ForEach-Object { [IO.Path]::GetFileName($_) })
 
 $state = [pscustomobject]@{
