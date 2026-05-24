@@ -13,6 +13,14 @@ on:
         description: 'Kanban board name (optional)'
         required: false
         default: 'Return Rover Board'
+      sprint_start:
+        description: 'Sprint start date (YYYY-MM-DD, optional)'
+        required: false
+        default: ''
+      sprint_end:
+        description: 'Sprint end date (YYYY-MM-DD, optional)'
+        required: false
+        default: ''
 
 jobs:
   sync-board:
@@ -34,6 +42,7 @@ jobs:
 
       - name: Sync Issues to Kanban Board
         run: node scripts/sync-kanban.js
+        working-directory: automations
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -42,9 +51,11 @@ jobs:
       - name: Send Discord Notification
         run: node scripts/send-discord-notification.js
         if: always()
+        working-directory: automations
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_EVENT: ${{ toJson(github.event) }}
 
   sprint-report:
     runs-on: ubuntu-latest
@@ -66,6 +77,7 @@ jobs:
 
       - name: Generate Sprint Report
         run: node scripts/generate-sprint-report.js
+        working-directory: automations
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -76,5 +88,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sprint-report
-          path: reports/
+          path: automations/reports/
           retention-days: 30
