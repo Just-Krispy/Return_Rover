@@ -50,7 +50,7 @@ jobs:
 
       - name: Send Discord Notification
         run: node scripts/send-discord-notification.js
-        if: always() && secrets.DISCORD_WEBHOOK_URL != ''
+        if: always()
         working-directory: automations
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
