@@ -1,8 +1,27 @@
 {
+  "name": "return-rover-automation",
+  "version": "1.0.0",
+  "description": "Kanban board automation for Return Rover",
+  "main": "scripts/sync-kanban.js",
   "scripts": {
-    "cy:run": "cypress run --headless"
+    "sync": "node scripts/sync-kanban.js",
+    "notify": "node scripts/send-discord-notification.js",
+    "sprint": "node scripts/generate-sprint-report.js",
+    "test": "node scripts/test.js"
   },
-  "devDependencies": {
-    "cypress": "^13.6.1"
+  "keywords": [
+    "kanban",
+    "github",
+    "automation",
+    "discord"
+  ],
+  "author": "Just-Krispy",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.0.0",
+    "discord.js": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
