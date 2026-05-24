@@ -154,8 +154,8 @@ async function main() {
     
     // Save to file
     const fs = require('fs');
-    const outputPath = 'automations/reports/kanban-board.json';
-    fs.mkdirSync('automations/reports', { recursive: true });
+    const outputPath = 'reports/kanban-board.json';
+    fs.mkdirSync('reports', { recursive: true });
     fs.writeFileSync(outputPath, JSON.stringify(board, null, 2));
     console.log(`Saved board to ${outputPath}`);
     

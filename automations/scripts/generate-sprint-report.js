@@ -204,7 +204,7 @@ async function main() {
     
     // Save to file
     const fs = require('fs');
-    const reportsDir = 'automations/reports';
+    const reportsDir = 'reports';
     fs.mkdirSync(reportsDir, { recursive: true });
     
     const reportFilename = `sprint-report-${SPRINT_START.getTime()}-${SPRINT_END.getTime()}.json`;
