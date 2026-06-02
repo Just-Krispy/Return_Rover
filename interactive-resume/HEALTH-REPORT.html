@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Resume — Health Report</title>
+<style>
+  :root { --bg: #0b0f1a; --card: #111827; --border: #1e293b; --text: #e2e8f0; --dim: #94a3b8; --green: #22c55e; --red: #ef4444; --amber: #f59e0b; --blue: #3b82f6; --purple: #a855f7; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; padding: 2rem; }
+  h1 { font-size: 2rem; margin-bottom: .25rem; }
+  h2 { font-size: 1.3rem; color: var(--blue); margin: 2rem 0 .75rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; }
+  h3 { font-size: 1.05rem; margin: 1rem 0 .5rem; }
+  .subtitle { color: var(--dim); margin-bottom: 2rem; }
+  .score-bar { display: flex; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem 1.75rem; min-width: 140px; }
+  .score-card .num { font-size: 2rem; font-weight: 700; }
+  .score-card .lbl { font-size: .85rem; color: var(--dim); }
+  .pass { color: var(--green); } .fail { color: var(--red); } .warn { color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+  th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--dim); font-size: .8rem; text-transform: uppercase; }
+  .badge { display: inline-block; padding: .15rem .5rem; border-radius: 4px; font-size: .75rem; font-weight: 600; }
+  .badge-pass { background: rgba(34,197,94,.15); color: var(--green); }
+  .badge-fail { background: rgba(239,68,68,.15); color: var(--red); }
+  .badge-warn { background: rgba(245,158,11,.15); color: var(--amber); }
+  .badge-info { background: rgba(59,130,246,.15); color: var(--blue); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-title { font-weight: 600; margin-bottom: .5rem; }
+  .card-title .badge { margin-left: .5rem; vertical-align: middle; }
+  .card p { color: var(--dim); font-size: .9rem; }
+  .card code { background: #1e293b; padding: .15rem .4rem; border-radius: 4px; font-size: .85rem; }
+  .upgrade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+  .priority-high { border-left: 3px solid var(--red); }
+  .priority-med { border-left: 3px solid var(--amber); }
+  .priority-low { border-left: 3px solid var(--blue); }
+  .timestamp { color: var(--dim); font-size: .85rem; }
+  .section { margin-bottom: 2rem; }
+</style>
+</head>
+<body>
+
+<h1>Interactive Resume — Health Report</h1>
+<p class="subtitle">Ryan C. Bradford · interactive-resume-tan.vercel.app · <span class="timestamp">Generated 2025-07-14</span></p>
+
+<div class="score-bar">
+  <div class="score-card"><div class="num pass">140</div><div class="lbl">Tests Passed</div></div>
+  <div class="score-card"><div class="num fail">0</div><div class="lbl">Tests Failed</div></div>
+  <div class="score-card"><div class="num warn">1</div><div class="lbl">Bugs Fixed</div></div>
+  <div class="score-card"><div class="num" style="color:var(--amber)">3</div><div class="lbl">Gaps Found</div></div>
+  <div class="score-card"><div class="num" style="color:var(--purple)">7</div><div class="lbl">Upgrade Ideas</div></div>
+</div>
+
+<!-- ─── Test Results ─── -->
+<div class="section">
+<h2>Test Results Summary</h2>
+
+<h3>Playwright E2E (48 tests)</h3>
+<table>
+  <tr><th>Category</th><th>Tests</th><th>Status</th></tr>
+  <tr><td>Page Load & Structure</td><td>3</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Navigation</td><td>4</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Content Sections</td><td>6</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Project Content</td><td>5</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Experience Content</td><td>4</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Archer Conversation</td><td>7</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Contact Links</td><td>4</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>PDF Download</td><td>2</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Print Page</td><td>1</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>SEO & Meta</td><td>5</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Accessibility</td><td>3</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Visual / Layout</td><td>3</td><td><span class="badge badge-pass">PASS</span></td></tr>
+</table>
+
+<h3>Content Validation (92 tests)</h3>
+<table>
+  <tr><th>Category</th><th>Tests</th><th>Status</th></tr>
+  <tr><td>Contact Completeness</td><td>9</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Hero Stats</td><td>4</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Now Shipping</td><td>1</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Overview Cards</td><td>4</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Projects</td><td>16</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Experience</td><td>12</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Skill Groups</td><td>10</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Sample Prompts</td><td>1</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Archer Knowledge Coverage</td><td>14</td><td><span class="badge badge-pass">PASS</span></td></tr>
+  <tr><td>Archer Edge Cases</td><td>4</td><td><span class="badge badge-pass">PASS</span> (1 fixed)</td></tr>
+  <tr><td>Data Consistency</td><td>6</td><td><span class="badge badge-pass">PASS</span></td></tr>
+</table>
+</div>
+
+<!-- ─── Bug Fixed ─── -->
+<div class="section">
+<h2>Bug Fixed</h2>
+
+<div class="card priority-high">
+  <div class="card-title">Compensation regex misses "paid" <span class="badge badge-fail">FIXED</span></div>
+  <p><strong>File:</strong> <code>lib/archer-chat.ts</code> line 395</p>
+  <p><strong>Problem:</strong> Regex <code>/(salary|compensation|pay|rate)/</code> doesn't match "paid" — the question "How much does he get paid?" routed to QA experience instead of the compensation fallback.</p>
+  <p><strong>Fix:</strong> Changed to <code>/(salary|compensation|pay|paid|rate|wage|income)/</code> to also catch "paid", "wage", and "income" variants.</p>
+</div>
+</div>
+
+<!-- ─── Content Gaps ─── -->
+<div class="section">
+<h2>Content Gaps & Issues</h2>
+
+<div class="card priority-med">
+  <div class="card-title">Missing OG image <span class="badge badge-warn">GAP</span></div>
+  <p>The <code>layout.tsx</code> has <code>opengraph-image.tsx</code> which auto-generates an OG image, but there's no explicit <code>og:image</code> meta tag with a stable URL. Social link previews (LinkedIn, Slack, Discord) may show a blank or default image instead of a branded card. Consider adding a static <code>public/og-image.png</code> and referencing it in metadata, or verify the auto-generated route works at <code>/opengraph-image</code>.</p>
+</div>
+
+<div class="card priority-med">
+  <div class="card-title">Missing canonical URL <span class="badge badge-warn">GAP</span></div>
+  <p>No <code>&lt;link rel="canonical"&gt;</code> in the page. While <code>metadataBase</code> is set in layout.tsx, an explicit canonical helps SEO by consolidating signals (e.g., if someone links with query params). Add <code>alternates: { canonical: 'https://interactive-resume-tan.vercel.app' }</code> to the metadata export.</p>
+</div>
+
+<div class="card priority-low">
+  <div class="card-title">LinkedIn returns 999 from server-side <span class="badge badge-info">INFO</span></div>
+  <p>LinkedIn aggressively blocks automated requests (HTTP 999). This is expected and not a real issue for recruiters clicking the link in a browser. The E2E suite skips external link validation for LinkedIn/GitHub for this reason. GitHub returns 000 from this network (likely firewall), but works in browser. Both links are valid — this is a testing-only artifact.</p>
+</div>
+</div>
+
+<!-- ─── Upgrade Recommendations ─── -->
+<div class="section">
+<h2>Upgrade Recommendations</h2>
+
+<div class="upgrade-grid">
+
+<div class="card priority-high">
+  <div class="card-title">Dark/light mode toggle <span class="badge badge-warn">HIGH</span></div>
+  <p>Add a theme toggle. Many recruiters browse during the day and may prefer a light theme. Tailwind v3+ makes this trivial with <code>dark:</code> variants. Even just respecting <code>prefers-color-scheme</code> via CSS would improve the first impression for light-mode users.</p>
+</div>
+
+<div class="card priority-high">
+  <div class="card-title">Project links to live demos / repos <span class="badge badge-warn">HIGH</span></div>
+  <p>Each project card has hook + detail text but no link. Adding a "View on GitHub" or "Live demo" link per project would let recruiters immediately verify the work exists. WiFi Privacy Scanner and PawsitiveID both have public repos — link them.</p>
+</div>
+
+<div class="card priority-med">
+  <div class="card-title">Scroll-triggered animations <span class="badge badge-info">MED</span></div>
+  <p>The page is content-dense. Adding subtle fade-in or slide-up animations on scroll (via <code>IntersectionObserver</code> or a lib like Framer Motion) would make the experience feel more premium and help recruiters scan section-by-section instead of being hit with a wall of text.</p>
+</div>
+
+<div class="card priority-med">
+  <div class="card-title">Archer "How to use" tooltip <span class="badge badge-info">MED</span></div>
+  <p>The Archer FAB says "Talk to Archer" but doesn't explain what Archer is until the dialog opens. A small tooltip or subtitle on the FAB ("AI briefing about Ryan") would increase click-through from recruiters who don't recognize the name.</p>
+</div>
+
+<div class="card priority-med">
+  <div class="card-title">Print page should match PDF content 1:1 <span class="badge badge-info">MED</span></div>
+  <p>The <code>/print</code> route and the <code>Ryan_Bradford_Resume.pdf</code> are separate artifacts. If they drift, recruiters get conflicting info. Consider generating the PDF from the print route (via Puppeteer or a CI step) so they're always in sync. Add a test that compares print page sections against <code>resume-data.ts</code>.</p>
+</div>
+
+<div class="card priority-low">
+  <div class="card-title">Skill proficiency indicators <span class="badge badge-info">LOW</span></div>
+  <p>Skill chips are flat lists. Adding subtle proficiency tiers (e.g., "core" vs "familiar" via color intensity or a small dot) would help recruiters quickly see primary vs secondary skills without cluttering the layout.</p>
+</div>
+
+<div class="card priority-low">
+  <div class="card-title">Schema.org structured data <span class="badge badge-info">LOW</span></div>
+  <p>Add <code>Person</code> and <code>WebPage</code> JSON-LD structured data. This helps search engines show rich results (job title, location, employer) and is a quick SEO win. Tailor it to <code>resume-data.ts</code> fields.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ─── Test Harness Docs ─── -->
+<div class="section">
+<h2>Test Harness Reference</h2>
+
+<div class="card">
+  <div class="card-title">Files Created</div>
+  <table>
+    <tr><th>File</th><th>Purpose</th></tr>
+    <tr><td><code>playwright.config.ts</code></td><td>Playwright config (Chromium, HTML reporter, auto-retry on CI)</td></tr>
+    <tr><td><code>tests/resume-e2e.spec.ts</code></td><td>48 E2E tests: page load, nav, content, Archer, links, SEO, a11y</td></tr>
+    <tr><td><code>tests/content-validation.js</code></td><td>92 pure-Node content tests: data completeness, Archer knowledge, consistency</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">npm Scripts</div>
+  <table>
+    <tr><th>Command</th><th>What It Does</th></tr>
+    <tr><td><code>npm run test:content</code></td><td>Run 92 content validation checks (no browser needed, ~1s)</td></tr>
+    <tr><td><code>npm run test:e2e</code></td><td>Run 48 Playwright E2E tests against production URL</td></tr>
+    <tr><td><code>npm run test:e2e:local</code></td><td>Run E2E against localhost:3000 (for dev)</td></tr>
+    <tr><td><code>npm run test:all</code></td><td>Run content validation + E2E in sequence</td></tr>
+    <tr><td><code>npm run test:archer</code></td><td>Original Archer knowledge routing test (still works)</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">How to Extend</div>
+  <p><strong>Add a new project:</strong> Add it to <code>resume-data.ts</code> projects array. The content validation tests will automatically verify it has name, hook, detail, and tags. Add an Archer knowledge entry for it.</p>
+  <p><strong>Add a new section:</strong> Add it to <code>page.tsx</code> with an <code>id</code> attribute. Add a nav link. Add a Playwright test for the section count and content.</p>
+  <p><strong>Add a new Archer topic:</strong> Add a knowledge entry in <code>archer-chat.ts</code>. Add a routing test to both <code>content-validation.js</code> and <code>scripts/test-archer-chat.js</code>.</p>
+  <p><strong>Run before every deploy:</strong> <code>npm run test:all</code> catches content drift, broken nav, missing sections, and Archer routing regressions.</p>
+</div>
+</div>
+
+</body>
+</html>
