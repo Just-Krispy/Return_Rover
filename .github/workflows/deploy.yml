@@ -25,9 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: brain-dashboard/package-lock.json
+          node-version: '22'
 
       - name: Install brain-dashboard deps
         run: npm ci
@@ -37,17 +35,15 @@ jobs:
         run: npm run build
         working-directory: brain-dashboard
 
-      # Replace the source brain-dashboard/ with the built dist/ so the
-      # uploaded artifact includes the compiled assets while keeping
-      # everything else (root index.html, other projects, etc.) intact.
       - name: Assemble deploy artifact
         run: |
-          # Remove source brain-dashboard content (keep the dir)
-          find brain-dashboard -mindepth 1 -not -name 'dist' -delete
-          # Move built dist contents into brain-dashboard root
-          cp -r brain-dashboard/dist/* brain-dashboard/
-          # Remove the now-empty dist dir
-          rm -rf brain-dashboard/dist
+          # Create a staging directory with the repo structure
+          # but swap brain-dashboard source with the built dist
+          mkdir -p /tmp/deploy
+          # Copy everything except brain-dashboard contents
+          rsync -a --exclude='brain-dashboard' . /tmp/deploy/
+          # Copy the built dist as brain-dashboard
+          cp -r brain-dashboard/dist /tmp/deploy/brain-dashboard
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -55,7 +51,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: /tmp/deploy
 
       - name: Deploy to GitHub Pages
         id: deployment
