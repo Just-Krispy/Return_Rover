@@ -23,27 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Install deps & build
-        working-directory: brain-dashboard
-        run: |
-          npm ci
-          npm run build
-
-      - name: Replace brain-dashboard source with dist
-        run: |
-          # Move dist contents to a temp location
-          cp -r brain-dashboard/dist /tmp/brain-dashboard-dist
-          # Remove all brain-dashboard contents
-          rm -rf brain-dashboard/*
-          # Move dist files into brain-dashboard root
-          cp -r /tmp/brain-dashboard-dist/* brain-dashboard/
-          # Clean up
-          rm -rf /tmp/brain-dashboard-dist
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
