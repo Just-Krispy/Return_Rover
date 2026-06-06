@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -27,23 +27,22 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install brain-dashboard deps
-        run: npm ci
+      - name: Install deps & build
         working-directory: brain-dashboard
-
-      - name: Build brain-dashboard
-        run: npm run build
-        working-directory: brain-dashboard
-
-      - name: Assemble deploy artifact
         run: |
-          # Create a staging directory with the repo structure
-          # but swap brain-dashboard source with the built dist
-          mkdir -p /tmp/deploy
-          # Copy everything except brain-dashboard contents
-          rsync -a --exclude='brain-dashboard' . /tmp/deploy/
-          # Copy the built dist as brain-dashboard
-          cp -r brain-dashboard/dist /tmp/deploy/brain-dashboard
+          npm ci
+          npm run build
+
+      - name: Replace brain-dashboard source with dist
+        run: |
+          # Move dist contents to a temp location
+          cp -r brain-dashboard/dist /tmp/brain-dashboard-dist
+          # Remove all brain-dashboard contents
+          rm -rf brain-dashboard/*
+          # Move dist files into brain-dashboard root
+          cp -r /tmp/brain-dashboard-dist/* brain-dashboard/
+          # Clean up
+          rm -rf /tmp/brain-dashboard-dist
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -51,7 +50,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: /tmp/deploy
+          path: .
 
       - name: Deploy to GitHub Pages
         id: deployment
