@@ -1,0 +1,15 @@
+[Unit]
+Description=Brain Dashboard API Gateway
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/darkschneider/.openclaw/workspace/brain-gateway
+ExecStart=/usr/bin/python3 /home/darkschneider/.openclaw/workspace/brain-gateway/gateway.py
+Restart=always
+RestartSec=5
+Environment=PORT=9888
+Environment=VAULT_PATH=/home/darkschneider/The-Vault
+
+[Install]
+WantedBy=default.target

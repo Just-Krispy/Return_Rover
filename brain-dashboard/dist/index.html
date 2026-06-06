@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Second Brain - Mission Control</title>
+  <meta name="description" content="Mission Control for your second brain — 3D knowledge graph, vault health, RAG search, braindump capture, and automation workflows. Built with Three.js.">
+  <meta property="og:title" content="Second Brain Dashboard">
+  <meta property="og:description" content="Mission Control for your second brain — vault stats, knowledge graph, RAG search, and automation workflows.">
+  <meta property="og:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/preview.png">
+  <meta property="og:url" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Second Brain Dashboard">
+  <meta name="twitter:description" content="Mission Control for your second brain — 3D knowledge graph, vault health, and RAG search.">
+  <meta name="twitter:image" content="https://just-krispy.github.io/Return_Rover/brain-dashboard/preview.png">
+  <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+  <meta http-equiv="x-dns-prefetch-control" content="on">
+  <meta name="robots" content="index, follow">
+  <meta name="color-scheme" content="dark light">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="canonical" href="https://just-krispy.github.io/Return_Rover/brain-dashboard/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+
+  <!-- Vite CSS entry — single import, cascading order handled by main.css -->
+
+  <!-- Legacy CSS — will be consolidated into src/css/ during Step 2 -->
+
+  <!-- Legacy JS entry — uses js/src/ working codebase (not the src/js/ stubs) -->
+  <script type="module" crossorigin src="/Return_Rover/brain-dashboard/assets/main-CjPakggU.js"></script>
+  <link rel="stylesheet" crossorigin href="/Return_Rover/brain-dashboard/assets/main-Bf7pQuXs.css">
+</head>
+<body>
+
+<a href="#sec-graph" class="skip-to-content" style="position:absolute;top:-100px;left:0;background:var(--accent-indigo);color:#fff;padding:8px 16px;z-index:9999;font-size:14px;border-radius:0 0 8px 0;transition:top 0.2s" onfocus="this.style.top='0'" onblur="this.style.top='-100px'">Skip to content</a>
+<div class="dashboard">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-brand">
+        <i data-lucide="brain" class="brand-icon"></i>
+        <div>
+          <h1>Second Brain</h1>
+          <p class="header-subtitle">Mission Control</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-right" style="display:flex;align-items:center;gap:8px">
+      <button id="analyze-cassandra-btn" class="mode-badge demo" style="cursor:pointer;border:1px solid var(--border-accent);background:var(--bg-surface);padding:4px 12px;font-size:12px;transition:all 0.2s" title="Analyze selected node in Nash">
+        🧠 Nash It
+      </button>
+      <span id="healthScoreBadge" class="mode-badge demo" style="display:none;font-size:11px;padding:3px 10px" title="Vault health score">
+        <span class="dot" style="background:var(--accent-green)"></span>
+        <span id="healthScoreLabel">--</span>
+      </span>
+    </div>
+  </div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode" id="themeToggle" aria-label="Toggle dark/light mode" style="position:fixed;top:12px;right:12px;z-index:1000">&#9789;</button>
+
+  <!-- FLOATING SEARCH BAR -->
+  <div class="floating-search" id="floatingSearch">
+    <div class="floating-search-inner">
+      <div class="floating-search-wrap">
+        <i data-lucide="search" class="floating-search-icon" style="width:16px;height:16px"></i>
+        <input type="text" class="floating-search-input" id="floatingSearchInput" placeholder="Search your vault..." aria-label="Search vault" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE GRAPH 3D -->
+  <div class="card card--hero graph-hero-card" id="sec-graph" style="margin-bottom: 16px;">
+    <div class="card-title graph-card-title">
+      <span class="graph-title-glow">
+        <i data-lucide="network" class="icon"></i>
+        <span>Knowledge Graph</span>
+      </span>
+      <span id="graphStats" class="graph-stats-label" style="display:none"></span>
+      <button class="graph-expand-btn" onclick="openGraphFullscreen()" title="Expand to fullscreen">
+        <i data-lucide="maximize-2" style="width:14px;height:14px"></i>
+      </button>
+    </div>
+    <div id="graphContainer" class="graph-container">
+      <canvas id="sparkleCanvas" class="sparkle-canvas"></canvas>
+      <div id="graphTooltip" class="graph-tooltip"></div>
+      <div id="crtOverlay" class="crt-overlay">
+        <div class="crt-scanlines"></div>
+        <div class="crt-flicker"></div>
+        <div class="crt-vignette"></div>
+      </div>
+      <div id="graphReticle" class="graph-reticle">
+        <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" stroke-width="1" opacity="0.6">
+          <circle cx="30" cy="30" r="20" stroke-dasharray="4 4"/>
+          <line x1="30" y1="4" x2="30" y2="16"/>
+          <line x1="30" y1="44" x2="30" y2="56"/>
+          <line x1="4" y1="30" x2="16" y2="30"/>
+          <line x1="44" y1="30" x2="56" y2="30"/>
+          <circle cx="30" cy="30" r="3"/>
+        </svg>
+      </div>
+      <div id="graphHud" class="graph-hud">
+        <div class="hud-line">NODES: <span class="hud-val" id="hudNodes">--</span></div>
+        <div class="hud-line">LINKS: <span class="hud-val" id="hudLinks">--</span></div>
+        <div class="hud-line">CLUSTERS: <span class="hud-val" id="hudClusters">--</span></div>
+        <div class="hud-line">MODE: <span class="hud-val" id="hudMode">PLAYFUL</span></div>
+      </div>
+      <div class="graph-search" id="graphSearch">
+        <input type="text" class="graph-search-input" id="graphSearchInput" placeholder="Find node..." autocomplete="off" aria-label="Search graph nodes">
+        <div class="graph-search-results" id="graphSearchResults"></div>
+      </div>
+      <div class="autopilot-indicator" id="autopilotIndicator">&#9654; AUTOPILOT <span id="autopilotNodeName" style="font-weight:600"></span></div>
+      <div class="graph-intel-panel" id="graphIntelPanel"></div>
+      <div class="graph-controls">
+        <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
+        <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
+        <button class="graph-btn" onclick="graphShakeAll()" title="Shake it up!" style="font-size:16px">🎉</button>
+        <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot scenic tour" aria-label="Toggle autopilot" id="autopilotBtn">&#9992;</button>
+        <button class="graph-btn" onclick="toggleGraphIntel()" title="Graph intelligence" aria-label="Graph analytics" id="intelBtn">&#128202;</button>
+        <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot graph" aria-label="Screenshot">&#128247;</button>
+      </div>
+    </div>
+    <div class="graph-legend" id="graphLegend">
+      <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#818cf8"></span> Resources</span>
+      <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#22d3ee"></span> Areas</span>
+      <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#fbbf24"></span> Projects</span>
+      <span class="graph-legend-item"><span class="graph-legend-dot" style="background:#f87171"></span> Inbox</span>
+      <span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click to expand &middot; drag to orbit &middot; scroll to zoom</span>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN GRAPH MODAL -->
+  <div id="graphFullscreenModal" class="graph-fullscreen-modal" role="dialog" aria-label="Fullscreen Knowledge Graph" style="display:none">
+    <div class="graph-fullscreen-header">
+      <div class="graph-fullscreen-title">
+        <i data-lucide="network" style="width:20px;height:20px"></i>
+        Knowledge Graph
+        <span id="graphFullscreenStats" class="graph-stats-label"></span>
+      </div>
+      <div class="graph-fullscreen-controls" style="display:flex;align-items:center;gap:6px">
+        <button class="graph-btn" onclick="graphToggleRotate()" title="Toggle auto-rotate" aria-label="Toggle auto-rotate">&#10227;</button>
+        <button class="graph-btn" onclick="graphReset()" title="Reset camera" aria-label="Reset camera">&#8634;</button>
+        <button class="graph-btn" onclick="toggleAutopilot()" title="Autopilot" aria-label="Autopilot">&#9992;</button>
+        <button class="graph-btn" onclick="toggleGraphIntel()" title="Intelligence" aria-label="Analytics">&#128202;</button>
+        <button class="graph-btn" onclick="screenshotGraph()" title="Screenshot" aria-label="Screenshot">&#128247;</button>
+        <button class="graph-btn graph-close-btn" onclick="closeGraphFullscreen()" title="Exit fullscreen (ESC)">&#10005;</button>
+      </div>
+    </div>
+    <div id="graphFullscreenContainer" class="graph-fullscreen-container"></div>
+    <div class="graph-fullscreen-legend" id="graphFullscreenLegend"></div>
+    <div id="graphFullscreenTooltip" class="graph-tooltip"></div>
+  </div>
+
+  <!-- QUICK STATS -->
+  <div class="stats-row" id="sec-stats">
+    <div class="card stat-card stat-card--indigo">
+      <div class="stat-card__header">
+        <i data-lucide="file-text" class="stat-card__icon"></i>
+        <span class="stat-label">Total Notes</span>
+      </div>
+      <div class="stat-value" id="statNotes">--</div>
+      <div class="stat-sub" id="statNotesSub"></div>
+      <div class="sparkline-container">
+        <canvas id="sparklineCanvas"></canvas>
+        <div class="sparkline-label">7-day vault growth</div>
+      </div>
+    </div>
+    <div class="card stat-card stat-card--cyan">
+      <div class="stat-card__header">
+        <i data-lucide="search" class="stat-card__icon"></i>
+        <span class="stat-label">Chunks Indexed</span>
+      </div>
+      <div class="stat-value" id="statChunks">--</div>
+      <div class="stat-sub">RAG search index</div>
+      <button class="btn-reindex" id="reindexBtn" onclick="triggerReindex()" title="Rebuild the RAG search index"><i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex</button>
+    </div>
+    <div class="card stat-card stat-card--amber">
+      <div class="stat-card__header">
+        <i data-lucide="message-circle" class="stat-card__icon"></i>
+        <span class="stat-label">Questions Answered</span>
+      </div>
+      <div class="stat-value" id="statQuestions">--</div>
+      <div class="stat-sub">Vault conversations</div>
+    </div>
+    <div class="card stat-card stat-card--green">
+      <div class="stat-card__header">
+        <i data-lucide="inbox" class="stat-card__icon"></i>
+        <span class="stat-label">Ingested Today</span>
+      </div>
+      <div class="stat-value" id="statToday">--</div>
+      <div class="stat-sub">New notes processed</div>
+    </div>
+  </div>
+
+  <!-- ROW: VAULT STRUCTURE + ACTIVITY -->
+  <div class="grid-2" id="sec-vault">
+    <div class="card card--primary">
+      <div class="card-title"><i data-lucide="folder-tree" class="icon"></i> Vault Structure (PARA)</div>
+      <div class="vault-bars" id="vaultBars"></div>
+      <div class="vault-detail-panel" id="vaultDetail">
+        <h4 id="vaultDetailTitle">--</h4>
+        <ul id="vaultDetailList"></ul>
+      </div>
+    </div>
+    <div class="card card--primary">
+      <div class="card-title"><i data-lucide="activity" class="icon"></i> Recent Activity</div>
+      <div class="activity-list" id="activityFeed"></div>
+    </div>
+  </div>
+
+  <!-- RAG SEARCH -->
+  <div class="card card--primary full-width" id="sec-search">
+    <div class="card-title"><i data-lucide="search" class="icon"></i> Vault Search</div>
+    <div class="search-form">
+      <input type="text" class="ask-input" id="searchInput" placeholder="Search your vault..." aria-label="Search vault" onkeydown="if(event.key==='Enter')searchVault()">
+      <button class="btn-primary" id="searchBtn" onclick="searchVault()" style="background:var(--accent-cyan);"><i data-lucide="search" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Search</button>
+    </div>
+    <div id="recentSearches" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+    <div id="searchResults" class="search-results" aria-live="polite">
+      <div class="search-empty">Search across your vault notes using semantic RAG search.</div>
+    </div>
+  </div>
+
+  <!-- RESEARCH PIPELINE -->
+  <div class="card card--secondary full-width" id="sec-research">
+    <div class="card-title"><i data-lucide="flask-conical" class="icon"></i> <span id="researchPipelineName"></span></div>
+    <div class="research-stats" id="researchStats">
+      <div class="research-stat"><div class="rs-val" id="rsNotes">--</div><div class="rs-label">Research Notes</div></div>
+      <div class="research-stat"><div class="rs-val" id="rsJobs">--</div><div class="rs-label">NotebookLM Jobs</div></div>
+      <div class="research-stat"><div class="rs-val" id="rsCoverage">--</div><div class="rs-label">Verticals Covered</div></div>
+      <div class="research-stat"><div class="rs-val" id="rsDigests">--</div><div class="rs-label">Digests</div></div>
+    </div>
+    <div class="research-grid">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Vertical Coverage</div>
+        <div class="vertical-list" id="verticalList">
+          <div style="color:var(--text-tertiary);font-size:12px;padding:8px">Awaiting data...</div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Research Gaps</div>
+        <div id="researchGaps" class="research-gaps">
+          <strong>Analyzing coverage...</strong>
+        </div>
+        <div style="margin-top:12px;font-size:12px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px">Latest Digest</div>
+        <div id="researchDigestInfo" style="font-size:13px;color:var(--text-secondary);padding:8px 12px;background:var(--bg-inset);border-radius:var(--radius-sm);border:1px solid var(--border-subtle)">
+          No digests yet
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW: ASK THE VAULT + QUICK CAPTURE -->
+  <div class="grid-2" id="sec-ask">
+    <div class="card card--hero">
+      <div class="card-title"><i data-lucide="message-square" class="icon"></i> Ask the Vault</div>
+      <div class="chat-session-bar">
+        <div class="chat-session-info">
+          <span class="chat-turn-indicator">
+            <i data-lucide="message-circle" style="width:12px;height:12px"></i>
+            Turn <span class="turn-count" id="chatTurnCount">0</span>
+          </span>
+        </div>
+        <button class="btn-new-chat" onclick="resetChatSession()" title="Start a fresh conversation">New Chat</button>
+      </div>
+      <div class="ask-form">
+        <input type="text" class="ask-input" id="askInput" placeholder="Ask your second brain anything..." aria-label="Ask the vault" onkeydown="if(event.key==='Enter')askVault()">
+        <button class="btn-primary" id="askBtn" onclick="askVault()">Ask</button>
+      </div>
+      <div class="chat-history" id="chatHistory"></div>
+      <div class="ask-result" id="askResult" aria-live="polite" aria-atomic="true">
+        <div class="demo-notice" id="askPlaceholder">
+          Type a question to search your vault using conversational RAG.
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--primary">
+      <div class="card-title"><i data-lucide="bookmark-plus" class="icon"></i> Quick Capture</div>
+      <div class="capture-form">
+        <input type="url" class="capture-input" id="captureUrl" placeholder="URL to capture...">
+        <div class="capture-row">
+          <input type="text" class="capture-input" id="captureTitle" placeholder="Title (optional)">
+          <input type="text" class="capture-input" id="captureTags" placeholder="Tags (comma-separated)">
+        </div>
+        <div class="capture-row">
+          <button class="btn-capture" id="captureBtn" onclick="captureBookmark()">Capture</button>
+        </div>
+        <div class="capture-feedback" id="captureFeedback"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRAINDUMP -->
+  <div class="card card--primary full-width" id="sec-braindump">
+    <div class="card-title"><i data-lucide="zap" class="icon"></i> Braindump</div>
+    <div class="braindump-row braindump-row--mb">
+      <input type="text" class="ask-input braindump-title" id="braindumpTitle" placeholder="Title (auto-generated if blank)" aria-label="Braindump title">
+      <input type="text" class="ask-input braindump-tags" id="braindumpTags" placeholder="Tags (comma-sep)" aria-label="Braindump tags">
+    </div>
+    <div class="braindump-row">
+      <textarea class="ask-input braindump-textarea" id="braindumpContent" placeholder="Dump your thought here... it'll land in the vault Inbox." aria-label="Braindump content"></textarea>
+    </div>
+    <div class="braindump-row braindump-row--mt">
+      <button class="btn-primary" id="braindumpBtn" onclick="submitBraindump()" aria-label="Submit braindump" style="background:var(--accent-green)">
+        <i data-lucide="zap" style="width:14px;height:14px;margin-right:4px;vertical-align:-2px"></i>Dump to Vault
+      </button>
+      <span class="capture-feedback" id="braindumpFeedback"></span>
+    </div>
+  </div>
+
+  <!-- CHAT HISTORY -->
+  <div class="card card--secondary full-width">
+    <div class="card-title"><i data-lucide="history" class="icon"></i> Chat History</div>
+    <div class="chat-history-list" id="chatHistoryList">
+      <div style="color:var(--text-tertiary);font-size:13px;padding:12px;text-align:center">
+        Ask questions above to build your history.
+      </div>
+    </div>
+  </div>
+
+  <!-- TAG EXPLORER + VAULT QUALITY -->
+  <div class="grid-2" id="sec-tags">
+    <div class="card card--secondary">
+      <div class="card-title"><i data-lucide="tags" class="icon"></i> Tag Explorer</div>
+      <div class="tag-stats-row" id="tagStats">
+        <div class="tag-stat-card"><div class="tag-stat-val" id="tagUnique">--</div><div class="tag-stat-label">Unique Tags</div></div>
+        <div class="tag-stat-card"><div class="tag-stat-val" id="tagWithTags">--</div><div class="tag-stat-label">Notes w/ Tags</div></div>
+        <div class="tag-stat-card"><div class="tag-stat-val" id="tagNormNeeded">--</div><div class="tag-stat-label">Need Normalization</div></div>
+        <div class="tag-stat-card"><div class="tag-stat-val" id="tagAliasGroups">--</div><div class="tag-stat-label">Alias Groups</div></div>
+      </div>
+      <div class="tag-cloud" id="tagCloud">
+        <span style="color:var(--text-tertiary);font-size:12px">Awaiting tag data...</span>
+      </div>
+    </div>
+    <div class="card card--secondary">
+      <div class="card-title"><i data-lucide="shield-check" class="icon"></i> Vault Quality</div>
+      <div class="tag-stats-row" id="qualityStats">
+        <div class="tag-stat-card"><div class="tag-stat-val" id="qualityAvg">--</div><div class="tag-stat-label">Avg Score</div></div>
+        <div class="tag-stat-card"><div class="tag-stat-val" id="qualityA">--</div><div class="tag-stat-label">A Tier (80+)</div></div>
+        <div class="tag-stat-card"><div class="tag-stat-val" id="qualityBC">--</div><div class="tag-stat-label">B-C Tier</div></div>
+        <div class="tag-stat-card"><div class="tag-stat-val" id="qualityDF">--</div><div class="tag-stat-label">D-F Tier</div></div>
+      </div>
+      <div class="quality-bar" id="qualityBar"></div>
+      <div id="qualityBottomList" style="margin-top:12px;font-size:12px;color:var(--text-secondary)"></div>
+    </div>
+  </div>
+
+  <!-- ROW: SYSTEM HEALTH + AUTOMATION -->
+  <div class="grid-2" id="sec-system">
+    <div class="card card--secondary">
+      <div class="card-title"><i data-lucide="heart-pulse" class="icon"></i> System Health</div>
+      <div class="health-pills" id="healthGrid"></div>
+      <div class="health-gauges" id="healthGauges">
+        <div class="health-gauge">
+          <div class="health-gauge__label">Disk</div>
+          <div class="health-gauge__ring">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" class="gauge-bg"/>
+              <circle cx="28" cy="28" r="22" class="gauge-fill" id="gaugeDisk" stroke="var(--accent-green)" stroke-dasharray="138.2" stroke-dashoffset="138.2"/>
+            </svg>
+            <span class="health-gauge__value" id="gaugeDiskVal">--</span>
+          </div>
+        </div>
+        <div class="health-gauge">
+          <div class="health-gauge__label">Memory</div>
+          <div class="health-gauge__ring">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" class="gauge-bg"/>
+              <circle cx="28" cy="28" r="22" class="gauge-fill" id="gaugeMemory" stroke="var(--accent-cyan)" stroke-dasharray="138.2" stroke-dashoffset="138.2"/>
+            </svg>
+            <span class="health-gauge__value" id="gaugeMemoryVal">--</span>
+          </div>
+        </div>
+        <div class="health-gauge">
+          <div class="health-gauge__label">Load</div>
+          <div class="health-gauge__ring">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="22" class="gauge-bg"/>
+              <circle cx="28" cy="28" r="22" class="gauge-fill" id="gaugeLoad" stroke="var(--accent-amber)" stroke-dasharray="138.2" stroke-dashoffset="138.2"/>
+            </svg>
+            <span class="health-gauge__value" id="gaugeLoadVal">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card--secondary">
+      <div class="card-title"><i data-lucide="workflow" class="icon"></i> Automation Workflows (n8n) <span id="workflowCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
+      <div class="workflow-list" id="workflowList"></div>
+    </div>
+  </div>
+
+  <!-- KNOWLEDGE TAGS -->
+  <div class="card" style="margin-top:0">
+    <div class="card-title"><i data-lucide="tags" class="icon"></i> Knowledge Tags <span id="tagCloudCount" style="font-size:11px;color:var(--text-tertiary);font-weight:400;margin-left:6px"></span></div>
+    <div id="tagCloudContainer" style="display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;min-height:40px;padding:4px 0"></div>
+  </div>
+
+</div>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<!-- SCROLL TO TOP -->
+<button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Scroll to top">
+  <i data-lucide="chevron-up" style="width:20px;height:20px"></i>
+</button>
+
+<!-- SECTION NAV DOTS -->
+<nav class="section-nav" id="sectionNav" aria-label="Page sections">
+  <button class="section-nav-dot active" data-label="Graph" data-target="sec-graph" onclick="scrollToSection('sec-graph')" aria-label="Jump to Graph"></button>
+  <button class="section-nav-dot" data-label="Stats" data-target="sec-stats" onclick="scrollToSection('sec-stats')" aria-label="Jump to Stats"></button>
+  <button class="section-nav-dot" data-label="Vault" data-target="sec-vault" onclick="scrollToSection('sec-vault')" aria-label="Jump to Vault"></button>
+  <button class="section-nav-dot" data-label="Search" data-target="sec-search" onclick="scrollToSection('sec-search')" aria-label="Jump to Search"></button>
+  <button class="section-nav-dot" data-label="Ask" data-target="sec-ask" onclick="scrollToSection('sec-ask')" aria-label="Jump to Ask"></button>
+  <button class="section-nav-dot" data-label="Braindump" data-target="sec-braindump" onclick="scrollToSection('sec-braindump')" aria-label="Jump to Braindump"></button>
+  <button class="section-nav-dot" data-label="Tags" data-target="sec-tags" onclick="scrollToSection('sec-tags')" aria-label="Jump to Tags"></button>
+  <button class="section-nav-dot" data-label="System" data-target="sec-system" onclick="scrollToSection('sec-system')" aria-label="Jump to System"></button>
+</nav>
+
+<!-- KEYBOARD SHORTCUTS OVERLAY -->
+<div class="kb-overlay" id="kbOverlay" onclick="if(event.target===this)closeKbOverlay()">
+  <div class="kb-panel">
+    <h3><i data-lucide="keyboard" style="width:18px;height:18px"></i> Keyboard Shortcuts</h3>
+    <div class="kb-row"><span class="kb-action">Show this panel</span><kbd>?</kbd></div>
+    <div class="kb-row"><span class="kb-action">Focus vault search</span><kbd>/</kbd></div>
+    <div class="kb-row"><span class="kb-action">Focus ask the vault</span><kbd>A</kbd></div>
+    <div class="kb-row"><span class="kb-action">Refresh dashboard</span><kbd>R</kbd></div>
+    <div class="kb-row"><span class="kb-action">Toggle dark/light mode</span><kbd>T</kbd></div>
+    <div class="kb-row"><span class="kb-action">Reset graph camera</span><kbd>G</kbd></div>
+    <div class="kb-row"><span class="kb-action">Focus braindump</span><kbd>B</kbd></div>
+    <div class="kb-row"><span class="kb-action">New chat session</span><kbd>N</kbd></div>
+    <div class="kb-row"><span class="kb-action">Toggle autopilot tour</span><kbd>P</kbd></div>
+    <div class="kb-row"><span class="kb-action">Graph intelligence</span><kbd>I</kbd></div>
+    <div class="kb-row"><span class="kb-action">Close overlay</span><kbd>Esc</kbd></div>
+  </div>
+</div>
+
+<!-- NOTE PREVIEW PANEL -->
+<div class="note-preview-overlay" id="notePreviewOverlay" onclick="closeNotePreview()"></div>
+<div class="note-preview-panel" id="notePreviewPanel" role="dialog" aria-label="Note preview">
+  <div class="note-preview-header">
+    <span class="note-preview-title" id="notePreviewTitle">--</span>
+    <button style="font-size:12px;padding:4px 10px;background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:6px;color:var(--accent-cyan);cursor:pointer;margin-right:8px" onclick="const t=document.getElementById('notePreviewTitle').textContent;closeNotePreview();viewInGraph(t)" title="View in Graph">&#127760; Graph</button><button class="note-preview-close" onclick="closeNotePreview()" title="Close (Esc)">&times;</button>
+  </div>
+  <div class="note-preview-meta" id="notePreviewMeta"></div>
+  <div class="note-preview-body" id="notePreviewBody"></div>
+</div>
+
+<!-- RICH CONTEXT PANEL -->
+<div class="context-panel-overlay" id="contextPanelOverlay" onclick="if(event.target===this)closeContextPanel()">
+  <div class="context-panel" id="contextPanel">
+    <div class="context-panel-header">
+      <div class="context-panel-title">
+        <h2>
+          <span class="node-icon" id="contextIcon">🎯</span>
+          <span id="contextTitle">Node Details</span>
+        </h2>
+        <p class="context-panel-subtitle" id="contextSubtitle"></p>
+      </div>
+      <button class="context-panel-close" onclick="closeContextPanel()" aria-label="Close panel">
+        <i data-lucide="x" style="width:20px;height:20px"></i>
+      </button>
+    </div>
+    <div class="context-panel-content">
+      <div class="context-section" id="sectionOverview">
+        <div class="context-section-header" onclick="toggleSection('sectionOverview')">
+          <h3><i data-lucide="info" class="section-icon"></i> Overview</h3>
+          <i data-lucide="chevron-down" class="context-section-toggle"></i>
+        </div>
+        <div class="context-section-body">
+          <div class="overview-grid" id="overviewStats"></div>
+          <p class="overview-description" id="overviewDescription"></p>
+        </div>
+      </div>
+      <div class="context-section" id="sectionTimeline">
+        <div class="context-section-header" onclick="toggleSection('sectionTimeline')">
+          <h3><i data-lucide="calendar" class="section-icon"></i> Timeline</h3>
+          <i data-lucide="chevron-down" class="context-section-toggle"></i>
+        </div>
+        <div class="context-section-body">
+          <div class="timeline" id="timelineContent"></div>
+        </div>
+      </div>
+      <div class="context-section" id="sectionAnalysis">
+        <div class="context-section-header" onclick="toggleSection('sectionAnalysis')">
+          <h3><i data-lucide="brain" class="section-icon"></i> Analysis</h3>
+          <i data-lucide="chevron-down" class="context-section-toggle"></i>
+        </div>
+        <div class="context-section-body">
+          <div id="analysisContent"></div>
+          <button class="nash-button" onclick="analyzeWithNash()">
+            <i data-lucide="sparkles" style="width:16px;height:16px"></i>
+            Analyze with Nash
+          </button>
+        </div>
+      </div>
+      <div class="context-section" id="sectionMedia">
+        <div class="context-section-header" onclick="toggleSection('sectionMedia')">
+          <h3><i data-lucide="image" class="section-icon"></i> Media & Resources</h3>
+          <i data-lucide="chevron-down" class="context-section-toggle"></i>
+        </div>
+        <div class="context-section-body">
+          <div class="media-grid" id="mediaImages"></div>
+          <div class="media-links" id="mediaLinks" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="kb-overlay" id="settingsOverlay" onclick="if(event.target===this)toggleSettings()" role="dialog" aria-label="Settings">
+  <div class="kb-panel" style="max-width:420px">
+    <h3><i data-lucide="settings" style="width:18px;height:18px"></i> Dashboard Settings</h3>
+    <div style="margin:16px 0">
+      <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">API Gateway URL</label>
+      <input type="text" id="settingsGateway" class="ask-input" placeholder="https://your-vps:port" style="width:100%;margin-bottom:12px">
+      <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Auto-refresh interval (seconds)</label>
+      <input type="number" id="settingsRefresh" class="ask-input" min="10" max="600" style="width:100%;margin-bottom:12px">
+      <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px">Max recent searches</label>
+      <input type="number" id="settingsMaxSearches" class="ask-input" min="3" max="20" style="width:100%;margin-bottom:12px">
+    </div>
+    <div id="settingsFeedback" style="display:none;font-size:12px;color:var(--accent-green);margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" onclick="saveSettings()" style="flex:1">Save</button>
+      <button class="btn-primary" onclick="resetSettings()" style="flex:1;background:var(--bg-inset);color:var(--text-secondary)">Reset Defaults</button>
+    </div>
+  </div>
+</div>
+
+<!-- OFFLINE MODE TOAST (injected by api-layer.js) -->
+<div id="offlineToast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent-amber,#fbbf24);color:#000;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:10000;box-shadow:0 4px 20px rgba(0,0,0,0.3)"></div>
+
+</body>
+</html>

@@ -1,0 +1,4175 @@
+// =============================================
+//  CONFIGURATION
+// =============================================
+const DEFAULT_GATEWAY = '';
+let API_GATEWAY = (() => {
+    const stored = localStorage.getItem('brain-api-gateway') || DEFAULT_GATEWAY;
+    try { if (stored) new URL(stored); } catch { return DEFAULT_GATEWAY; }
+    return stored;
+})();
+const FETCH_TIMEOUT = 5000;
+let REFRESH_INTERVAL = 600000; // 10 minutes
+let MAX_RECENT_SEARCHES = parseInt(localStorage.getItem('brain-max-searches') || '8');
+
+let isLive = false;
+let refreshTimer = null;
+let lastRefreshTimestamp = Date.now();
+let lastUpdatedInterval = null;
+
+// Chat session support
+let chatSessionId = generateSessionId();
+let chatTurnCount = 0;
+
+function generateSessionId() {
+    const arr = new Uint8Array(12);
+    crypto.getRandomValues(arr);
+    return 'sess_' + Array.from(arr, b => b.toString(16).padStart(2, '0')).join('') + '_' + Date.now().toString(36);
+}
+
+function resetChatSession() {
+    chatSessionId = generateSessionId();
+    chatTurnCount = 0;
+    document.getElementById('chatTurnCount').textContent = '0';
+    document.getElementById('chatHistory').innerHTML = '';
+    document.getElementById('askResult').innerHTML = '<div class="demo-notice">New conversation started. Ask your second brain anything.</div>';
+    document.getElementById('askResult').style.display = '';
+    document.getElementById('askInput').value = '';
+    document.getElementById('askInput').focus();
+}
+
+// =============================================
+//  THEME TOGGLE
+// =============================================
+function getTheme() {
+    return localStorage.getItem('brain-theme') || 'dark';
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.innerHTML = theme === 'dark' ? '&#9789;' : '&#9728;';
+}
+
+function toggleTheme() {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('brain-theme', next);
+    applyTheme(next);
+    // Re-render graph with appropriate colors if scene exists
+    if (g3.scene) {
+        const lit = next === 'light';
+        const bg = lit ? 0xdde4ed : 0x07090f;
+        g3.scene.background = new THREE.Color(bg);
+        g3.scene.fog = new THREE.FogExp2(bg, lit ? 0.001 : 0.0014);
+        // Starfield: muted on light, brighter on dark
+        if (g3.scene.children) {
+            g3.scene.children.forEach(c => {
+                if (c.isPoints && c.material && c.geometry.attributes.position.count > 500) {
+                    c.material.color.set(lit ? 0x8899bb : 0x4466aa);
+                    c.material.opacity = lit ? 0.35 : 0.7;
+                }
+            });
+        }
+        // Labels: dark text on light bg, light text on dark bg
+        if (g3.labelSprites) {
+            g3.labelSprites.forEach(s => { s.material.color.set(lit ? '#1e293b' : '#e2e8f0'); });
+        }
+        // Ambient particles: darker on light bg
+        if (g3.ambientParticles) {
+            g3.ambientParticles.material.color.set(lit ? 0x667788 : 0xcccccc);
+            g3.ambientParticles.material.opacity = lit ? 0.3 : 0.2;
+        }
+        // Cluster halos: slightly more visible on light bg
+        if (g3.halos) {
+            g3.halos.forEach(h => { h.material.opacity = lit ? 0.08 : 0.045; });
+        }
+        // Node glow: reduce on light (additive blending washes out)
+        if (g3.nodeMeshes) {
+            g3.nodeMeshes.forEach(m => {
+                if (m.userData._glow) {
+                    m.userData._glow.material.opacity = lit ? 0.12 : 0.35;
+                }
+                // Boost emissive on light so nodes pop against pale bg
+                m.material.emissiveIntensity = lit ? 0.3 : 0.5;
+            });
+        }
+        // Edges: adjust opacity for all types on theme switch
+        if (g3.lineMeshes) {
+            g3.lineMeshes.forEach(l => {
+                const e = l.userData;
+                if (e.type === 'shared_tags') {
+                    l.material.opacity = lit ? 0.2 : (e._baseOpacity || 0.12);
+                    l.material.color.set(lit ? 0x6678aa : 0x2d3561);
+                } else {
+                    // wikilink, mention, semantic edges — boost opacity in light mode
+                    l.material.opacity = lit ? Math.min((e._baseOpacity || 0.3) * 1.5, 0.8) : (e._baseOpacity || 0.3);
+                }
+            });
+        }
+        // Flow particles: update color for theme
+        if (g3.scene) {
+            g3.scene.children.forEach(c => {
+                if (c.isPoints && c.material && c.geometry.attributes.position.count <= 500 && c.geometry.attributes.position.count > 1) {
+                    c.material.color.set(lit ? 0x4488cc : 0x00ff88);
+                }
+            });
+        }
+    }
+}
+
+// Apply saved theme immediately
+applyTheme(getTheme());
+
+// =============================================
+//  KEYBOARD SHORTCUTS OVERLAY
+// =============================================
+function openKbOverlay() {
+    document.getElementById('kbOverlay').classList.add('open');
+    lucide.createIcons();
+}
+function closeKbOverlay() {
+    document.getElementById('kbOverlay').classList.remove('open');
+}
+
+// =============================================
+//  SETTINGS PANEL
+// =============================================
+function toggleSettings() {
+    const overlay = document.getElementById('settingsOverlay');
+    if (overlay.classList.contains('open')) {
+        overlay.classList.remove('open');
+    } else {
+        document.getElementById('settingsGateway').value = API_GATEWAY;
+        document.getElementById('settingsRefresh').value = REFRESH_INTERVAL / 1000;
+        document.getElementById('settingsMaxSearches').value = MAX_RECENT_SEARCHES;
+        overlay.classList.add('open');
+        lucide.createIcons();
+    }
+}
+
+function saveSettings() {
+    const gateway = document.getElementById('settingsGateway').value.trim().replace(/\/+$/, '');
+    const refresh = parseInt(document.getElementById('settingsRefresh').value) || 60;
+    const maxSearches = parseInt(document.getElementById('settingsMaxSearches').value) || 8;
+
+    if (gateway) {
+        API_GATEWAY = gateway;
+        localStorage.setItem('brain-api-gateway', gateway);
+    }
+    REFRESH_INTERVAL = Math.max(10, Math.min(600, refresh)) * 1000;
+    localStorage.setItem('brain-refresh-interval', String(REFRESH_INTERVAL / 1000));
+    MAX_RECENT_SEARCHES = Math.max(3, Math.min(20, maxSearches));
+    localStorage.setItem('brain-max-searches', String(MAX_RECENT_SEARCHES));
+
+    startAutoRefresh();
+    const fb = document.getElementById('settingsFeedback');
+    fb.textContent = 'Settings saved. Refreshing...';
+    fb.style.display = '';
+    setTimeout(() => { fb.style.display = 'none'; toggleSettings(); refreshAll(); }, 800);
+}
+
+function resetSettings() {
+    localStorage.removeItem('brain-api-gateway');
+    localStorage.removeItem('brain-refresh-interval');
+    localStorage.removeItem('brain-max-searches');
+    API_GATEWAY = DEFAULT_GATEWAY;
+    REFRESH_INTERVAL = 60000;
+    MAX_RECENT_SEARCHES = 8;
+    document.getElementById('settingsGateway').value = DEFAULT_GATEWAY;
+    document.getElementById('settingsRefresh').value = '60';
+    document.getElementById('settingsMaxSearches').value = '8';
+    const fb = document.getElementById('settingsFeedback');
+    fb.textContent = 'Reset to defaults.';
+    fb.style.display = '';
+    setTimeout(() => fb.style.display = 'none', 1500);
+}
+
+// =============================================
+//  LOADING SKELETONS
+// =============================================
+function showSkeletons() {
+    ['statNotes','statChunks','statQuestions','statToday'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.textContent === '--') el.innerHTML = '<span class="skeleton skeleton-stat"></span>';
+    });
+}
+
+// Demo sparkline data (7 data points representing last 7 days of vault note counts)
+const DEMO_SPARKLINE = [31, 35, 38, 41, 43, 46, 49];
+
+// =============================================
+//  DEMO DATA
+// =============================================
+const DEMO = {
+    health: {
+        status: 'ok',
+        uptime: '14d 7h 32m',
+        services: ['vault-search', 'vault-chat', 'bookmark-capture', 'auto-ingest', 'vault-organize']
+    },
+    vaultStructure: {
+        Inbox:     { count: 3,  notes: ['Quick note - AI agents comparison.md', 'Bookmark - Latent Space podcast.md', 'Clipping - Transformer architecture.md'] },
+        Projects:  { count: 0,  notes: [] },
+        Areas:     { count: 3,  notes: ['Personal Knowledge Management.md', 'Health & Fitness Tracker.md', 'Career Development 2026.md'] },
+        Resources: { count: 43, notes: ['RAG Architecture Patterns.md', 'LangChain vs LlamaIndex.md', 'Vector Database Comparison.md', 'Obsidian Plugin Development.md', 'n8n Workflow Recipes.md', 'Claude API Best Practices.md', 'Self-Hosting Guide.md', 'Tailscale VPN Setup.md', 'Zettelkasten Method.md', 'Building a Second Brain (BASB).md', 'Progressive Summarization.md', 'Spaced Repetition Systems.md', 'NotebookLM Integration.md', 'Whisper Transcription Pipeline.md', 'YouTube to Notes Pipeline.md'] },
+    },
+    ragStats: {
+        total_chunks: 273,
+        total_notes: 49,
+        embedding_model: 'all-MiniLM-L6-v2',
+        last_indexed: '2026-06-07T08:12:44Z'
+    },
+    chatStats: {
+        total_questions: 15,
+        avg_response_time: '2.3s',
+        top_topics: ['RAG', 'PKM', 'n8n workflows'],
+        last_question: '2026-06-07T07:45:00Z'
+    },
+    chatHistory: [
+        { q: 'What are the best RAG chunking strategies?', a: 'Based on your notes, the most effective strategies are: (1) semantic chunking using sentence boundaries, (2) recursive splitting with 512-token windows and 50-token overlap, and (3) parent-child document splitting for preserving context.', sources: ['RAG Architecture Patterns.md', 'Vector Database Comparison.md'], ts: '2026-06-07T07:45:00Z' },
+        { q: 'How does Zettelkasten differ from PARA?', a: 'Your notes highlight that Zettelkasten focuses on atomic, interconnected ideas with unique IDs, while PARA (Projects, Areas, Resources, Archive) organizes by actionability. Many PKM practitioners combine both -- using PARA for folder structure and Zettelkasten linking within notes.', sources: ['Zettelkasten Method.md', 'Building a Second Brain (BASB).md'], ts: '2026-06-07T06:30:00Z' },
+        { q: 'What n8n workflows do I have for auto-ingestion?', a: 'You have several ingestion workflows: (1) YouTube transcript ingestor running every 6 hours, (2) RSS feed monitor checking hourly, (3) bookmark capture webhook, and (4) daily Obsidian vault sync. The YouTube pipeline processes the most content.', sources: ['n8n Workflow Recipes.md', 'YouTube to Notes Pipeline.md'], ts: '2026-06-06T22:15:00Z' }
+    ],
+    bookmarkStats: {
+        total_captured: 37,
+        today: 2,
+        last_capture: '2026-06-07T06:18:00Z'
+    },
+    ingestStats: {
+        total_ingested: 49,
+        today: 2,
+        last_ingest: '2026-06-07T08:12:44Z',
+        pending: 0
+    },
+    activity: [
+        { type: 'ingest',  text: 'Ingested <strong>Bookmark - Latent Space podcast.md</strong>',          ts: '2026-06-07T08:12:44Z' },
+        { type: 'chat',    text: 'Answered: "What are the best RAG chunking strategies?"',                  ts: '2026-06-07T07:45:00Z' },
+        { type: 'search',  text: 'Searched vault for <strong>embedding models comparison</strong>',         ts: '2026-06-07T07:30:00Z' },
+        { type: 'ingest',  text: 'Ingested <strong>Clipping - Transformer architecture.md</strong>',       ts: '2026-06-07T07:15:00Z' },
+        { type: 'chat',    text: 'Answered: "How does Zettelkasten differ from PARA?"',                     ts: '2026-06-07T06:30:00Z' },
+        { type: 'capture', text: 'Captured bookmark: <strong>https://simonwillison.net/2026/...</strong>',  ts: '2026-06-07T06:18:00Z' },
+        { type: 'search',  text: 'Searched vault for <strong>self-hosting vector database</strong>',        ts: '2026-06-07T05:50:00Z' },
+        { type: 'move',    text: 'Organized <strong>3 notes</strong> from Inbox to Resources',              ts: '2026-06-07T04:00:00Z' },
+        { type: 'chat',    text: 'Answered: "What n8n workflows do I have for auto-ingestion?"',            ts: '2026-06-06T22:15:00Z' },
+        { type: 'ingest',  text: 'Auto-ingested <strong>2 YouTube transcripts</strong>',                    ts: '2026-06-06T18:00:00Z' }
+    ],
+    services: [
+        { name: 'vault-search',      port: 9876, status: 'up' },
+        { name: 'vault-chat',        port: 9879, status: 'up' },
+        { name: 'bookmark-capture',  port: 9880, status: 'up' },
+        { name: 'health-endpoint',   port: 9876, status: 'up' },
+        { name: 'fc-data-fetcher',   port: 5002, status: 'up' }
+    ],
+    workflows: [
+        { name: 'Daily Vault Organizer',           schedule: 'Every day 6 AM UTC',       status: 'active' },
+        { name: 'YouTube Transcript Ingestor',      schedule: 'Every 6 hours',            status: 'active' },
+        { name: 'RSS Feed Monitor',                 schedule: 'Every hour',               status: 'active' },
+        { name: 'Bookmark Capture Webhook',         schedule: 'On trigger',               status: 'active' },
+        { name: 'Daily Note Resurfacer',            schedule: 'Every day 9 AM UTC',       status: 'active' },
+        { name: 'Weekly Synthesis Report',           schedule: 'Sundays 10 AM UTC',       status: 'active' },
+        { name: 'Obsidian Vault Sync',              schedule: 'Every day midnight',       status: 'active' },
+        { name: 'RAG Index Rebuilder',              schedule: 'Every 4 hours',            status: 'active' },
+        { name: 'Broken Link Checker',              schedule: 'Mondays 3 AM UTC',        status: 'active' },
+        { name: 'Duplicate Note Detector',           schedule: 'Wednesdays 4 AM UTC',     status: 'idle' },
+        { name: 'Tag Normalizer',                   schedule: 'Daily 5 AM UTC',           status: 'active' },
+        { name: 'Stale Note Archiver',              schedule: 'Fridays 2 AM UTC',        status: 'idle' },
+        { name: 'FarmCredit Data Fetcher',           schedule: 'Weekdays 7 AM EST',       status: 'active' },
+        { name: 'Discord Digest Generator',          schedule: 'Daily 11 PM UTC',         status: 'active' },
+        { name: 'Vault Backup to S3',               schedule: 'Daily 1 AM UTC',          status: 'active' }
+    ]
+};
+
+// =============================================
+//  FETCH HELPERS
+// =============================================
+async function apiFetch(url) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+    try {
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        clearTimeout(timeout);
+        return null;
+    }
+}
+
+async function checkLive() {
+    const data = await apiFetch(`${API_GATEWAY}/`);
+    return !!(data && data.status === 'ok');
+}
+
+function setMode(live) {
+    isLive = live;
+    const badge = document.getElementById('modeBadge');
+    const label = document.getElementById('modeLabel');
+    if (badge) badge.className = live ? 'mode-badge live' : 'mode-badge demo';
+    if (label) label.textContent = live ? 'LIVE' : 'DEMO';
+}
+
+function updateRefreshTime() {
+    const el = document.getElementById('refreshInfo');
+    if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    lastRefreshTimestamp = Date.now();
+    updateLastUpdatedTicker();
+}
+
+function updateLastUpdatedTicker() {
+    const el = document.getElementById('lastUpdatedTicker');
+    if (!el) return;
+    const seconds = Math.floor((Date.now() - lastRefreshTimestamp) / 1000);
+    if (seconds < 5) el.textContent = 'Updated just now';
+    else if (seconds < 60) el.textContent = `Updated ${seconds}s ago`;
+    else { const mins = Math.floor(seconds / 60); el.textContent = `Updated ${mins}m ago`; }
+}
+
+function startLastUpdatedTicker() {
+    if (lastUpdatedInterval) clearInterval(lastUpdatedInterval);
+    lastUpdatedInterval = setInterval(updateLastUpdatedTicker, 1000);
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// =============================================
+//  RENDERERS
+// =============================================
+function renderStats(data) {
+    const notes = data.ragStats?.total_notes ?? data.ingestStats?.total_ingested ?? '--';
+    const chunks = data.ragStats?.total_chunks ?? '--';
+    const questions = data.chatStats?.total_questions ?? '--';
+    const today = data.ingestStats?.today ?? '--';
+
+    document.getElementById('statNotes').textContent = notes;
+    document.getElementById('statChunks').textContent = chunks;
+    document.getElementById('statQuestions').textContent = questions;
+    document.getElementById('statToday').textContent = today;
+
+    const sub = document.getElementById('statNotesSub');
+    if (data.ragStats?.embedding_model) {
+        sub.textContent = data.ragStats.embedding_model;
+    }
+}
+
+function renderVault(structure) {
+    const container = document.getElementById('vaultBars');
+    container.innerHTML = '';
+    const total = Object.values(structure).reduce((s, v) => s + v.count, 0);
+
+    Object.entries(structure).forEach(([folder, data]) => {
+        const pct = total > 0 ? (data.count / total * 100) : 0;
+        const row = document.createElement('div');
+        row.className = 'vault-bar-row';
+        row.onclick = () => showVaultDetail(folder, data);
+        row.innerHTML = `
+            <span class="vault-bar-label">${folder}</span>
+            <div class="vault-bar-track">
+                <div class="vault-bar-fill ${folder.toLowerCase()}" style="width:${Math.max(pct, data.count > 0 ? 3 : 0)}%">${data.count > 0 ? data.count : ''}</div>
+            </div>
+            <span class="vault-bar-count">${data.count}</span>
+        `;
+        container.appendChild(row);
+    });
+}
+
+// Store graph nodes for folder drill-down
+let graphNodesCache = [];
+
+async function showVaultDetail(folder, data) {
+    const panel = document.getElementById('vaultDetail');
+    const title = document.getElementById('vaultDetailTitle');
+    const list = document.getElementById('vaultDetailList');
+
+    // Toggle: click same folder again to close
+    if (panel.classList.contains('open') && title.textContent.startsWith(folder)) {
+        panel.classList.remove('open');
+        return;
+    }
+
+    title.textContent = `${folder} (${data.count} notes)`;
+    list.innerHTML = '<li style="color:var(--text-tertiary);font-style:italic;">Loading...</li>';
+    panel.classList.add('open');
+
+    // Fetch real note list from API when live
+    let notes = [];
+    if (isLive) {
+        try {
+            const resp = await apiFetch(`${API_GATEWAY}/api/notes/list?folder=${encodeURIComponent(folder)}`);
+            if (resp && resp.notes) {
+                notes = resp.notes;
+                title.textContent = `${folder} (${resp.total} notes)`;
+            }
+        } catch (e) {}
+    }
+    // Fallback to graph cache or demo data
+    if (notes.length === 0) {
+        const folderNotes = graphNodesCache
+            .filter(n => n.folder === folder)
+            .sort((a, b) => (b.connections || 0) - (a.connections || 0))
+            .map(n => ({ file: folder + '/' + n.id, title: n.id }));
+        notes = folderNotes.length > 0 ? folderNotes : (data.notes || []).map(n => ({ file: folder + '/' + n, title: n }));
+    }
+
+    list.innerHTML = '';
+    if (notes.length > 0) {
+        notes.slice(0, 25).forEach(n => {
+            const li = document.createElement('li');
+            const displayName = n.title || n.file?.split('/').pop()?.replace('.md','') || n;
+            li.textContent = displayName;
+            li.style.cursor = 'pointer';
+            li.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openNotePreview(n.file || (folder + '/' + displayName), displayName);
+            });
+            list.appendChild(li);
+        });
+        const total = parseInt(title.textContent.match(/\d+/)?.[0]) || notes.length;
+        if (total > 25) {
+            const li = document.createElement('li');
+            li.style.color = 'var(--text-tertiary)';
+            li.style.fontStyle = 'italic';
+            li.textContent = `...and ${total - 25} more`;
+            list.appendChild(li);
+        }
+    } else if (data.count === 0) {
+        const li = document.createElement('li');
+        li.style.color = 'var(--text-tertiary)';
+        li.style.fontStyle = 'italic';
+        li.textContent = 'No notes in this folder';
+        list.appendChild(li);
+    }
+}
+
+// =============================================
+//  NOTE PREVIEW
+// =============================================
+async function openNotePreview(filePath, displayName) {
+    const overlay = document.getElementById('notePreviewOverlay');
+    const panel = document.getElementById('notePreviewPanel');
+    const title = document.getElementById('notePreviewTitle');
+    const meta = document.getElementById('notePreviewMeta');
+    const body = document.getElementById('notePreviewBody');
+
+    title.textContent = displayName || filePath.split('/').pop().replace('.md', '');
+    meta.innerHTML = '';
+    body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:120px;color:var(--text-tertiary);font-size:13px;"><span class="spinner"></span>&nbsp;Loading note...</div>';
+
+    overlay.classList.add('open');
+    setTimeout(() => panel.classList.add('open'), 10);
+
+    if (!isLive) {
+        body.innerHTML = '<div style="color:var(--text-tertiary);padding:20px;text-align:center">Note preview requires live VPS connection.</div>';
+        return;
+    }
+
+    try {
+        const file = filePath.endsWith('.md') ? filePath : filePath + '.md';
+        const data = await apiFetch(`${API_GATEWAY}/api/notes/content?file=${encodeURIComponent(file)}`);
+        if (!data || data.error) {
+            body.innerHTML = `<div style="color:var(--accent-red);padding:20px;">${escapeHtml(data?.error || 'Failed to load note')}</div>`;
+            return;
+        }
+
+        title.textContent = data.title || displayName || file.split('/').pop().replace('.md', '');
+
+        const metaParts = [];
+        if (data.folder) metaParts.push(`<span style="color:var(--accent-indigo)">${escapeHtml(data.folder)}</span>`);
+        if (data.word_count) metaParts.push(`${data.word_count} words`);
+        if (data.modified) metaParts.push(data.modified);
+        if (data.tags && data.tags.length > 0) {
+            metaParts.push(data.tags.map(t => `<span class="meta-tag">#${escapeHtml(t)}</span>`).join(' '));
+        }
+        meta.innerHTML = metaParts.join(' &middot; ');
+
+        let content = data.content || '';
+        content = content.replace(/^---[\s\S]*?---\s*\n?/, '');
+        body.innerHTML = renderMarkdownBasic(content);
+
+    } catch (err) {
+        body.innerHTML = `<div style="color:var(--accent-red);padding:20px;">Error: ${escapeHtml(err.message)}</div>`;
+    }
+}
+
+function renderMarkdownBasic(md) {
+    let html = escapeHtml(md);
+    // Code blocks (fenced)
+    html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+    // Headers
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    // Bold and italic
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Inline code
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Wikilinks: handle [[file|display]] pipe syntax first, then plain [[file]]
+    html = html.replace(/\[\[([^\]|]+?)\|([^\]]+?)\]\]/g, '<span class="wikilink" data-note="$1" style="color:var(--accent-indigo);font-weight:500;cursor:pointer;border-bottom:1px dashed var(--accent-indigo)">$2</span>');
+    html = html.replace(/\[\[(.+?)\]\]/g, '<span class="wikilink" data-note="$1" style="color:var(--accent-indigo);font-weight:500;cursor:pointer;border-bottom:1px dashed var(--accent-indigo)">$1</span>');
+    // External links
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Blockquotes
+    html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+    // Horizontal rules
+    html = html.replace(/^---$/gm, '<hr>');
+    // Checkboxes
+    html = html.replace(/^- \[x\] (.+)$/gm, '<li style="list-style:none"><input type="checkbox" checked disabled> $1</li>');
+    html = html.replace(/^- \[ \] (.+)$/gm, '<li style="list-style:none"><input type="checkbox" disabled> $1</li>');
+    // Unordered lists
+    html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+    // Numbered lists
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    // Line breaks (double newline = paragraph)
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = '<p>' + html + '</p>';
+    html = html.replace(/<p>\s*<\/p>/g, '');
+    return html;
+}
+
+function renderActivity(items) {
+    const container = document.getElementById('activityFeed');
+    container.innerHTML = '';
+    const icons = {
+        ingest: 'download',
+        search: 'search',
+        chat: 'message-circle',
+        move: 'folder-input',
+        capture: 'bookmark'
+    };
+
+    items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'activity-item';
+        el.style.cursor = 'pointer';
+        const ago = timeAgo(new Date(item.ts));
+        el.innerHTML = `
+            <div class="activity-icon ${item.type}"><i data-lucide="${icons[item.type] || 'circle'}"></i></div>
+            <div class="activity-body">
+                <div class="activity-text">${item.text}</div>
+                <div class="activity-time">${ago}</div>
+            </div>
+        `;
+        el.addEventListener('click', () => handleActivityClick(item));
+        container.appendChild(el);
+    });
+    lucide.createIcons();
+}
+
+function handleActivityClick(item) {
+    if (item.type === 'ingest') {
+        const match = item.text.match(/<strong>(.+?)<\/strong>/);
+        const noteName = match ? match[1] : 'Note';
+        const filePath = item.file || (noteName + '.md');
+        openNotePreview(filePath, noteName);
+    } else if (item.type === 'chat') {
+        // Extract question from 'Answered: "question"'
+        const match = item.text.match(/Answered: "(.+?)(?:\.\.\.)?"/);
+        if (match) {
+            const q = match[1];
+            document.getElementById('askInput').value = q;
+            document.getElementById('askInput').focus();
+        }
+    } else if (item.type === 'capture') {
+        // Extract bookmark name
+        const match = item.text.match(/<strong>(.+?)<\/strong>/);
+        if (match) {
+            openNotePreview('Inbox/' + match[1] + '.md', match[1]);
+        }
+    } else if (item.type === 'search') {
+        const match = item.text.match(/<strong>(.+?)<\/strong>/);
+        if (match) {
+            document.getElementById('searchInput').value = match[1];
+            document.getElementById('searchInput').focus();
+        }
+    }
+}
+
+function renderHealth(services) {
+    const container = document.getElementById('healthGrid');
+    container.innerHTML = '';
+    services.forEach(svc => {
+        const el = document.createElement('div');
+        el.className = 'health-pill';
+        const statusLabel = svc.status === 'up' ? 'UP' : svc.status === 'down' ? 'DOWN' : '???';
+        el.innerHTML = `
+            <span class="pill-dot ${svc.status}"></span>
+            <div class="pill-info">
+                <span class="pill-name">${svc.name}</span>
+                <span class="pill-port">:${svc.port}</span>
+            </div>
+            <span class="pill-status-label ${svc.status}">${statusLabel}</span>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function renderWorkflows(workflows, count, n8nStatus) {
+    const container = document.getElementById('workflowList');
+    const countEl = document.getElementById('workflowCount');
+    container.innerHTML = '';
+    if (countEl && count) countEl.textContent = `(${count} workflows${n8nStatus ? ' \u2022 n8n ' + n8nStatus : ''})`;
+    workflows.forEach(wf => {
+        const el = document.createElement('div');
+        el.className = 'workflow-item';
+        el.innerHTML = `
+            <span class="workflow-name" title="${escapeHtml(wf.name)}">${escapeHtml(wf.name)}</span>
+            ${wf.schedule ? `<span class="workflow-schedule">${escapeHtml(wf.schedule)}</span>` : ''}
+            <span class="workflow-status ${wf.status}">${wf.status}</span>
+        `;
+        container.appendChild(el);
+    });
+}
+
+function renderTagCloud(tags, uniqueCount) {
+    const container = document.getElementById('tagCloudContainer');
+    const countEl = document.getElementById('tagCloudCount');
+    if (!container || !tags || !tags.length) return;
+    if (countEl) countEl.textContent = `(${uniqueCount || tags.length} unique)`;
+    const NOISE_TAGS = new Set(['auto-ingest', 'rss', 'auto-generated']);
+    const filtered = tags.filter(t => !NOISE_TAGS.has(t.tag));
+    if (!filtered.length) return;
+    const maxCount = filtered[0].count;
+    const minCount = filtered[filtered.length - 1].count;
+    const range = maxCount - minCount || 1;
+    container.innerHTML = '';
+    filtered.slice(0, 30).forEach(t => {
+        const size = 11 + ((t.count - minCount) / range) * 8;
+        const opacity = 0.5 + ((t.count - minCount) / range) * 0.5;
+        const el = document.createElement('span');
+        el.style.cssText = `font-size:${size}px;opacity:${opacity};color:var(--accent-indigo);cursor:pointer;transition:opacity .15s;white-space:nowrap`;
+        el.textContent = '#' + t.tag;
+        el.title = `${t.count} notes`;
+        el.onmouseenter = () => el.style.opacity = '1';
+        el.onmouseleave = () => el.style.opacity = String(opacity);
+        el.onclick = () => {
+            document.getElementById('searchInput').value = '#' + t.tag;
+            document.getElementById('searchInput').focus();
+            if (typeof searchVault === 'function') searchVault();
+        };
+        container.appendChild(el);
+    });
+}
+
+function timeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+}
+
+// =============================================
+//  ASK THE VAULT
+// =============================================
+function addChatBubble(type, content, sources) {
+    const history = document.getElementById('chatHistory');
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${type}`;
+    if (type === 'user') {
+        bubble.textContent = content;
+    } else {
+        bubble.innerHTML = escapeHtml(content);
+        if (sources && sources.length > 0) {
+            const srcDiv = document.createElement('div');
+            srcDiv.className = 'sources';
+            srcDiv.textContent = 'Sources: ';
+            sources.forEach(s => {
+                const span = document.createElement('span');
+                span.textContent = s.split('/').pop().replace('.md', '');
+                span.addEventListener('click', () => openNotePreview(s, span.textContent));
+                srcDiv.appendChild(span);
+            });
+            bubble.appendChild(srcDiv);
+        }
+    }
+    history.appendChild(bubble);
+    history.scrollTop = history.scrollHeight;
+}
+
+async function askVault() {
+    const input = document.getElementById('askInput');
+    const resultDiv = document.getElementById('askResult');
+    const btn = document.getElementById('askBtn');
+    const q = input.value.trim();
+    if (!q) return;
+
+    chatTurnCount++;
+    document.getElementById('chatTurnCount').textContent = chatTurnCount;
+    addChatBubble('user', q);
+    input.value = '';
+
+    if (!isLive) {
+        const demo = DEMO.chatHistory[(chatTurnCount - 1) % DEMO.chatHistory.length];
+        addChatBubble('assistant', demo.a, demo.sources);
+        resultDiv.style.display = 'none';
+        return;
+    }
+
+    btn.disabled = true;
+    resultDiv.innerHTML = '<span class="spinner"></span> Thinking...';
+    resultDiv.style.display = '';
+
+    try {
+        const data = await apiFetch(`${API_GATEWAY}/api/chat/chat?q=${encodeURIComponent(q)}&session=${encodeURIComponent(chatSessionId)}`);
+        if (data && data.answer) {
+            const sourceNames = (data.sources || []).map(s => typeof s === 'string' ? s : s.file);
+            addChatBubble('assistant', data.answer, sourceNames);
+            resultDiv.style.display = 'none';
+        } else {
+            resultDiv.innerHTML = '<div class="demo-notice">No answer returned. Try a different question.</div>';
+        }
+    } catch (err) {
+        resultDiv.innerHTML = `<div class="demo-notice" style="color:var(--accent-red)">Error: ${escapeHtml(err.message)}</div>`;
+    }
+    btn.disabled = false;
+}
+
+// =============================================
+//  QUICK CAPTURE
+// =============================================
+async function captureBookmark() {
+    const url = document.getElementById('captureUrl').value.trim();
+    const title = document.getElementById('captureTitle').value.trim();
+    const tags = document.getElementById('captureTags').value.trim();
+    const fb = document.getElementById('captureFeedback');
+    const btn = document.getElementById('captureBtn');
+
+    if (!url) { fb.className = 'capture-feedback error'; fb.textContent = 'URL is required.'; return; }
+
+    if (!isLive) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Capture requires live VPS connection via Tailscale.';
+        return;
+    }
+
+    btn.disabled = true;
+    fb.className = 'capture-feedback';
+    fb.textContent = 'Capturing...';
+
+    try {
+        const body = { url };
+        if (title) body.title = title;
+        if (tags) body.tags = tags.split(',').map(t => t.trim());
+
+        const params = new URLSearchParams({ url: body.url });
+        if (body.title) params.set('title', body.title);
+        if (body.tags) params.set('tags', body.tags.join(','));
+        const res = await fetch(`${API_GATEWAY}/api/bookmarks/capture?${params}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        fb.className = 'capture-feedback success';
+        fb.textContent = 'Captured successfully!';
+        showToast('Bookmark captured to vault', 'success');
+        document.getElementById('captureUrl').value = '';
+        document.getElementById('captureTitle').value = '';
+        document.getElementById('captureTags').value = '';
+    } catch (err) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Failed: ' + err.message;
+        showToast('Capture failed: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+}
+
+async function submitBraindump() {
+    const titleEl = document.getElementById('braindumpTitle');
+    const contentEl = document.getElementById('braindumpContent');
+    const tagsEl = document.getElementById('braindumpTags');
+    const btn = document.getElementById('braindumpBtn');
+    const fb = document.getElementById('braindumpFeedback');
+
+    const content = contentEl.value.trim();
+    if (!content) { fb.className = 'capture-feedback error'; fb.textContent = 'Write something first!'; return; }
+
+    btn.disabled = true;
+    fb.className = 'capture-feedback';
+    fb.textContent = 'Saving to vault...';
+
+    try {
+        const body = { content };
+        if (titleEl.value.trim()) body.title = titleEl.value.trim();
+        if (tagsEl.value.trim()) body.tags = tagsEl.value.split(',').map(t => t.trim()).filter(Boolean);
+
+        const res = await fetch(`${API_GATEWAY}/api/notes/braindump`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        fb.className = 'capture-feedback success';
+        fb.textContent = `Saved: ${data.file} (${data.word_count} words)`;
+        showToast('Braindump saved to vault', 'success');
+        contentEl.value = '';
+        titleEl.value = '';
+        tagsEl.value = '';
+    } catch (err) {
+        fb.className = 'capture-feedback error';
+        fb.textContent = 'Failed: ' + err.message;
+        showToast('Braindump failed: ' + err.message, 'error');
+    }
+    btn.disabled = false;
+}
+
+// =============================================
+//  LIVE DATA FETCHING
+// =============================================
+async function fetchLiveData() {
+    const data = JSON.parse(JSON.stringify(DEMO)); // Start with demo as base
+
+    try {
+        const [health, ragStats, chatStats, chatHistory, bmStats, graphData, vaultGrowth, vaultActivity, vaultNotesList, liveWorkflows, vaultTags] = await Promise.allSettled([
+            apiFetch(`${API_GATEWAY}/api/health`),
+            apiFetch(`${API_GATEWAY}/api/rag/stats`),
+            apiFetch(`${API_GATEWAY}/api/chat/stats`),
+            apiFetch(`${API_GATEWAY}/api/chat/history?n=10`),
+            apiFetch(`${API_GATEWAY}/api/bookmarks/stats`),
+            apiFetch(`${API_GATEWAY}/api/graph/graph`),
+            apiFetch(`${API_GATEWAY}/api/stats/growth?days=7`),
+            apiFetch(`${API_GATEWAY}/api/stats/activity?n=20`),
+            apiFetch(`${API_GATEWAY}/api/notes/list?folder=all`),
+            apiFetch(`${API_GATEWAY}/api/health/workflows`),
+            apiFetch(`${API_GATEWAY}/api/health/vault-tags`)
+        ]);
+
+        // Health: {"gateway":"running","disk":"17%","memory":"12%","load":"0.06","n8n":"Up 15 minutes"}
+        if (health.status === 'fulfilled' && health.value) {
+            const h = health.value;
+            data.health = {
+                status: h.gateway === 'running' ? 'ok' : 'degraded',
+                uptime: h.n8n || 'unknown',
+                disk: h.disk, memory: h.memory, load: h.load,
+                services: data.health.services
+            };
+        }
+
+        // RAG: {"total_notes":200,"indexed_notes":200,"total_chunks":1203}
+        if (ragStats.status === 'fulfilled' && ragStats.value) {
+            const r = ragStats.value;
+            data.ragStats = { ...data.ragStats, ...r };
+            data.ingestStats = { ...data.ingestStats, total_ingested: r.total_notes };
+        }
+
+        // Chat: {"questions_asked":2,"avg_response_time_ms":2572,"active_sessions":1}
+        if (chatStats.status === 'fulfilled' && chatStats.value) {
+            const c = chatStats.value;
+            data.chatStats = {
+                ...data.chatStats,
+                total_questions: c.questions_asked || 0,
+                avg_response_time: c.avg_response_time_ms ? (c.avg_response_time_ms / 1000).toFixed(1) + 's' : data.chatStats.avg_response_time,
+                active_sessions: c.active_sessions
+            };
+        }
+
+        // Chat history: {"history":[{question,answer,sources:[{file,similarity}],timestamp}]}
+        if (chatHistory.status === 'fulfilled' && chatHistory.value) {
+            const hist = chatHistory.value.history || chatHistory.value;
+            if (Array.isArray(hist) && hist.length > 0) {
+                data.chatHistory = hist.map(h => ({
+                    q: h.question,
+                    a: h.answer,
+                    sources: (h.sources || []).map(s => typeof s === 'string' ? s : s.file),
+                    ts: h.timestamp
+                }));
+                // Update last_question timestamp
+                data.chatStats.last_question = hist[0].timestamp;
+                // Build activity feed from real chat history
+                data.activity = hist.map(h => ({
+                    type: 'chat',
+                    text: `Answered: "${escapeHtml(h.question.substring(0, 60))}${h.question.length > 60 ? '...' : ''}"`,
+                    ts: h.timestamp
+                }));
+            }
+        }
+
+        // Bookmarks: {"total_captured":1,"vault_inbox":"..."}
+        if (bmStats.status === 'fulfilled' && bmStats.value) {
+            data.bookmarkStats = { ...data.bookmarkStats, ...bmStats.value };
+        }
+
+        // Graph: derive vault folder counts from nodes
+        if (graphData.status === 'fulfilled' && graphData.value && graphData.value.nodes) {
+            const folderCounts = {};
+            graphData.value.nodes.forEach(n => {
+                const folder = n.folder || 'root';
+                folderCounts[folder] = (folderCounts[folder] || 0) + 1;
+            });
+            // Update vault structure with real counts
+            Object.keys(data.vaultStructure).forEach(f => {
+                data.vaultStructure[f].count = folderCounts[f] || 0;
+            });
+        }
+
+        // Vault Growth → sparkline data + "ingested today" count
+        if (vaultGrowth.status === 'fulfilled' && vaultGrowth.value && vaultGrowth.value.daily) {
+            const daily = vaultGrowth.value.daily;
+            data._sparklineData = daily.map(d => d.count);
+            const todayCount = daily.length >= 2 ? daily[daily.length - 1].count - daily[daily.length - 2].count : 0;
+            data.ingestStats = { ...data.ingestStats, total_ingested: vaultGrowth.value.total_notes, today: Math.max(0, todayCount) };
+        }
+
+        // Vault Activity → activity feed + derive today's bookmark count
+        if (vaultActivity.status === 'fulfilled' && vaultActivity.value && vaultActivity.value.events) {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const capturedToday = vaultActivity.value.events.filter(e => e.type === 'capture' && e.timestamp.startsWith(todayStr)).length;
+            if (capturedToday > 0) data.bookmarkStats = { ...data.bookmarkStats, today: capturedToday };
+            const liveActivity = vaultActivity.value.events.map(e => ({
+                type: e.type,
+                text: e.text,
+                ts: e.timestamp,
+                ...(e.file && { file: e.file })
+            }));
+            // Merge with any chat-history-derived activity, deduplicate by timestamp
+            const seen = new Set(liveActivity.map(a => a.ts));
+            const merged = [...liveActivity];
+            (data.activity || []).forEach(a => {
+                if (!seen.has(a.ts)) merged.push(a);
+            });
+            merged.sort((a, b) => b.ts.localeCompare(a.ts));
+            data.activity = merged.slice(0, 20);
+        }
+
+        // Vault Notes list → real folder counts
+        if (vaultNotesList.status === 'fulfilled' && vaultNotesList.value && vaultNotesList.value.notes) {
+            const folderCounts = {};
+            vaultNotesList.value.notes.forEach(n => {
+                const folder = n.file.split('/')[0] || 'root';
+                folderCounts[folder] = (folderCounts[folder] || 0) + 1;
+            });
+            Object.keys(data.vaultStructure).forEach(f => {
+                if (folderCounts[f] !== undefined) {
+                    data.vaultStructure[f].count = folderCounts[f];
+                }
+            });
+        }
+
+        // Live n8n workflows
+        if (liveWorkflows.status === 'fulfilled' && liveWorkflows.value && liveWorkflows.value.workflows) {
+            data.workflows = liveWorkflows.value.workflows.map(wf => ({
+                name: wf.name,
+                schedule: '',
+                status: wf.active ? 'active' : 'idle'
+            }));
+            data._workflowCount = liveWorkflows.value.count;
+            data._n8nStatus = liveWorkflows.value.n8n_status;
+        }
+
+        // Vault tag cloud
+        if (vaultTags.status === 'fulfilled' && vaultTags.value && vaultTags.value.top_tags) {
+            data._tagCloud = vaultTags.value.top_tags;
+            data._uniqueTags = vaultTags.value.unique_tags;
+            data._tagCoverage = vaultTags.value.notes_with_tags / Math.max(1, vaultTags.value.total_notes);
+        }
+
+        // Build live service health by checking what data we got back
+        data.services = [
+            { name: 'vault-search', port: 9878, status: ragStats.status === 'fulfilled' && ragStats.value ? 'up' : 'down' },
+            { name: 'vault-chat', port: 9879, status: chatStats.status === 'fulfilled' && chatStats.value ? 'up' : 'down' },
+            { name: 'bookmark-capture', port: 9880, status: bmStats.status === 'fulfilled' && bmStats.value ? 'up' : 'down' },
+            { name: 'knowledge-graph', port: 9881, status: graphData.status === 'fulfilled' && graphData.value ? 'up' : 'down' },
+            { name: 'vault-notes', port: 9882, status: vaultNotesList.status === 'fulfilled' && vaultNotesList.value ? 'up' : 'down' },
+            { name: 'vault-stats', port: 9883, status: vaultGrowth.status === 'fulfilled' && vaultGrowth.value ? 'up' : 'down' },
+            { name: 'health-endpoint', port: 9876, status: health.status === 'fulfilled' && health.value ? 'up' : 'down' }
+        ];
+
+    } catch (err) {
+        console.warn('Error fetching some live data:', err);
+    }
+
+    return data;
+}
+
+// =============================================
+//  SPARKLINE CHART
+// =============================================
+function renderSparkline(dataPoints) {
+    const canvas = document.getElementById('sparklineCanvas');
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    const W = container.clientWidth;
+    const H = 48;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    if (!dataPoints || dataPoints.length < 2) return;
+
+    const min = Math.min(...dataPoints) * 0.9;
+    const max = Math.max(...dataPoints) * 1.05;
+    const range = max - min || 1;
+    const padX = 4;
+    const padY = 4;
+    const plotW = W - padX * 2;
+    const plotH = H - padY * 2;
+
+    const points = dataPoints.map((v, i) => ({
+        x: padX + (i / (dataPoints.length - 1)) * plotW,
+        y: padY + plotH - ((v - min) / range) * plotH
+    }));
+
+    // Area fill
+    const gradient = ctx.createLinearGradient(0, padY, 0, H);
+    gradient.addColorStop(0, 'rgba(129,140,248,0.25)');
+    gradient.addColorStop(1, 'rgba(129,140,248,0.02)');
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, H);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length - 1].x, H);
+    ctx.closePath();
+    ctx.fillStyle = gradient;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        const cp1x = (points[i-1].x + points[i].x) / 2;
+        ctx.bezierCurveTo(cp1x, points[i-1].y, cp1x, points[i].y, points[i].x, points[i].y);
+    }
+    ctx.strokeStyle = '#818cf8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // End dot
+    const last = points[points.length - 1];
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#818cf8';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(last.x, last.y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(129,140,248,0.3)';
+    ctx.fill();
+}
+
+// =============================================
+//  KEYBOARD SHORTCUTS
+// =============================================
+function initKeyboardShortcuts() {
+    // Ctrl+Enter in capture fields sends capture
+    ['captureUrl', 'captureTitle', 'captureTags'].forEach(id => {
+        document.getElementById(id).addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                captureBookmark();
+            }
+        });
+    });
+
+    // Ctrl+Enter in braindump fields
+    ['braindumpTitle', 'braindumpTags', 'braindumpContent'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                submitBraindump();
+            }
+        });
+    });
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Skip if user is typing in an input
+        const tag = document.activeElement.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') {
+            if (e.key === 'Escape') document.activeElement.blur();
+            return;
+        }
+
+        switch(e.key) {
+            case '?':
+                e.preventDefault();
+                openKbOverlay();
+                break;
+            case 'Escape':
+                closeKbOverlay();
+                closeNotePreview();
+                const so = document.getElementById('settingsOverlay'); if (so && so.classList.contains('open')) toggleSettings();
+                break;
+            case '/':
+                e.preventDefault();
+                document.getElementById('floatingSearchInput').focus();
+                break;
+            case 'a': case 'A':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    document.getElementById('askInput').focus();
+                }
+                break;
+            case 'b': case 'B':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    document.getElementById('braindumpContent').focus();
+                }
+                break;
+            case 'r': case 'R':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    refreshAll();
+                }
+                break;
+            case 't': case 'T':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    toggleTheme();
+                }
+                break;
+            case 'g': case 'G':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    graphReset();
+                }
+                break;
+            case 'n': case 'N':
+                if (!e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    resetChatSession();
+                }
+                break;
+        }
+    });
+}
+
+// =============================================
+//  MAIN RENDER
+// =============================================
+async function renderAll(data) {
+    renderStats(data);
+    renderVault(data.vaultStructure);
+    renderActivity(data.activity);
+    renderHealth(data.services);
+    renderWorkflows(data.workflows, data._workflowCount, data._n8nStatus);
+    renderSparkline(data._sparklineData || DEMO_SPARKLINE);
+    if (data._tagCloud) renderTagCloud(data._tagCloud, data._uniqueTags);
+    if (data.health) renderHealthGauges(data.health);
+    renderHealthScore(data);
+    // Chat history
+    chatHistoryData = data.chatHistory || [];
+    renderChatHistory(chatHistoryData);
+    updateRefreshTime();
+}
+
+async function refreshAll() {
+    if (isLive) {
+        const live = await checkLive();
+        if (live) {
+            const data = await fetchLiveData();
+            renderAll(data);
+        } else {
+            setMode(false);
+            renderAll(DEMO);
+        }
+    } else {
+        const live = await checkLive();
+        if (live) {
+            setMode(true);
+            const data = await fetchLiveData();
+            renderAll(data);
+            startAutoRefresh();
+        } else {
+            renderAll(DEMO);
+        }
+    }
+    updateRefreshTime();
+}
+
+function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    if (isLive) {
+        refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL);
+    }
+}
+
+// =============================================
+//  KNOWLEDGE GRAPH — 3D (Three.js, Google Earth style)
+// =============================================
+const GRAPH_COLORS = {
+    Resources: '#818cf8', Areas: '#22d3ee', Projects: '#fbbf24',
+    Inbox: '#f87171', root: '#a1a1aa'
+};
+const COMMUNITY_COLORS = [
+    '#f87171', '#60a5fa', '#4ade80', '#fbbf24', '#a78bfa', '#f472b6', '#22d3ee', '#fb923c'
+];
+const COMMUNITY_LABELS = {
+    'cybersecurity': 'Cybersecurity', 'security': 'Cybersecurity',
+    'ai': 'AI & Research', 'openai': 'AI & Research', 'research': 'AI & Research',
+    'business': 'Business', 'startups': 'Business', 'essays': 'Business', 'strategy': 'Business',
+    'agriculture': 'Agriculture', 'ag-tech': 'Agriculture',
+    'podcast': 'Podcasts', 'huberman': 'Podcasts', 'neuroscience': 'Podcasts',
+    'hacker-news': 'Tech & News', 'consumer': 'Tech & News', 'science': 'Tech & News'
+};
+
+const DEMO_GRAPH = {
+    nodes: [
+        {id:'Lex Fridman 490',folder:'Resources',word_count:450,connections:5,tags:['podcast','ai']},
+        {id:'Lex Fridman 491',folder:'Resources',word_count:380,connections:4,tags:['podcast','ai']},
+        {id:'Huberman - Dopamine',folder:'Resources',word_count:520,connections:4,tags:['podcast','neuroscience']},
+        {id:'Huberman - Play',folder:'Resources',word_count:410,connections:3,tags:['podcast','neuroscience']},
+        {id:'GPT-5.4',folder:'Resources',word_count:200,connections:3,tags:['ai','research']},
+        {id:'GitHub Security',folder:'Resources',word_count:180,connections:2,tags:['cybersecurity']},
+        {id:'Wikipedia Hack',folder:'Resources',word_count:190,connections:2,tags:['cybersecurity']},
+        {id:'Anthropic Supply Chain',folder:'Resources',word_count:220,connections:3,tags:['ai','security']},
+        {id:'YT - Second Brain',folder:'Resources',word_count:250,connections:3,tags:['productivity']},
+        {id:'YT - Obsidian',folder:'Resources',word_count:220,connections:3,tags:['productivity']},
+        {id:'Cuban Missile Crisis',folder:'Resources',word_count:3420,connections:6,tags:['history','game-theory','crisis']},
+        {id:'Bay of Pigs',folder:'Resources',word_count:2150,connections:4,tags:['history','game-theory','crisis']},
+        {id:'Liv Stats Card',folder:'Areas',word_count:707,connections:2,tags:['education']},
+        {id:'Archer Summary',folder:'Areas',word_count:127,connections:2,tags:['infrastructure']},
+        {id:'Vault Report',folder:'Areas',word_count:180,connections:3,tags:['infrastructure']},
+        {id:'Weekly Synthesis',folder:'Inbox',word_count:600,connections:8,tags:['synthesis']},
+        {id:'Learning Report',folder:'Inbox',word_count:300,connections:2,tags:['education']},
+    ],
+    edges: [
+        {source:'Lex Fridman 490',target:'Lex Fridman 491',weight:3,type:'shared_tags'},
+        {source:'Lex Fridman 490',target:'GPT-5.4',weight:2,type:'shared_tags'},
+        {source:'Huberman - Dopamine',target:'Huberman - Play',weight:3,type:'shared_tags'},
+        {source:'GPT-5.4',target:'Anthropic Supply Chain',weight:2,type:'shared_tags'},
+        {source:'GitHub Security',target:'Wikipedia Hack',weight:2,type:'shared_tags'},
+        {source:'YT - Second Brain',target:'YT - Obsidian',weight:3,type:'wikilink'},
+        {source:'YT - Second Brain',target:'Vault Report',weight:1,type:'mention'},
+        {source:'Weekly Synthesis',target:'Vault Report',weight:2,type:'wikilink'},
+        {source:'Weekly Synthesis',target:'Lex Fridman 490',weight:1,type:'wikilink'},
+        {source:'Weekly Synthesis',target:'Huberman - Dopamine',weight:1,type:'wikilink'},
+        {source:'Weekly Synthesis',target:'GPT-5.4',weight:1,type:'semantic'},
+        {source:'Liv Stats Card',target:'Learning Report',weight:2,type:'shared_tags'},
+        {source:'Archer Summary',target:'Vault Report',weight:2,type:'wikilink'},
+        {source:'Cuban Missile Crisis',target:'Bay of Pigs',weight:3,type:'wikilink'},
+        {source:'Cuban Missile Crisis',target:'Weekly Synthesis',weight:1,type:'semantic'},
+        {source:'Bay of Pigs',target:'Weekly Synthesis',weight:1,type:'semantic'},
+    ],
+    stats: {total_nodes:17,total_edges:16,orphan_nodes:0}
+};
+
+let g3 = {}; // all Three.js state in one object
+let hoveredNode = null;
+let timeSlider = null; // Time slider for historical playback
+
+// Autopilot state (must be declared before initGraph which calls animate→updateCamera)
+let autopilotActive = false;
+let autopilotTimer = null;
+let autopilotQueue = [];
+let autopilotIndex = 0;
+
+// ---- SOUND EFFECTS (Web Audio API - tiny synth bloops) ----
+const SFX = (() => {
+    let ctx = null;
+    function getCtx() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        return ctx;
+    }
+    function play(freq, type, dur, vol) {
+        try {
+            const c = getCtx();
+            const osc = c.createOscillator();
+            const gain = c.createGain();
+            osc.type = type || 'sine';
+            osc.frequency.setValueAtTime(freq, c.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.5, c.currentTime + dur * 0.3);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.8, c.currentTime + dur);
+            gain.gain.setValueAtTime(vol || 0.08, c.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+            osc.connect(gain).connect(c.destination);
+            osc.start(); osc.stop(c.currentTime + dur);
+        } catch(e) {}
+    }
+    return {
+        bloop() { play(580, 'sine', 0.12, 0.06); },
+        pop() { play(880, 'sine', 0.08, 0.07); },
+        ding() { play(1200, 'triangle', 0.2, 0.05); },
+        whoosh() { play(200, 'sawtooth', 0.3, 0.03); },
+        sparkle() {
+            play(1400, 'sine', 0.1, 0.04);
+            setTimeout(() => play(1800, 'sine', 0.1, 0.03), 50);
+            setTimeout(() => play(2200, 'sine', 0.15, 0.02), 100);
+        },
+        party() {
+            [440, 554, 659, 880, 1109].forEach((f, i) => {
+                setTimeout(() => play(f, 'square', 0.15, 0.04), i * 60);
+            });
+        }
+    };
+})();
+
+// ---- PLAYFUL COLORS (bright, cheerful) ----
+const PLAYFUL_COLORS = [
+    '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6bff',
+    '#ff9f43', '#00d2d3', '#a29bfe', '#fd79a8', '#55efc4',
+    '#74b9ff', '#e17055', '#00cec9', '#fdcb6e', '#e056fd'
+];
+
+// ---- EMOJI ICONS by tag/folder ----
+const NODE_EMOJIS = {
+    'podcast': '🎙️', 'ai': '🤖', 'research': '🔬', 'neuroscience': '🧠',
+    'cybersecurity': '🛡️', 'security': '🔒', 'productivity': '⚡',
+    'education': '📚', 'infrastructure': '⚙️', 'synthesis': '🔮',
+    'business': '💼', 'agriculture': '🌾', 'startups': '🚀',
+    'Resources': '📦', 'Areas': '🗂️', 'Projects': '🎯', 'Inbox': '📥'
+};
+
+function getNodeEmoji(node) {
+    for (const tag of (node.tags || [])) {
+        if (NODE_EMOJIS[tag]) return NODE_EMOJIS[tag];
+    }
+    return NODE_EMOJIS[node.folder] || '✨';
+}
+
+// ---- SPARKLE SYSTEM ----
+const sparkles = [];
+function spawnSparkles(x, y, count, canvas2d) {
+    for (let i = 0; i < count; i++) {
+        if (sparkles.length >= 200) break; // cap sparkles for performance
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3;
+        const hue = Math.random() * 360;
+        sparkles.push({
+            x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.0,
+            decay: 0.015 + Math.random() * 0.025,
+            size: 2 + Math.random() * 4,
+            color: `hsl(${hue}, 100%, 70%)`,
+            shape: Math.random() > 0.5 ? 'star' : 'circle'
+        });
+    }
+}
+
+function updateSparkles(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+        const s = sparkles[i];
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 0.05; // gravity
+        s.life -= s.decay;
+        if (s.life <= 0) { sparkles.splice(i, 1); continue; }
+        ctx.globalAlpha = s.life;
+        ctx.fillStyle = s.color;
+        if (s.shape === 'star') {
+            drawStar(ctx, s.x, s.y, 4, s.size, s.size * 0.4);
+        } else {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    ctx.globalAlpha = 1;
+}
+
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+    let rot = Math.PI / 2 * 3;
+    const step = Math.PI / spikes;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerR);
+    for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+    }
+    ctx.lineTo(cx, cy - outerR);
+    ctx.closePath();
+    ctx.fill();
+}
+
+let g3ShakeAll = null; // global ref for shake button
+
+function initGraph(data) {
+    const graph = data || DEMO_GRAPH;
+    const container = document.getElementById('graphContainer');
+    if (!container || typeof THREE === 'undefined') return;
+
+    // Teardown previous graph if reinitializing
+    if (g3.renderer) {
+        if (g3.rafId) cancelAnimationFrame(g3.rafId);
+        if (g3._onResize) window.removeEventListener('resize', g3._onResize);
+        g3.renderer.dispose();
+        g3.renderer.forceContextLoss();
+        container.innerHTML = '';
+    }
+
+    try { _initGraphInner(graph, container); }
+    catch (e) {
+        console.error('Knowledge graph init failed:', e, e.stack);
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>Graph failed to load</div><div style="font-size:11px;color:#71717a;max-width:600px">Graph rendering encountered an issue. Try refreshing.</div></div>';
+    }
+}
+
+function _initGraphInner(graph, container) {
+    // Setup sparkle overlay
+    const sparkleCanvas = document.getElementById('sparkleCanvas');
+    let sparkleCtx = null;
+    if (sparkleCanvas) {
+        sparkleCanvas.width = container.clientWidth;
+        sparkleCanvas.height = container.clientHeight;
+        sparkleCtx = sparkleCanvas.getContext('2d');
+    }
+
+    // Stats label
+    const stats = graph.stats || {};
+    document.getElementById('graphStats').textContent =
+        `${stats.total_nodes || graph.nodes.length} nodes · ${stats.total_edges || graph.edges.length} edges · ${(graph.communities || []).length} communities`;
+
+    // Build legend with filter toggles
+    const legendEl = document.getElementById('graphLegend');
+    if (legendEl) {
+        let legendItems = '';
+        if (graph.communities && graph.communities.length > 0) {
+            legendItems = graph.communities.map((c, idx) => {
+                const color = COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length];
+                const topTag = (c.top_tags || [])[0] || '';
+                const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
+                const dimmed = graphHiddenGroups.has(label) ? ' dimmed' : '';
+                const safeLabel = escapeHtml(label).replace(/'/g, '&#39;');
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${safeLabel}"><span class="graph-legend-dot" style="background:${color}"></span> ${safeLabel} (${c.size})</span>`;
+            }).join('');
+        } else {
+            // Fallback: folder-based legend
+            const folders = ['Resources','Areas','Projects','Inbox'];
+            legendItems = folders.map(f => {
+                const c = GRAPH_COLORS[f] || '#a1a1aa';
+                const count = graph.nodes.filter(n => n.folder === f).length;
+                if (count === 0) return '';
+                const dimmed = graphHiddenGroups.has(f) ? ' dimmed' : '';
+                return `<span class="graph-legend-item filterable${dimmed}" data-filter="${f}"><span class="graph-legend-dot" style="background:${c}"></span> ${f} (${count})</span>`;
+            }).join('');
+        }
+        legendEl.innerHTML = legendItems +
+            '<span class="graph-legend-item" style="margin-left:auto;opacity:0.5;font-size:11px">click for sparkles ✨ drag to orbit · scroll to zoom · shake 🎉</span>';
+        // Event delegation for legend filter clicks (safe — no inline onclick)
+        legendEl.querySelectorAll('.graph-legend-item.filterable').forEach(el => {
+            el.addEventListener('click', () => toggleGraphFilter(el, el.dataset.filter));
+        });
+    }
+
+    // Clean up previous
+    if (g3.renderer) {
+        g3.renderer.dispose();
+        g3.renderer.domElement.remove();
+        cancelAnimationFrame(g3.rafId);
+    }
+
+    const W = container.clientWidth;
+    const H = container.clientHeight;
+    console.log('[graph] container size:', W, H, 'THREE defined:', typeof THREE !== 'undefined');
+
+    // Scene — theme-aware background
+    const scene = new THREE.Scene();
+    const isLight = getTheme() === 'light';
+    const sceneBg = isLight ? 0xdde4ed : 0x07090f;
+    scene.background = new THREE.Color(sceneBg);
+    scene.fog = new THREE.FogExp2(sceneBg, isLight ? 0.001 : 0.0014);
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(50, W / H, 1, 2000);
+    camera.position.set(0, 60, 280);
+
+    // Renderer — try creating WebGL, fall back to friendly message
+    console.log('[graph] creating renderer...');
+    let renderer;
+    try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    } catch (e) {
+        console.warn('[graph] WebGL failed:', e.message);
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a1a1aa;font-size:14px;font-family:Inter,sans-serif;flex-direction:column;gap:8px;text-align:center;padding:20px"><div>3D graph requires WebGL</div><div style="font-size:12px;color:#71717a">Try closing other tabs, or enable hardware acceleration in browser settings</div></div>';
+        return;
+    }
+    renderer.setSize(W, H);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.insertBefore(renderer.domElement, container.firstChild);
+
+    // -- Post-processing: Bloom (wrapped in try-catch for resilience) --
+    let composer = null, bloomPass = null;
+    try {
+        if (typeof THREE.EffectComposer !== 'undefined' && typeof THREE.UnrealBloomPass !== 'undefined') {
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+            bloomPass = new THREE.UnrealBloomPass(
+                new THREE.Vector2(W, H),
+                0.8,   // strength
+                0.4,   // radius
+                0.25   // threshold
+            );
+            composer.addPass(bloomPass);
+        }
+    } catch (e) {
+        console.warn('Bloom post-processing failed, falling back to basic render:', e);
+        composer = null;
+        bloomPass = null;
+    }
+
+    console.log('[graph] bloom done, composer:', !!composer, 'building scene...');
+    // -- Lights (brighter, more colorful) --
+    scene.add(new THREE.AmbientLight(0x445577, 0.8));
+    const pointLight = new THREE.PointLight(0xa78bfa, 1.0, 800);
+    pointLight.position.set(0, 100, 100);
+    scene.add(pointLight);
+    const pointLight2 = new THREE.PointLight(0xfb7185, 0.5, 600);
+    pointLight2.position.set(-100, -50, 80);
+    scene.add(pointLight2);
+
+    // -- Starfield (brighter, twinkle) --
+    const starGeo = new THREE.BufferGeometry();
+    const starCount = 1000;
+    const starPos = new Float32Array(starCount * 3);
+    const starSizes = new Float32Array(starCount);
+    for (let i = 0; i < starCount; i++) {
+        starPos[i*3]     = (Math.random() - 0.5) * 1400;
+        starPos[i*3 + 1] = (Math.random() - 0.5) * 1400;
+        starPos[i*3 + 2] = (Math.random() - 0.5) * 1400;
+        starSizes[i] = 0.8 + Math.random() * 2.0;
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({
+        color: isLight ? 0x8899bb : 0x4466aa, size: 1.5, transparent: true, opacity: isLight ? 0.35 : 0.7
+    });
+    const starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
+
+    console.log('[graph] starfield + lights added, building nodes...');
+    // -- Build community color map from graph data --
+    const communityMap = {};
+    const communityMeta = [];
+    if (graph.communities) {
+        graph.communities.forEach((c, idx) => {
+            const color = COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length];
+            const topTag = (c.top_tags || [])[0] || '';
+            const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
+            communityMeta.push({ label, color, size: c.size || 0 });
+            (c.members || []).forEach(id => { communityMap[id] = color; });
+        });
+    }
+
+    // -- Layout: 3D force simulation (pre-computed) --
+    const nodeMap = {};
+    const nodes3d = graph.nodes.map((n, i) => {
+        // Spherical initial placement
+        const phi = Math.acos(1 - 2 * (i + 0.5) / graph.nodes.length);
+        const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+        const r = 80 + Math.random() * 30;
+        const pos = {
+            x: r * Math.sin(phi) * Math.cos(theta),
+            y: r * Math.sin(phi) * Math.sin(theta) * 0.6,
+            z: r * Math.cos(phi),
+            vx: 0, vy: 0, vz: 0
+        };
+        // Use playful colors instead of muted ones
+        let nodeColor = communityMap[n.id] || GRAPH_COLORS[n.folder] || GRAPH_COLORS.root;
+        if (!communityMap[n.id]) {
+            nodeColor = PLAYFUL_COLORS[i % PLAYFUL_COLORS.length];
+        }
+        const nd = { ...n, ...pos, color: nodeColor,
+            radius: Math.max(2.5, Math.min(6, (n.connections || 1) * 0.5)),
+            // Playful physics
+            _baseY: 0, _floatOffset: Math.random() * Math.PI * 2,
+            _floatSpeed: 0.3 + Math.random() * 0.5,
+            _floatAmp: 1.5 + Math.random() * 2.5,
+            _bounceVel: 0, _bouncePos: 0,
+            _wiggle: 0, _wiggleDecay: 0,
+            _scaleTarget: 1, _scale: 1,
+            _emoji: getNodeEmoji(n)
+        };
+        nodeMap[n.id] = nd;
+        return nd;
+    });
+
+    const edges3d = graph.edges.filter(e => nodeMap[e.source] && nodeMap[e.target]).map(e => ({
+        source: nodeMap[e.source], target: nodeMap[e.target],
+        weight: e.weight || 1, type: e.type || 'shared_tags'
+    }));
+
+    // Build adjacency
+    nodes3d.forEach(n => n._neighbors = new Set());
+    edges3d.forEach(e => { e.source._neighbors.add(e.target.id); e.target._neighbors.add(e.source.id); });
+
+    // Run 3D force layout (200 ticks, no rendering — like pre-baking positions)
+    for (let tick = 0; tick < 200; tick++) {
+        const alpha = 0.3 * Math.pow(0.985, tick);
+        if (alpha < 0.001) break;
+        // Repulsion
+        for (let i = 0; i < nodes3d.length; i++) {
+            for (let j = i+1; j < nodes3d.length; j++) {
+                const a = nodes3d[i], b = nodes3d[j];
+                let dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
+                let dist = Math.sqrt(dx*dx+dy*dy+dz*dz) || 1;
+                let f = -600 / (dist*dist) * alpha;
+                let fx = dx/dist*f, fy = dy/dist*f, fz = dz/dist*f;
+                a.vx -= fx; a.vy -= fy; a.vz -= fz;
+                b.vx += fx; b.vy += fy; b.vz += fz;
+            }
+        }
+        // Attraction along edges
+        edges3d.forEach(e => {
+            let dx = e.target.x-e.source.x, dy = e.target.y-e.source.y, dz = e.target.z-e.source.z;
+            let dist = Math.sqrt(dx*dx+dy*dy+dz*dz) || 1;
+            let f = (dist - 40) * 0.008 * alpha * Math.min(e.weight, 3);
+            let fx = dx/dist*f, fy = dy/dist*f, fz = dz/dist*f;
+            e.source.vx += fx; e.source.vy += fy; e.source.vz += fz;
+            e.target.vx -= fx; e.target.vy -= fy; e.target.vz -= fz;
+        });
+        // Centering + damping
+        nodes3d.forEach(n => {
+            n.vx += -n.x * 0.002 * alpha; n.vy += -n.y * 0.002 * alpha; n.vz += -n.z * 0.002 * alpha;
+            n.vx *= 0.75; n.vy *= 0.75; n.vz *= 0.75;
+            n.x += n.vx; n.y += n.vy; n.z += n.vz;
+        });
+    }
+
+    // Save base Y for floating animation
+    nodes3d.forEach(n => { n._baseY = n.y; });
+
+    // -- Create node meshes (bigger, bouncier) --
+    const nodeMeshes = [];
+    const glowMat = new THREE.SpriteMaterial({
+        map: createGlowTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false
+    });
+
+    // Create emoji texture for sprite labels
+    function createEmojiTexture(emoji) {
+        const c = document.createElement('canvas');
+        c.width = 64; c.height = 64;
+        const ctx = c.getContext('2d');
+        ctx.font = '48px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, 32, 36);
+        return new THREE.CanvasTexture(c);
+    }
+
+    nodes3d.forEach(n => {
+        const color = new THREE.Color(n.color);
+        // Sphere (slightly bigger for playfulness)
+        const geo = new THREE.SphereGeometry(n.radius, 20, 14);
+        const mat = new THREE.MeshPhongMaterial({
+            color, emissive: color.clone(), emissiveIntensity: isLight ? 0.3 : 0.5,
+            transparent: true, opacity: 0.92, shininess: 80
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(n.x, n.y, n.z);
+        mesh.userData = n;
+        scene.add(mesh);
+        nodeMeshes.push(mesh);
+
+        // Glow sprite (bigger, more vibrant)
+        const glow = new THREE.Sprite(glowMat.clone());
+        glow.material.color = color;
+        glow.material.opacity = isLight ? 0.12 : (composer ? 0.15 : 0.35);
+        glow.scale.set(n.radius * (composer ? 4 : 6), n.radius * (composer ? 4 : 6), 1);
+        glow.position.copy(mesh.position);
+        scene.add(glow);
+        mesh.userData._glow = glow;
+
+        // Emoji sprite floating above node
+        const emojiTex = createEmojiTexture(n._emoji);
+        const emojiMat = new THREE.SpriteMaterial({ map: emojiTex, transparent: true, depthWrite: false });
+        const emojiSprite = new THREE.Sprite(emojiMat);
+        emojiSprite.scale.set(n.radius * 2.5, n.radius * 2.5, 1);
+        emojiSprite.position.set(n.x, n.y + n.radius + 3, n.z);
+        scene.add(emojiSprite);
+        mesh.userData._emojiSprite = emojiSprite;
+    });
+
+    // Build node lookup map (O(1) instead of O(n) find per access)
+    const nodeMeshMap = new Map();
+    nodeMeshes.forEach(m => nodeMeshMap.set(m.userData.id, m));
+
+    console.log('[graph] nodes created:', nodeMeshes.length);
+    // -- Create curved edge lines --
+    const edgeTypeColors = {
+        wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: isLight ? 0x6678aa : 0x2d3561
+    };
+    const CURVE_SEGMENTS = 20;
+    const lineMeshes = [];
+
+    function computeCurvePoints(sx, sy, sz, tx, ty, tz) {
+        const mx = (sx + tx) / 2, my = (sy + ty) / 2, mz = (sz + tz) / 2;
+        const dx = tx - sx, dy = ty - sy, dz = tz - sz;
+        const len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+        // Perpendicular offset for organic arc
+        const px = -dz / len, pz = dx / len;
+        const arcAmount = len * 0.15;
+        const cp = new THREE.Vector3(mx + px * arcAmount, my + len * 0.08, mz + pz * arcAmount);
+        const curve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(sx, sy, sz), cp, new THREE.Vector3(tx, ty, tz)
+        );
+        return curve.getPoints(CURVE_SEGMENTS);
+    }
+
+    edges3d.forEach(e => {
+        const pts = computeCurvePoints(e.source.x, e.source.y, e.source.z, e.target.x, e.target.y, e.target.z);
+        const geo = new THREE.BufferGeometry().setFromPoints(pts);
+        const c = edgeTypeColors[e.type] || edgeTypeColors.shared_tags;
+        // Phase 2: weight-based opacity
+        const w = Math.min(e.weight || 1, 3);
+        const baseTypeOp = e.type === 'shared_tags' ? (isLight ? 0.35 : 0.25) : (e.type === 'wikilink' ? 0.6 : 0.45);
+        const opacity = Math.min(baseTypeOp * (0.5 + w * 0.5), 0.85);
+        let mat, line;
+        // Phase 3: dashed material for strong edges
+        if (w >= 2) {
+            mat = new THREE.LineDashedMaterial({ color: c, transparent: true, opacity, depthWrite: false, dashSize: 0.3, gapSize: 0.2, linewidth: w >= 3 ? 2 : 1 });
+            line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            line.userData._dashed = true;
+            line.userData._dashWeight = w;
+        } else {
+            mat = new THREE.LineBasicMaterial({ color: c, transparent: true, opacity, depthWrite: false });
+            line = new THREE.Line(geo, mat);
+        }
+        line.userData = Object.assign(line.userData || {}, e);
+        line.userData._baseOpacity = opacity;
+        scene.add(line);
+        lineMeshes.push(line);
+    });
+
+    console.log('[graph] edges created:', lineMeshes.length);
+    // -- Phase 4: Node text labels (billboard sprites) --
+    const labelSprites = [];
+    function createLabelTexture(text, color) {
+        const c = document.createElement('canvas');
+        c.width = 256; c.height = 64;
+        const ctx = c.getContext('2d');
+        ctx.font = 'bold 28px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = isLight ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)';
+        ctx.fillText(text, 130, 34); // shadow
+        ctx.fillStyle = color || (isLight ? '#1e293b' : '#e2e8f0');
+        ctx.fillText(text, 128, 32);
+        return new THREE.CanvasTexture(c);
+    }
+    nodes3d.forEach((n, i) => {
+        const label = (n.id || '').length > 18 ? n.id.substring(0, 18) + '…' : n.id;
+        const tex = createLabelTexture(label, isLight ? '#1e293b' : '#e2e8f0');
+        const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(n.radius * 5, n.radius * 1.3, 1);
+        sprite.position.set(n.x, n.y + n.radius + 4.5, n.z);
+        sprite.userData._nodeIdx = i;
+        n._labelIdx = i; // link node to its label sprite
+        scene.add(sprite);
+        labelSprites.push(sprite);
+    });
+
+    // -- Phase 5: Cluster halos --
+    const halos = [];
+    if (graph.communities && graph.communities.length > 0) {
+        graph.communities.forEach((c, idx) => {
+            if ((c.members || []).length < 3) return;
+            const members = (c.members || []).map(id => nodeMap[id]).filter(Boolean);
+            if (members.length < 3) return;
+            const cx = members.reduce((s, n) => s + n.x, 0) / members.length;
+            const cy = members.reduce((s, n) => s + n.y, 0) / members.length;
+            const cz = members.reduce((s, n) => s + n.z, 0) / members.length;
+            let maxR = 0;
+            members.forEach(n => {
+                const d = Math.sqrt((n.x-cx)**2 + (n.y-cy)**2 + (n.z-cz)**2);
+                if (d > maxR) maxR = d;
+            });
+            const color = new THREE.Color(COMMUNITY_COLORS[idx % COMMUNITY_COLORS.length]);
+            color.multiplyScalar(0.4);
+            const haloGeo = new THREE.SphereGeometry(maxR + 12, 16, 12);
+            const haloMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.045, side: THREE.BackSide, depthWrite: false });
+            const halo = new THREE.Mesh(haloGeo, haloMat);
+            halo.position.set(cx, cy, cz);
+            scene.add(halo);
+            halos.push(halo);
+        });
+    }
+
+    // -- Phase 9: Ambient particles --
+    const particleCount = 60;
+    const apGeo = new THREE.BufferGeometry();
+    const apPos = new Float32Array(particleCount * 3);
+    const apSizes = new Float32Array(particleCount);
+    const drift = [];
+    for (let i = 0; i < particleCount; i++) {
+        const r = 20 + Math.random() * 5;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        apPos[i*3]     = r * Math.sin(phi) * Math.cos(theta);
+        apPos[i*3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        apPos[i*3 + 2] = r * Math.cos(phi);
+        apSizes[i] = 0.03 + Math.random() * 0.05;
+        drift.push({ x: (Math.random()-0.5)*0.004, y: (Math.random()-0.5)*0.004, z: (Math.random()-0.5)*0.004 });
+    }
+    apGeo.setAttribute('position', new THREE.BufferAttribute(apPos, 3));
+    const apMat = new THREE.PointsMaterial({ color: isLight ? 0x667788 : 0xcccccc, size: 1.2, transparent: true, opacity: isLight ? 0.3 : 0.2, depthWrite: false });
+    const ambientParticles = new THREE.Points(apGeo, apMat);
+    ambientParticles.userData._drift = drift;
+    scene.add(ambientParticles);
+
+    // -- Edge flow particles (dots flowing along connections) --
+    const flowableEdges = edges3d; // All edge types get particles
+    const FLOW_COUNT = Math.min(flowableEdges.length * 2, 200);
+    const flowGeo = new THREE.SphereGeometry(0.35, 6, 4);
+    const flowBaseMat = new THREE.MeshBasicMaterial({ color: 0x74b9ff, transparent: true, opacity: 0.7 });
+    const flowParticles = [];
+    for (let fi = 0; fi < FLOW_COUNT; fi++) {
+        const edge = flowableEdges[fi % flowableEdges.length];
+        const fm = new THREE.Mesh(flowGeo, flowBaseMat.clone());
+        fm.material.color = new THREE.Color(edgeTypeColors[edge.type] || 0x74b9ff);
+        fm.scale.setScalar(0);
+        scene.add(fm);
+        flowParticles.push({ mesh: fm, edge, t: Math.random(), speed: 0.002 + Math.random() * 0.004, active: true });
+    }
+    function updateFlowParticles() {
+        flowParticles.forEach(fp => {
+            if (!fp.active) return;
+            fp.t += fp.speed * (1 + (fp.edge.weight || 1) * 0.3);
+            if (fp.t > 1) fp.t -= 1;
+            const sm = nodeMeshMap.get(fp.edge.source.id);
+            const tm = nodeMeshMap.get(fp.edge.target.id);
+            if (!sm || !tm || !sm.visible || !tm.visible) { fp.mesh.visible = false; return; }
+            fp.mesh.visible = true;
+            const sp = sm.position, tp = tm.position;
+            const mx=(sp.x+tp.x)/2, my=(sp.y+tp.y)/2, mz=(sp.z+tp.z)/2;
+            const dx=tp.x-sp.x, dy=tp.y-sp.y, dz=tp.z-sp.z;
+            const len=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;
+            const px=-dz/len, pz=dx/len;
+            const cpx=mx+px*len*0.15, cpy=my+len*0.08, cpz=mz+pz*len*0.15;
+            const t=fp.t, it=1-t;
+            fp.mesh.position.set(it*it*sp.x+2*it*t*cpx+t*t*tp.x, it*it*sp.y+2*it*t*cpy+t*t*tp.y, it*it*sp.z+2*it*t*cpz+t*t*tp.z);
+            const fade = Math.sin(t * Math.PI);
+            fp.mesh.material.opacity = 0.55 * fade;
+            fp.mesh.scale.setScalar(0.4 + fade * 0.6);
+        });
+    }
+
+    // -- Node entry animation (staggered, hubs first) --
+    const entryOrder = nodes3d.map((n,i) => ({i, c: n.connections||0})).sort((a,b) => b.c - a.c).map(x => x.i);
+    nodeMeshes.forEach(m => { m.scale.setScalar(0); m.userData._scaleTarget = 0; if(m.userData._glow) m.userData._glow.scale.setScalar(0); if(m.userData._emojiSprite) m.userData._emojiSprite.visible = false; });
+    lineMeshes.forEach(l => { l.material.opacity = 0; });
+    flowParticles.forEach(fp => { fp.active = false; fp.mesh.visible = false; });
+    entryOrder.forEach((ni, rank) => {
+        setTimeout(() => { const m = nodeMeshes[ni]; if(m) { m.userData._scaleTarget = 1; if(m.userData._emojiSprite) m.userData._emojiSprite.visible = true; } }, rank * 35);
+    });
+    setTimeout(() => {
+        lineMeshes.forEach(l => { const tgt = l.userData._baseOpacity || 0.45; let cur = 0; const iv = setInterval(() => { cur += 0.025; if(cur >= tgt) { l.material.opacity = tgt; clearInterval(iv); } else l.material.opacity = cur; }, 16); });
+        setTimeout(() => { flowParticles.forEach(fp => { fp.active = true; }); }, 500);
+    }, entryOrder.length * 35 + 200);
+
+    // -- Camera System (spherical orbit with smooth interpolation) --
+    const cinematicCamera = {
+        theta: 0, phi: Math.PI * 0.35, distance: 280,
+        lookAt: new THREE.Vector3(0, 0, 0),
+        targetTheta: 0, targetPhi: Math.PI * 0.35, targetDistance: 280,
+        targetLookAt: new THREE.Vector3(0, 0, 0),
+        autoRotate: true,
+        update() {
+            if (this.autoRotate) this.targetTheta += 0.0015;
+            this.theta += (this.targetTheta - this.theta) * 0.06;
+            this.phi += (this.targetPhi - this.phi) * 0.06;
+            this.distance += (this.targetDistance - this.distance) * 0.06;
+            this.lookAt.lerp(this.targetLookAt, 0.06);
+            const sp = Math.sin(this.phi), cp = Math.cos(this.phi);
+            const st = Math.sin(this.theta), ct = Math.cos(this.theta);
+            camera.position.set(
+                this.lookAt.x + this.distance * sp * st,
+                this.lookAt.y + this.distance * cp,
+                this.lookAt.z + this.distance * sp * ct
+            );
+            camera.lookAt(this.lookAt);
+        }
+    };
+    
+    let isDragging = false, lastMouse = {x:0,y:0};
+    hoveredNode = null;
+    let clickCount = {}; // track clicks per node for easter eggs
+
+    // Compatibility aliases for existing code
+    let orbitTheta = 0, orbitPhi = Math.PI * 0.35, orbitDist = 280;
+    let targetTheta = 0, targetPhi = Math.PI * 0.35, targetDist = 280;
+    let targetLookAt = new THREE.Vector3(0, 0, 0);
+    let currentLookAt = new THREE.Vector3(0, 0, 0);
+    let autoRotate = true;
+
+    function updateCamera() {
+        // Cinematic camera handles all updates
+        cinematicCamera.update();
+        
+        // Sync compatibility aliases
+        orbitTheta = cinematicCamera.theta;
+        orbitPhi = cinematicCamera.phi;
+        orbitDist = cinematicCamera.distance;
+        currentLookAt.copy(cinematicCamera.lookAt);
+        targetTheta = cinematicCamera.targetTheta;
+        targetPhi = cinematicCamera.targetPhi;
+        targetDist = cinematicCamera.targetDistance;
+        targetLookAt.copy(cinematicCamera.targetLookAt);
+        autoRotate = cinematicCamera.autoRotate;
+    }
+
+    // -- Playful node physics update --
+    function updatePlayfulNodes(time) {
+        nodeMeshes.forEach(m => {
+            const nd = m.userData;
+            // Gentle floating motion
+            const floatY = Math.sin(time * nd._floatSpeed + nd._floatOffset) * nd._floatAmp;
+            // Bounce physics (spring)
+            nd._bounceVel += (-nd._bouncePos) * 0.15; // spring force
+            nd._bounceVel *= 0.85; // damping
+            nd._bouncePos += nd._bounceVel;
+            // Wiggle decay
+            nd._wiggle *= 0.92;
+            const wiggleX = Math.sin(time * 15) * nd._wiggle;
+            const wiggleZ = Math.cos(time * 15) * nd._wiggle;
+            // Apply position
+            m.position.y = nd._baseY + floatY + nd._bouncePos;
+            m.position.x = nd.x + wiggleX;
+            m.position.z = nd.z + wiggleZ;
+            // Smooth scale (for hover pop)
+            nd._scale += (nd._scaleTarget - nd._scale) * 0.12;
+            m.scale.setScalar(nd._scale);
+            // Update glow + emoji positions
+            if (nd._glow) {
+                nd._glow.position.copy(m.position);
+                nd._glow.scale.set(nd.radius * 6 * nd._scale, nd.radius * 6 * nd._scale, 1);
+            }
+            if (nd._emojiSprite) {
+                nd._emojiSprite.position.set(m.position.x, m.position.y + nd.radius * nd._scale + 3, m.position.z);
+                nd._emojiSprite.scale.set(nd.radius * 2.5 * nd._scale, nd.radius * 2.5 * nd._scale, 1);
+            }
+            // Phase 4: sync label sprite position
+            if (nd._labelIdx !== undefined && labelSprites[nd._labelIdx]) {
+                labelSprites[nd._labelIdx].position.set(m.position.x, m.position.y + nd.radius * nd._scale + 4.5, m.position.z);
+            }
+        });
+        // Update edge positions to follow floating nodes
+        lineMeshes.forEach(l => {
+            const e = l.userData;
+            const srcMesh = nodeMeshMap.get(e.source.id);
+            const tgtMesh = nodeMeshMap.get(e.target.id);
+            if (srcMesh && tgtMesh) {
+                const cpts = computeCurvePoints(srcMesh.position.x, srcMesh.position.y, srcMesh.position.z, tgtMesh.position.x, tgtMesh.position.y, tgtMesh.position.z);
+                const pos = l.geometry.attributes.position;
+                for (let ci = 0; ci <= CURVE_SEGMENTS; ci++) { pos.setXYZ(ci, cpts[ci].x, cpts[ci].y, cpts[ci].z); }
+                pos.needsUpdate = true;
+                if (l.userData._dashed) l.computeLineDistances();
+            }
+        });
+        // Twinkle starfield
+        starMat.opacity = 0.5 + Math.sin(time * 0.5) * 0.2;
+    }
+
+    // Bounce a node (called on click) — satisfying spring physics
+    function bounceNode(nd) {
+        nd._bounceVel = 12;
+        nd._wiggle = 3;
+        nd._scaleTarget = 1.5;
+        setTimeout(() => { nd._scaleTarget = 1; }, 200);
+    }
+
+    // Shake ALL nodes (party mode / easter egg)
+    function shakeAllNodes() {
+        nodes3d.forEach((n, i) => {
+            setTimeout(() => {
+                n._bounceVel = 8 + Math.random() * 14;
+                n._wiggle = 3 + Math.random() * 4;
+                n._scaleTarget = 1.4;
+                setTimeout(() => { n._scaleTarget = 1; }, 300);
+            }, i * 30); // staggered wave effect
+        });
+        // Big sparkle burst everywhere
+        if (sparkleCtx) {
+            const cx = sparkleCanvas.width / 2;
+            const cy = sparkleCanvas.height / 2;
+            spawnSparkles(cx, cy, 80, sparkleCtx);
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    spawnSparkles(cx + (Math.random()-0.5) * 400, cy + (Math.random()-0.5) * 300, 30, sparkleCtx);
+                }, i * 50);
+            }
+        }
+    }
+    g3ShakeAll = shakeAllNodes;
+
+    // Mouse/touch handlers — reuse raycaster + mouse vector (avoid GC pressure)
+    const _raycaster = new THREE.Raycaster();
+    _raycaster.params.Mesh = { threshold: 2 };
+    const _mouseVec = new THREE.Vector2();
+    const canvas = renderer.domElement;
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        lastMouse = {x: e.clientX, y: e.clientY};
+        cinematicCamera.autoRotate = false;
+        autoRotate = false;
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const dx = e.clientX - lastMouse.x;
+            const dy = e.clientY - lastMouse.y;
+            cinematicCamera.handleDrag(dx, dy);
+            lastMouse = {x: e.clientX, y: e.clientY};
+        } else {
+            const rect = canvas.getBoundingClientRect();
+            _mouseVec.set(
+                ((e.clientX - rect.left) / rect.width) * 2 - 1,
+                -((e.clientY - rect.top) / rect.height) * 2 + 1
+            );
+            _raycaster.setFromCamera(_mouseVec, camera);
+            const hits = _raycaster.intersectObjects(nodeMeshes);
+            const tooltip = document.getElementById('graphTooltip');
+            if (hits.length > 0) {
+                const nd = hits[0].object.userData;
+                if (hoveredNode !== nd) SFX.bloop(); // sound on new hover
+                hoveredNode = nd;
+                canvas.style.cursor = 'pointer';
+                // Pop scale on hover
+                nd._scaleTarget = 1.3;
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX - rect.left + 14) + 'px';
+                tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
+                const tags = (nd.tags || []).slice(0, 5).map(t => `<span class="tt-tag">${t}</span>`).join('');
+                // Phase 8: Enhanced tooltip with neighborhood context + mini graph
+                const neighborIds = nd._neighbors ? [...nd._neighbors].slice(0, 3) : [];
+                const neighborNames = neighborIds.map(id => `<span class="tt-neighbor">${id}</span>`).join(', ');
+                const communityLabel = nodeGroupMap[nd.id] || '';
+                tooltip.innerHTML = `<span style="font-size:16px;margin-right:4px">${nd._emoji}</span><strong>${escapeHtml(nd.id)}</strong>
+                    <div class="tt-folder" style="color:${nd.color}">${nd.folder}</div>
+                    ${communityLabel ? '<div class="tt-community">' + communityLabel + '</div>' : ''}
+                    <div class="tt-meta">${nd.word_count || '?'} words &middot; ${nd.connections || 0} connections</div>
+                    ${tags ? '<div class="tt-tags">' + tags + '</div>' : ''}
+                    ${neighborNames ? '<div class="tt-neighbors">Linked to: ' + neighborNames + (nd._neighbors && nd._neighbors.size > 3 ? ' +' + (nd._neighbors.size - 3) + ' more' : '') + '</div>' : ''}
+                    <canvas class="tt-mini-graph" id="ttMiniCanvas" width="140" height="140"></canvas>
+                    <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">Click to bounce &middot; Double-click to open</div>`;
+                // Draw mini neighborhood radial graph
+                requestAnimationFrame(() => {
+                    const mc = document.getElementById('ttMiniCanvas');
+                    if (!mc) return;
+                    const mctx = mc.getContext('2d');
+                    const cx2 = 70, cy2 = 70, rad = 45;
+                    mctx.clearRect(0, 0, 140, 140);
+                    const allNeighbors = nd._neighbors ? [...nd._neighbors] : [];
+                    const shown = allNeighbors.slice(0, 8);
+                    // Draw edges
+                    mctx.strokeStyle = 'rgba(99,102,241,0.3)';
+                    mctx.lineWidth = 1;
+                    shown.forEach((nid, i) => {
+                        const angle = (i / shown.length) * Math.PI * 2 - Math.PI / 2;
+                        const nx = cx2 + Math.cos(angle) * rad;
+                        const ny = cy2 + Math.sin(angle) * rad;
+                        mctx.beginPath(); mctx.moveTo(cx2, cy2); mctx.lineTo(nx, ny); mctx.stroke();
+                    });
+                    // Draw neighbor nodes
+                    shown.forEach((nid, i) => {
+                        const angle = (i / shown.length) * Math.PI * 2 - Math.PI / 2;
+                        const nx = cx2 + Math.cos(angle) * rad;
+                        const ny = cy2 + Math.sin(angle) * rad;
+                        const nn = nodes3d.find(n => n.id === nid);
+                        mctx.fillStyle = nn ? nn.color : '#94a3b8';
+                        mctx.beginPath(); mctx.arc(nx, ny, 5, 0, Math.PI * 2); mctx.fill();
+                        mctx.fillStyle = '#94a3b8';
+                        mctx.font = '8px Inter, sans-serif';
+                        mctx.textAlign = 'center';
+                        const lbl = (nid || '').length > 10 ? nid.substring(0, 10) + '…' : nid;
+                        mctx.fillText(lbl, nx, ny + 14);
+                    });
+                    // Center node (hovered)
+                    mctx.fillStyle = nd.color;
+                    mctx.beginPath(); mctx.arc(cx2, cy2, 8, 0, Math.PI * 2); mctx.fill();
+                    mctx.strokeStyle = '#fff'; mctx.lineWidth = 1.5; mctx.stroke();
+                });
+                // Highlight connected edges
+                lineMeshes.forEach(l => {
+                    const le = l.userData;
+                    if (le.source.id === nd.id || le.target.id === nd.id) {
+                        l.material.opacity = 0.8;
+                        l.material.color.set(edgeTypeColors[le.type] || 0x74b9ff);
+                    } else {
+                        l.material.opacity = 0.03;
+                    }
+                });
+                nodeMeshes.forEach(m => {
+                    const mn = m.userData;
+                    if (mn.id === nd.id || nd._neighbors.has(mn.id)) {
+                        m.material.opacity = 1;
+                        m.material.emissiveIntensity = mn.id === nd.id ? 1.0 : 0.7;
+                        if (mn._glow) mn._glow.material.opacity = 0.5;
+                        if (mn.id !== nd.id) mn._scaleTarget = 1.15;
+                    } else {
+                        m.material.opacity = 0.15;
+                        m.material.emissiveIntensity = 0.1;
+                        if (mn._glow) mn._glow.material.opacity = 0.03;
+                        mn._scaleTarget = 0.85;
+                    }
+                });
+            } else {
+                if (hoveredNode) {
+                    // Reset all scales
+                    nodes3d.forEach(n => { n._scaleTarget = 1; });
+                }
+                hoveredNode = null;
+                canvas.style.cursor = 'grab';
+                tooltip.style.display = 'none';
+                lineMeshes.forEach(l => {
+                    const le = l.userData;
+                    l.material.opacity = le.type === 'shared_tags' ? 0.25 : (le.type === 'wikilink' ? 0.6 : 0.45);
+                    l.material.color.set(edgeTypeColors[le.type] || edgeTypeColors.shared_tags);
+                });
+                nodeMeshes.forEach(m => {
+                    m.material.opacity = 0.92;
+                    m.material.emissiveIntensity = 0.5;
+                    if (m.userData._glow) m.userData._glow.material.opacity = 0.35;
+                });
+            }
+        }
+    });
+    canvas.addEventListener('mouseup', () => { isDragging = false; });
+    canvas.addEventListener('mouseleave', () => {
+        isDragging = false;
+        nodes3d.forEach(n => { n._scaleTarget = 1; });
+        document.getElementById('graphTooltip').style.display = 'none';
+    });
+    canvas.addEventListener('click', (e) => {
+        if (hoveredNode) {
+            // Bounce the node!
+            bounceNode(hoveredNode);
+            SFX.sparkle();
+            // Sparkles at click position
+            const rect = canvas.getBoundingClientRect();
+            if (sparkleCtx) {
+                spawnSparkles(e.clientX - rect.left, e.clientY - rect.top, 25, sparkleCtx);
+            }
+            // Cinematic fly to node
+            const targetPos = new THREE.Vector3(hoveredNode.x, hoveredNode._baseY, hoveredNode.z);
+            cinematicCamera.flyTo(
+                cinematicCamera.theta, // Keep current rotation
+                Math.PI * 0.4,  // Slight elevation
+                80,  // Close zoom
+                targetPos
+            );
+            autoRotate = false;
+            // Easter egg: click same node 5 times
+            clickCount[hoveredNode.id] = (clickCount[hoveredNode.id] || 0) + 1;
+            if (clickCount[hoveredNode.id] >= 5) {
+                clickCount[hoveredNode.id] = 0;
+                shakeAllNodes(); // Party mode!
+                SFX.party();
+            }
+            // Bounce neighbors too (chain reaction with rising pitch)
+            let ni = 0;
+            hoveredNode._neighbors.forEach(nid => {
+                const neighbor = nodes3d.find(n => n.id === nid);
+                if (neighbor) {
+                    const delay = 100 + ni * 80;
+                    setTimeout(() => { bounceNode(neighbor); SFX.pop(); }, delay);
+                    ni++;
+                }
+            });
+        }
+    });
+    canvas.addEventListener('dblclick', (e) => {
+        if (hoveredNode && hoveredNode.file) {
+            openNotePreview(hoveredNode.file, hoveredNode.id);
+        } else if (hoveredNode) {
+            // Easter egg: rainbow spin on double-click!
+            SFX.ding();
+            const mesh = nodeMeshes.find(m => m.userData.id === hoveredNode.id);
+            if (mesh) {
+                let spins = 0;
+                const spinInterval = setInterval(() => {
+                    mesh.material.color.setHSL((spins * 0.05) % 1, 1, 0.6);
+                    mesh.material.emissive.setHSL((spins * 0.05) % 1, 1, 0.4);
+                    mesh.rotation.y += 0.3;
+                    spins++;
+                    if (spins > 30) {
+                        clearInterval(spinInterval);
+                        mesh.material.color.set(hoveredNode.color);
+                        mesh.material.emissive.set(hoveredNode.color);
+                        mesh.rotation.y = 0;
+                    }
+                }, 30);
+            }
+            // Big sparkle burst
+            const rect = canvas.getBoundingClientRect();
+            if (sparkleCtx) spawnSparkles(e.clientX - rect.left, e.clientY - rect.top, 40, sparkleCtx);
+        }
+    });
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        cinematicCamera.handleZoom(e.deltaY);
+    }, { passive: false });
+
+    // Touch support
+    let touchStartDist = 0;
+    let touchStartNode = null; // Track node at touch start for selection
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+            // Detect if touch hit a node (for selection)
+            const rect = canvas.getBoundingClientRect();
+            _mouseVec.set(
+                ((e.touches[0].clientX - rect.left) / rect.width) * 2 - 1,
+                -((e.touches[0].clientY - rect.top) / rect.height) * 2 + 1
+            );
+            _raycaster.setFromCamera(_mouseVec, camera);
+            const hits = _raycaster.intersectObjects(nodeMeshes);
+            
+            if (hits.length > 0) {
+                // Touch hit a node - set as hovered and selected
+                const nd = hits[0].object.userData;
+                touchStartNode = nd;
+                hoveredNode = nd;
+                
+                // Visual feedback: bounce immediately and highlight
+                nd._scaleTarget = 1.3;
+                SFX.bloop();
+                
+                // Highlight selected node and dim others (for Nash button compatibility)
+                nodeMeshes.forEach(m => {
+                    const mn = m.userData;
+                    if (mn.id === nd.id || nd._neighbors.has(mn.id)) {
+                        m.material.opacity = 1;
+                        m.material.emissiveIntensity = mn.id === nd.id ? 1.0 : 0.7;
+                        if (mn._glow) mn._glow.material.opacity = 0.5;
+                        if (mn.id !== nd.id) mn._scaleTarget = 1.15;
+                    } else {
+                        m.material.opacity = 0.15;
+                        m.material.emissiveIntensity = 0.1;
+                        if (mn._glow) mn._glow.material.opacity = 0.03;
+                        mn._scaleTarget = 0.85;
+                    }
+                });
+                
+                // Highlight connected edges
+                lineMeshes.forEach(l => {
+                    const le = l.userData;
+                    if (le.source.id === nd.id || le.target.id === nd.id) {
+                        l.material.opacity = 0.8;
+                        l.material.color.set(edgeTypeColors[le.type] || 0x74b9ff);
+                    } else {
+                        l.material.opacity = 0.03;
+                    }
+                });
+                
+                // Trigger click behavior (bounce, sparkles, etc)
+                bounceNode(nd);
+                SFX.sparkle();
+                
+                // Sparkles at touch position
+                if (sparkleCtx) {
+                    spawnSparkles(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top, 25, sparkleCtx);
+                }
+                
+                // Cinematic fly to node
+                const targetPos = new THREE.Vector3(nd.x, nd._baseY, nd.z);
+                cinematicCamera.flyTo(
+                    cinematicCamera.theta, // Keep current rotation initially
+                    Math.PI * 0.4,  // Slight elevation change
+                    80,  // Zoom distance
+                    targetPos
+                );
+                autoRotate = false;
+                
+                // Easter egg tracking
+                clickCount[nd.id] = (clickCount[nd.id] || 0) + 1;
+                if (clickCount[nd.id] >= 5) {
+                    clickCount[nd.id] = 0;
+                    shakeAllNodes();
+                    SFX.party();
+                }
+                
+                // Bounce neighbors
+                let ni = 0;
+                nd._neighbors.forEach(nid => {
+                    const neighbor = nodes3d.find(n => n.id === nid);
+                    if (neighbor) {
+                        const delay = 100 + ni * 80;
+                        setTimeout(() => { bounceNode(neighbor); SFX.pop(); }, delay);
+                        ni++;
+                    }
+                });
+                
+                // Prevent drag if we hit a node
+                isDragging = false;
+            } else {
+                // Touch missed nodes - allow drag
+                touchStartNode = null;
+                isDragging = true;
+                cinematicCamera.autoRotate = false;
+                autoRotate = false;
+                lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+            }
+        } else if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            touchStartDist = Math.sqrt(dx*dx + dy*dy);
+        }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1 && isDragging) {
+            const dx = e.touches[0].clientX - lastMouse.x;
+            const dy = e.touches[0].clientY - lastMouse.y;
+            cinematicCamera.handleDrag(dx, dy);
+            lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+        } else if (e.touches.length === 2 && touchStartDist) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const zoomFactor = touchStartDist / dist;
+            cinematicCamera.targetDistance *= zoomFactor;
+            touchStartDist = dist;
+        }
+    }, { passive: false });
+    let lastTapTime = 0;
+    let lastTapNode = null;
+    canvas.addEventListener('touchend', (e) => { 
+        isDragging = false;
+        
+        // Double-tap detection for opening notes
+        if (touchStartNode) {
+            const now = Date.now();
+            const timeSinceLastTap = now - lastTapTime;
+            
+            if (timeSinceLastTap < 400 && lastTapNode === touchStartNode) {
+                // Double-tap detected!
+                if (touchStartNode.file) {
+                    openNotePreview(touchStartNode.file, touchStartNode.id);
+                } else {
+                    // Rainbow spin easter egg
+                    SFX.ding();
+                    const mesh = nodeMeshes.find(m => m.userData.id === touchStartNode.id);
+                    if (mesh) {
+                        let spins = 0;
+                        const spinInterval = setInterval(() => {
+                            mesh.material.color.setHSL((spins * 0.05) % 1, 1, 0.6);
+                            mesh.material.emissive.setHSL((spins * 0.05) % 1, 1, 0.4);
+                            mesh.rotation.y += 0.3;
+                            spins++;
+                            if (spins > 30) {
+                                clearInterval(spinInterval);
+                                mesh.material.color.set(touchStartNode.color);
+                                mesh.material.emissive.set(touchStartNode.color);
+                                mesh.rotation.y = 0;
+                            }
+                        }, 30);
+                    }
+                }
+                lastTapTime = 0; // Reset to prevent triple-tap
+                lastTapNode = null;
+            } else {
+                lastTapTime = now;
+                lastTapNode = touchStartNode;
+            }
+        }
+        
+        touchStartNode = null;
+    });
+
+    // -- Animation loop (with playful physics) --
+    console.log('[graph] all phases done, starting animation...');
+    const startTime = performance.now();
+    let lastTime = performance.now();
+    function animate() {
+        g3.rafId = requestAnimationFrame(animate);
+        if (g3.visible === false) return; // skip render when off-screen
+        const now = performance.now();
+        const deltaTime = now - lastTime;
+        lastTime = now;
+        const time = (now - startTime) / 1000;
+        if (autoRotate) targetTheta += 0.0015;
+        updateCamera();
+        updatePlayfulNodes(time);
+        updateFlowParticles();
+        // Update connections system animations
+        // connectionsSystem removed (class was never defined)
+        // Update time slider (historical playback)
+        // timeSlider removed
+        // Phase 3: animate dashed edges
+        lineMeshes.forEach(l => {
+            if (l.userData._dashed) l.material.dashOffset -= 0.01 * (l.userData._dashWeight || 1);
+        });
+        // Phase 4: update label visibility by distance
+        if (g3.labelSprites && g3.labelSprites.length > 0) {
+            const camPos = camera.position;
+            const dists = g3.labelSprites.map((s, i) => ({ i, d: camPos.distanceTo(s.position) }));
+            dists.sort((a, b) => a.d - b.d);
+            const rankMap = new Map();
+            dists.forEach((d, rank) => rankMap.set(d.i, rank));
+            g3.labelSprites.forEach((s, i) => {
+                const rank = rankMap.get(i);
+                if (rank < 20 && dists[rank].d < 15) {
+                    const d = dists[rank].d;
+                    s.visible = true;
+                    s.material.opacity = d < 8 ? 1.0 : Math.max(0, 1.0 - (d - 8) / 7);
+                } else {
+                    s.visible = false;
+                }
+            });
+        }
+        // Phase 6: smooth color transitions
+        if (g3.colorTransition && g3.colorTransition.active) {
+            const ct = g3.colorTransition;
+            ct.progress = Math.min(ct.progress + (1/60) / ct.duration, 1);
+            const t = ct.progress;
+            // Lerp background + fog
+            if (ct.from.bg && ct.to.bg) {
+                scene.background.copy(ct.from.bg).lerp(ct.to.bg, t);
+                if (scene.fog) scene.fog.color.copy(ct.from.bg).lerp(ct.to.bg, t);
+            }
+            // Lerp node colors
+            if (ct.from.nodes && ct.to.nodes) {
+                nodeMeshes.forEach((m, i) => {
+                    if (ct.from.nodes[i] && ct.to.nodes[i]) {
+                        m.material.color.copy(ct.from.nodes[i]).lerp(ct.to.nodes[i], t);
+                        m.material.emissive.copy(ct.from.nodes[i]).lerp(ct.to.nodes[i], t);
+                    }
+                });
+            }
+            // Lerp edge colors
+            if (ct.from.edges && ct.to.edges) {
+                lineMeshes.forEach((l, i) => {
+                    if (ct.from.edges[i] && ct.to.edges[i]) {
+                        l.material.color.copy(ct.from.edges[i]).lerp(ct.to.edges[i], t);
+                    }
+                });
+            }
+            if (t >= 1) ct.active = false;
+        }
+        // Phase 7: graph search node pulse
+        if (g3._searchPulse) {
+            g3._searchPulse.forEach(sp => {
+                sp.elapsed += 1/60;
+                const p = Math.sin(sp.elapsed * Math.PI * 4) * 0.2 + 1.2;
+                sp.mesh.scale.setScalar(p);
+                if (sp.elapsed > 0.5) sp.mesh.scale.setScalar(1);
+            });
+            g3._searchPulse = g3._searchPulse.filter(sp => sp.elapsed < 0.5);
+        }
+        // Phase 9: ambient particle drift
+        if (g3.ambientParticles) {
+            const ap = g3.ambientParticles;
+            const pos = ap.geometry.attributes.position;
+            for (let i = 0; i < pos.count; i++) {
+                pos.setX(i, pos.getX(i) + ap.userData._drift[i].x);
+                pos.setY(i, pos.getY(i) + ap.userData._drift[i].y);
+                pos.setZ(i, pos.getZ(i) + ap.userData._drift[i].z);
+                // Wrap at boundary
+                if (Math.abs(pos.getX(i)) > 25) ap.userData._drift[i].x *= -1;
+                if (Math.abs(pos.getY(i)) > 25) ap.userData._drift[i].y *= -1;
+                if (Math.abs(pos.getZ(i)) > 25) ap.userData._drift[i].z *= -1;
+            }
+            pos.needsUpdate = true;
+        }
+        // Sparkle overlay
+        if (sparkleCtx && sparkles.length > 0) {
+            updateSparkles(sparkleCtx, sparkleCanvas.width, sparkleCanvas.height);
+        }
+        // Smooth bloom transitions
+        if (bloomPass && bloomPass._targetStrength !== undefined) {
+            bloomPass.strength += (bloomPass._targetStrength - bloomPass.strength) * 0.04;
+            bloomPass.radius += (bloomPass._targetRadius - bloomPass.radius) * 0.04;
+        }
+        try {
+            if (composer) composer.render();
+            else renderer.render(scene, camera);
+        } catch (e) {
+            // If bloom render fails, fall back to basic
+            console.warn('Composer render failed, using basic renderer:', e);
+            composer = null;
+            renderer.render(scene, camera);
+        }
+    }
+    // Force one immediate render to ensure canvas shows content
+    renderer.render(scene, camera);
+    animate();
+
+    // Resize handler
+    const onResize = () => {
+        const w = container.clientWidth, h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        if (composer) composer.setSize(w, h);
+        if (sparkleCanvas) {
+            sparkleCanvas.width = w;
+            sparkleCanvas.height = h;
+        }
+    };
+    window.addEventListener('resize', onResize);
+    g3._onResize = onResize; // store for cleanup on reinit
+
+    // Build community/folder label map for filtering
+    const nodeGroupMap = {};
+    if (graph.communities && graph.communities.length > 0) {
+        graph.communities.forEach((c, idx) => {
+            const topTag = (c.top_tags || [])[0] || '';
+            const label = COMMUNITY_LABELS[topTag] || topTag || `Cluster ${idx+1}`;
+            (c.members || []).forEach(id => { nodeGroupMap[id] = label; });
+        });
+    }
+
+    // Update HUD stats
+    const hudNodes = document.getElementById('hudNodes');
+    const hudLinks = document.getElementById('hudLinks');
+    const hudClusters = document.getElementById('hudClusters');
+    if (hudNodes) hudNodes.textContent = nodes3d.length;
+    if (hudLinks) hudLinks.textContent = edges3d.length;
+    if (hudClusters) hudClusters.textContent = (graph.communities || []).length || '—';
+
+    // Initialize Connections System
+    // connectionsSystem/connectionControls removed (classes never defined)
+    if (typeof ConnectionsSystem !== 'undefined') {
+        try {
+            // ConnectionsSystem removed (class never defined)
+            // ConnectionControls removed (class never defined)
+            // connections log removed
+        } catch (e) {
+            console.warn('[graph] Connections system failed to initialize:', e);
+        }
+    }
+
+    // Store state
+    g3 = { renderer, scene, camera, composer, bloomPass, rafId: g3.rafId, autoRotate, targetTheta, targetPhi, targetDist, targetLookAt, currentLookAt,
+        nodeMeshes, nodeMeshMap, lineMeshes, nodes3d, edges3d, visible: true, communityMeta,
+        labelSprites, halos, ambientParticles, flowParticles,
+        // connectionsSystem removed
+        colorTransition: { active: false, from: {}, to: {}, progress: 0, duration: 0.5 },
+        _setAutoRotate(v) { cinematicCamera.autoRotate = v; autoRotate = v; },
+        _getAutoRotate() { return cinematicCamera.autoRotate; },
+        _resetCamera() {
+            cinematicCamera.reset(false); // Cinematic fly-back home
+            autoRotate = true;
+            lineMeshes.forEach(l => {
+                const le = l.userData;
+                l.material.opacity = le.type === 'shared_tags' ? 0.25 : (le.type === 'wikilink' ? 0.6 : 0.45);
+            });
+            nodeMeshes.forEach(m => {
+                m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5;
+                if (m.userData._glow) m.userData._glow.material.opacity = 0.35;
+                m.userData._scaleTarget = 1;
+            });
+            clickCount = {};
+        },
+        _applyFilter(hiddenGroups) {
+            nodeMeshes.forEach(m => {
+                const nd = m.userData;
+                const group = nodeGroupMap[nd.id] || nd.folder;
+                const hidden = hiddenGroups.has(group);
+                m.visible = !hidden;
+                if (m.userData._glow) m.userData._glow.visible = !hidden;
+            });
+            lineMeshes.forEach(l => {
+                const e = l.userData;
+                const sg = nodeGroupMap[e.source.id] || e.source.folder;
+                const tg = nodeGroupMap[e.target.id] || e.target.folder;
+                l.visible = !hiddenGroups.has(sg) && !hiddenGroups.has(tg);
+            });
+        },
+        _showAll() {
+            nodeMeshes.forEach(m => { m.visible = true; if (m.userData._glow) m.userData._glow.visible = true; });
+            lineMeshes.forEach(l => { l.visible = true; });
+        }
+    };
+
+    // Initialize Time Slider for historical playback
+    if (typeof TimeSlider !== 'undefined' && !timeSlider) {
+        try {
+            // Create a simple data layers object for time slider integration
+            const mockDataLayers = {
+                layers: {
+                    historicalCrises: {
+                        sprites: [] // Will be populated with crisis markers
+                    }
+                }
+            };
+            // TimeSlider removed (class never defined)
+            console.log('[time-slider] Historical playback initialized (1900-2026)');
+        } catch (e) {
+            console.warn('[time-slider] Failed to initialize:', e);
+        }
+    }
+
+    // Initialize Guided Tours system
+    if (typeof TourEngine !== 'undefined') {
+        try {
+            initTourEngine(scene, camera, cinematicCamera);
+            console.log('[tours] Guided tours system initialized with', TOURS.length, 'tours');
+        } catch (e) {
+            console.warn('[tours] Failed to initialize:', e);
+        }
+    }
+
+    // Apply saved filter state on init
+    if (graphHiddenGroups.size > 0 && g3._applyFilter) {
+        g3._applyFilter(graphHiddenGroups);
+    }
+
+    // IntersectionObserver: pause animation when graph is off-screen
+    const graphObs = new IntersectionObserver((entries) => {
+        g3.visible = entries[0].isIntersecting;
+    }, { threshold: 0.05 });
+    graphObs.observe(container);
+}
+
+// Glow texture generator
+function createGlowTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gradient.addColorStop(0, 'rgba(255,255,255,0.5)');
+    gradient.addColorStop(0.3, 'rgba(255,255,255,0.15)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 64, 64);
+    const tex = new THREE.CanvasTexture(canvas);
+    return tex;
+}
+
+function graphToggleRotate() {
+    if (g3._getAutoRotate) {
+        const v = !g3._getAutoRotate();
+        g3._setAutoRotate(v);
+    }
+}
+
+function graphReset() {
+    if (g3._resetCamera) g3._resetCamera();
+    // Also clear all filters
+    document.querySelectorAll('.graph-legend-item.filterable.dimmed').forEach(el => el.classList.remove('dimmed'));
+    if (g3._showAll) g3._showAll();
+    // Re-apply current mode colors after reset
+    if (currentGraphMode !== 'playful') {
+        applyCinematicMode(currentGraphMode);
+    }
+}
+
+function graphShakeAll() {
+    if (g3ShakeAll) { g3ShakeAll(); SFX.party(); }
+}
+
+// =============================================
+//  CINEMATIC VIEW MODES
+// =============================================
+let currentGraphMode = 'playful';
+
+// Color palettes for each mode
+const MODE_COLORS = {
+    playful: null, // uses original colors stored on nodes
+    crt: {
+        node: '#00ff41',       // phosphor green
+        nodeAlt: '#00cc33',
+        glow: '#00ff41',
+        edge: { wikilink: 0x00ff41, mention: 0x00cc33, semantic: 0x33ff77, shared_tags: 0x003300 },
+        bg: 0x0a0a0a,
+        fog: 0x0a0a0a,
+        emissive: 0.8,
+        nodeOpacity: 0.95,
+        glowOpacity: 0.5,
+    },
+    thermal: {
+        // Hot = red/yellow/white, cool = blue/purple
+        nodeHot: '#ff4500',
+        nodeMed: '#ff8c00',
+        nodeCool: '#4169e1',
+        glow: '#ff6347',
+        edge: { wikilink: 0xff4500, mention: 0xff8c00, semantic: 0xffd700, shared_tags: 0x1a0500 },
+        bg: 0x0d0d1a,
+        fog: 0x0d0d1a,
+        emissive: 0.7,
+        nodeOpacity: 0.9,
+        glowOpacity: 0.45,
+    },
+    nightvision: {
+        node: '#39ff14',
+        nodeAlt: '#2bcc0f',
+        glow: '#39ff14',
+        edge: { wikilink: 0x39ff14, mention: 0x2bcc0f, semantic: 0x66ff44, shared_tags: 0x0a1a00 },
+        bg: 0x050a02,
+        fog: 0x050a02,
+        emissive: 0.6,
+        nodeOpacity: 0.85,
+        glowOpacity: 0.4,
+    },
+};
+
+function setGraphMode(mode) {
+    if (!g3.scene || !g3.nodeMeshes) return;
+    currentGraphMode = mode;
+
+    // Update button states
+    document.querySelectorAll('.graph-mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+    });
+
+    // Update HUD mode label
+    const hudMode = document.getElementById('hudMode');
+    if (hudMode) hudMode.textContent = mode.toUpperCase();
+
+    // Show/hide HUD
+    const hud = document.getElementById('graphHud');
+    if (hud) hud.classList.toggle('visible', mode !== 'playful');
+
+    // CRT overlay
+    const crt = document.getElementById('crtOverlay');
+    if (crt) crt.classList.toggle('active', mode === 'crt');
+
+    // Reticle
+    const reticle = document.getElementById('graphReticle');
+    if (reticle) reticle.classList.toggle('active', mode !== 'playful');
+
+    // Set data attribute on graph card for CSS scoping
+    const graphCard = document.querySelector('.graph-hero-card');
+    if (graphCard) graphCard.setAttribute('data-graph-mode', mode);
+
+    // Also set on fullscreen modal
+    const fsModal = document.getElementById('graphFullscreenModal');
+    if (fsModal) fsModal.setAttribute('data-graph-mode', mode);
+
+    // Adjust bloom per mode
+    if (g3.bloomPass) {
+        const bloomSettings = { playful: {s:0.8,r:0.4,t:0.25}, crt: {s:1.4,r:0.5,t:0.15}, thermal: {s:1.0,r:0.45,t:0.2}, nightvision: {s:1.6,r:0.6,t:0.1} };
+        const bs = bloomSettings[mode] || bloomSettings.playful;
+        g3.bloomPass._targetStrength = bs.s;
+        g3.bloomPass._targetRadius = bs.r;
+        g3.bloomPass.threshold = bs.t;
+    }
+
+    // Phase 6: capture current colors before applying new ones for smooth transition
+    const ct = g3.colorTransition;
+    ct.from.bg = g3.scene.background.clone();
+    ct.from.nodes = g3.nodeMeshes.map(m => m.material.color.clone());
+    ct.from.edges = g3.lineMeshes.map(l => l.material.color.clone());
+
+    // Apply colors (sets final target values)
+    if (mode === 'playful') {
+        applyPlayfulMode();
+    } else {
+        applyCinematicMode(mode);
+    }
+
+    // Phase 6: capture target colors and start lerp
+    ct.to.bg = g3.scene.background.clone();
+    ct.to.nodes = g3.nodeMeshes.map(m => m.material.color.clone());
+    ct.to.edges = g3.lineMeshes.map(l => l.material.color.clone());
+    // Reset to "from" colors — the animate loop will lerp to "to"
+    g3.scene.background.copy(ct.from.bg);
+    if (g3.scene.fog) g3.scene.fog.color.copy(ct.from.bg);
+    g3.nodeMeshes.forEach((m, i) => {
+        m.material.color.copy(ct.from.nodes[i]);
+        m.material.emissive.copy(ct.from.nodes[i]);
+    });
+    g3.lineMeshes.forEach((l, i) => l.material.color.copy(ct.from.edges[i]));
+    ct.progress = 0;
+    ct.active = true;
+
+    // Update ambient particle + label colors for new mode (theme-aware for playful)
+    const isLightTheme = getTheme() === 'light';
+    if (g3.ambientParticles) {
+        const pColors = { playful: isLightTheme ? 0x6678 : 0xcccccc, crt: 0x00ff41, thermal: 0xff6500, nightvision: 0x39ff14 };
+        g3.ambientParticles.material.color.set(pColors[mode] || 0xcccccc);
+        if (mode === 'playful') g3.ambientParticles.material.opacity = isLightTheme ? 0.3 : 0.2;
+    }
+    if (g3.labelSprites) {
+        const lColors = { playful: isLightTheme ? '#1e293b' : '#e2e8f0', crt: '#00ff41', thermal: '#ff8c00', nightvision: '#39ff14' };
+        const lc = lColors[mode] || '#e2e8f0';
+        g3.labelSprites.forEach(s => { s.material.color.set(lc); });
+    }
+    // Update flow particle colors for mode
+    if (g3.flowParticles) {
+        const flowColors = { playful: null, crt: 0x00ff41, thermal: 0xff6347, nightvision: 0x39ff14 };
+        const fc = flowColors[mode];
+        g3.flowParticles.forEach(fp => {
+            if (fc) fp.mesh.material.color.set(fc);
+            else { const etc = { wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff }; fp.mesh.material.color.set(etc[fp.edge.type] || 0x74b9ff); }
+        });
+    }
+}
+
+function applyPlayfulMode() {
+    // Restore original colors — theme-aware
+    const lit = getTheme() === 'light';
+    const defaultBg = lit ? 0xdde4ed : 0x07090f;
+    g3.scene.background = new THREE.Color(defaultBg);
+    g3.scene.fog = new THREE.FogExp2(defaultBg, lit ? 0.001 : 0.0014);
+
+    g3.nodeMeshes.forEach(m => {
+        const n = m.userData;
+        if (n._origColor) {
+            const c = new THREE.Color(n._origColor);
+            m.material.color = c;
+            m.material.emissive = c;
+            m.material.emissiveIntensity = lit ? 0.3 : 0.5;
+            m.material.opacity = 0.92;
+            if (n._glow) {
+                n._glow.material.color = c;
+                n._glow.material.opacity = lit ? 0.12 : 0.35;
+            }
+        }
+        // Show emoji sprites
+        if (n._emojiSprite) n._emojiSprite.visible = true;
+    });
+
+    const edgeTypeColors = { wikilink: 0x74b9ff, mention: 0x55efc4, semantic: 0xff6bff, shared_tags: lit ? 0x6678aa : 0x2d3561 };
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        l.material.color = new THREE.Color(edgeTypeColors[e.type] || edgeTypeColors.shared_tags);
+        l.material.opacity = e.type === 'shared_tags' ? (lit ? 0.35 : 0.25) : (e.type === 'wikilink' ? 0.6 : 0.45);
+    });
+}
+
+function applyCinematicMode(mode) {
+    const palette = MODE_COLORS[mode];
+    if (!palette) return;
+
+    // Background + fog
+    g3.scene.background = new THREE.Color(palette.bg);
+    g3.scene.fog = new THREE.FogExp2(palette.fog, 0.0022);
+
+    // Nodes
+    g3.nodeMeshes.forEach((m, i) => {
+        const n = m.userData;
+
+        // Store original color on first mode switch
+        if (!n._origColor) n._origColor = '#' + m.material.color.getHexString();
+
+        let nodeColor;
+        if (mode === 'thermal') {
+            // Use connections count to determine heat (more connections = hotter)
+            const conns = n.connections || (n._neighbors ? n._neighbors.length : 0);
+            if (conns >= 4) nodeColor = new THREE.Color(palette.nodeHot);
+            else if (conns >= 2) nodeColor = new THREE.Color(palette.nodeMed);
+            else nodeColor = new THREE.Color(palette.nodeCool);
+        } else {
+            // CRT / Night Vision — slight variation
+            nodeColor = new THREE.Color(i % 3 === 0 ? palette.nodeAlt : palette.node);
+        }
+
+        m.material.color = nodeColor;
+        m.material.emissive = nodeColor;
+        m.material.emissiveIntensity = palette.emissive;
+        m.material.opacity = palette.nodeOpacity;
+
+        if (n._glow) {
+            n._glow.material.color = nodeColor;
+            n._glow.material.opacity = palette.glowOpacity;
+        }
+
+        // Hide emoji sprites in cinematic modes for cleaner look
+        if (n._emojiSprite) n._emojiSprite.visible = false;
+    });
+
+    // Edges
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        const edgeColor = palette.edge[e.type] || palette.edge.shared_tags;
+        l.material.color = new THREE.Color(edgeColor);
+        l.material.opacity = e.type === 'shared_tags' ? 0.08 : (e.type === 'wikilink' ? 0.5 : 0.35);
+    });
+}
+
+// =============================================
+//  GRAPH SEARCH (find + zoom to nodes)
+// =============================================
+function initGraphSearch() {
+    const input = document.getElementById('graphSearchInput');
+    const results = document.getElementById('graphSearchResults');
+    if (!input || !results) return;
+
+    input.addEventListener('input', () => {
+        const q = input.value.trim().toLowerCase();
+        results.innerHTML = '';
+        if (q.length < 2 || !g3.nodes3d) { results.classList.remove('visible'); return; }
+        const matches = g3.nodes3d.filter(n => n.id.toLowerCase().includes(q)).slice(0, 8);
+        if (matches.length === 0) { results.classList.remove('visible'); return; }
+        matches.forEach(n => {
+            const div = document.createElement('div');
+            div.className = 'graph-search-result';
+            div.textContent = n._emoji + ' ' + n.id;
+            div.addEventListener('click', () => {
+                graphZoomToNode(n.id);
+                input.value = '';
+                results.classList.remove('visible');
+                results.innerHTML = '';
+            });
+            results.appendChild(div);
+        });
+        results.classList.add('visible');
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const first = results.querySelector('.graph-search-result');
+            if (first) first.click();
+        } else if (e.key === 'Escape') {
+            input.value = '';
+            results.classList.remove('visible');
+            results.innerHTML = '';
+            input.blur();
+            // Restore all nodes
+            if (g3.nodeMeshes) {
+                g3.nodeMeshes.forEach(m => { m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5; m.userData._scaleTarget = 1; });
+                g3.lineMeshes.forEach(l => { l.material.opacity = l.userData._baseOpacity || 0.45; });
+            }
+        }
+    });
+
+    // Close results on click outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.graph-search')) {
+            results.classList.remove('visible');
+        }
+    });
+}
+
+function graphZoomToNode(nodeId) {
+    if (!g3.nodeMeshes) return;
+    const mesh = g3.nodeMeshes.find(m => m.userData.id === nodeId);
+    if (!mesh) return;
+    // Zoom camera to node
+    g3.targetLookAt.copy(mesh.position);
+    g3.targetDist = 80;
+    g3._setAutoRotate(false);
+    // Highlight: dim all except target + neighbors
+    const nd = mesh.userData;
+    const neighbors = new Set(nd._neighbors || []);
+    g3.nodeMeshes.forEach(m => {
+        if (m.userData.id === nodeId) {
+            m.material.opacity = 1; m.material.emissiveIntensity = 1.0; m.userData._scaleTarget = 1.4;
+        } else if (neighbors.has(m.userData.id)) {
+            m.material.opacity = 0.8; m.material.emissiveIntensity = 0.6; m.userData._scaleTarget = 1.1;
+        } else {
+            m.material.opacity = 0.12; m.material.emissiveIntensity = 0.1; m.userData._scaleTarget = 0.8;
+        }
+    });
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        if (e.source.id === nodeId || e.target.id === nodeId) l.material.opacity = 0.8;
+        else l.material.opacity = 0.03;
+    });
+    // Bounce the target
+    if (nd._bounceVel !== undefined) { nd._bounceVel = 10; nd._wiggle = 2; }
+    SFX.sparkle();
+    // Add search pulse
+    if (!g3._searchPulse) g3._searchPulse = [];
+    g3._searchPulse.push({ mesh, elapsed: 0 });
+}
+
+
+// Graph filter: toggle visibility of a community/folder group
+const graphHiddenGroups = new Set(JSON.parse(localStorage.getItem('brain-graph-hidden') || '[]'));
+function toggleGraphFilter(el, group) {
+    el.classList.toggle('dimmed');
+    if (graphHiddenGroups.has(group)) graphHiddenGroups.delete(group);
+    else graphHiddenGroups.add(group);
+    localStorage.setItem('brain-graph-hidden', JSON.stringify([...graphHiddenGroups]));
+    if (g3._applyFilter) g3._applyFilter(graphHiddenGroups);
+}
+
+// =============================================
+//  FULLSCREEN GRAPH
+// =============================================
+let graphFullscreenActive = false;
+
+function openGraphFullscreen() {
+    const modal = document.getElementById('graphFullscreenModal');
+    modal.style.display = 'flex';
+    graphFullscreenActive = true;
+    document.body.style.overflow = 'hidden';
+
+    // Copy legend
+    const legend = document.getElementById('graphLegend');
+    const fsLegend = document.getElementById('graphFullscreenLegend');
+    fsLegend.innerHTML = legend.innerHTML;
+
+    // Copy stats
+    const stats = document.getElementById('graphStats');
+    const fsStats = document.getElementById('graphFullscreenStats');
+    fsStats.textContent = stats.textContent;
+
+    // Move canvas to fullscreen container
+    const container = document.getElementById('graphContainer');
+    const fsContainer = document.getElementById('graphFullscreenContainer');
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+        fsContainer.appendChild(canvas);
+        // Move tooltip too
+        const tooltip = document.getElementById('graphTooltip');
+        fsContainer.appendChild(tooltip);
+    }
+
+    // Resize renderer to fill screen
+    if (g3.renderer && g3.camera) {
+        const w = fsContainer.clientWidth;
+        const h = fsContainer.clientHeight;
+        g3.renderer.setSize(w, h);
+        if (g3.composer) g3.composer.setSize(w, h);
+        g3.camera.aspect = w / h;
+        g3.camera.updateProjectionMatrix();
+    }
+}
+
+function closeGraphFullscreen() {
+    const modal = document.getElementById('graphFullscreenModal');
+    modal.style.display = 'none';
+    graphFullscreenActive = false;
+    document.body.style.overflow = '';
+
+    // Move canvas back to inline container
+    const container = document.getElementById('graphContainer');
+    const fsContainer = document.getElementById('graphFullscreenContainer');
+    const canvas = fsContainer.querySelector('canvas');
+    if (canvas) {
+        container.insertBefore(canvas, container.firstChild);
+        // Move tooltip back
+        const tooltip = document.getElementById('graphTooltip');
+        container.appendChild(tooltip);
+    }
+
+    // Resize renderer back to inline
+    if (g3.renderer && g3.camera) {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        g3.renderer.setSize(w, h);
+        if (g3.composer) g3.composer.setSize(w, h);
+        g3.camera.aspect = w / h;
+        g3.camera.updateProjectionMatrix();
+    }
+}
+
+// ESC to close fullscreen
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && graphFullscreenActive) {
+        closeGraphFullscreen();
+    }
+});
+
+// Handle resize in fullscreen mode
+window.addEventListener('resize', () => {
+    if (graphFullscreenActive && g3.renderer && g3.camera) {
+        const fsContainer = document.getElementById('graphFullscreenContainer');
+        const w = fsContainer.clientWidth;
+        const h = fsContainer.clientHeight;
+        g3.renderer.setSize(w, h);
+        if (g3.composer) g3.composer.setSize(w, h);
+        g3.camera.aspect = w / h;
+        g3.camera.updateProjectionMatrix();
+    }
+});
+
+// Double-click graph container to expand
+document.addEventListener('DOMContentLoaded', () => {
+    const graphCard = document.querySelector('.graph-hero-card');
+    if (graphCard) {
+        graphCard.addEventListener('dblclick', (e) => {
+            // Only expand if not clicking a control button or tooltip
+            if (!e.target.closest('.graph-btn') && !e.target.closest('.graph-legend-item') && !e.target.closest('.graph-expand-btn')) {
+                // Check if we double-clicked on a node (hoveredNode) - if so, let the node handler work
+                if (!hoveredNode) {
+                    openGraphFullscreen();
+                }
+            }
+        });
+    }
+});
+
+// =============================================
+//  VAULT SEARCH (RAG)
+// =============================================
+function saveRecentSearch(q) {
+    let recent = JSON.parse(localStorage.getItem('brain-recent-searches') || '[]');
+    recent = recent.filter(s => s !== q);
+    recent.unshift(q);
+    recent = recent.slice(0, MAX_RECENT_SEARCHES);
+    localStorage.setItem('brain-recent-searches', JSON.stringify(recent));
+    renderRecentSearches();
+}
+
+function renderRecentSearches() {
+    const container = document.getElementById('recentSearches');
+    if (!container) return;
+    const recent = JSON.parse(localStorage.getItem('brain-recent-searches') || '[]');
+    if (!recent.length) { container.innerHTML = ''; return; }
+    container.innerHTML = '<span style="font-size:11px;color:var(--text-tertiary);margin-right:2px">Recent:</span>' +
+        recent.map(s => `<span class="recent-search-pill" data-query="${escapeHtml(s)}" style="font-size:11px;color:var(--accent-indigo);cursor:pointer;padding:2px 8px;background:var(--bg-inset);border-radius:10px;border:1px solid var(--border-subtle)">${escapeHtml(s)}</span>`).join('');
+    container.querySelectorAll('.recent-search-pill').forEach(pill => {
+        pill.addEventListener('click', () => { document.getElementById('searchInput').value = pill.dataset.query; searchVault(); });
+    });
+}
+
+async function searchVault() {
+    const input = document.getElementById('searchInput');
+    const container = document.getElementById('searchResults');
+    const btn = document.getElementById('searchBtn');
+    const q = input.value.trim();
+    if (!q) return;
+    saveRecentSearch(q);
+
+    if (!isLive) {
+        // Demo search
+        container.innerHTML = `
+            <div class="search-result-item">
+                <div class="search-result-title">RAG Architecture Patterns.md</div>
+                <div class="search-result-folder">Resources</div>
+                <div class="search-result-snippet">Semantic chunking, recursive splitting with 512-token windows, parent-child document splitting for context preservation...</div>
+                <div class="search-result-sim">similarity: 0.84</div>
+            </div>
+            <div class="search-result-item">
+                <div class="search-result-title">Vector Database Comparison.md</div>
+                <div class="search-result-folder">Resources</div>
+                <div class="search-result-snippet">ChromaDB vs Pinecone vs Weaviate — tradeoffs for self-hosted RAG pipelines...</div>
+                <div class="search-result-sim">similarity: 0.71</div>
+            </div>
+        `;
+        return;
+    }
+
+    btn.disabled = true;
+    container.innerHTML = '<div class="search-empty"><span class="spinner"></span> Searching...</div>';
+
+    try {
+        const data = await apiFetch(`${API_GATEWAY}/api/rag/search?q=${encodeURIComponent(q)}&n=8`);
+        if (data && data.results && data.results.length > 0) {
+            container.innerHTML = '';
+            data.results.forEach(r => {
+                const div = document.createElement('div');
+                div.className = 'search-result-item';
+                div.style.cursor = 'pointer';
+                div.title = 'Click to preview note';
+                const fileName = r.file.split('/').pop().replace('.md', '');
+                div.innerHTML = `
+                    <div class="search-result-title">${escapeHtml(fileName)}</div>
+                    <div class="search-result-folder">${escapeHtml(r.folder || r.file.split('/')[0])}</div>
+                    ${r.snippet ? `<div class="search-result-snippet">${escapeHtml(r.snippet.substring(0, 200))}</div>` : ''}
+                    <div class="search-result-sim">similarity: ${(r.similarity || 0).toFixed(3)}${r.section ? ' · ' + escapeHtml(r.section) : ''}</div>
+                `;
+                div.addEventListener('click', () => openNotePreview(r.file, fileName));
+                container.appendChild(div);
+            });
+        } else {
+            container.innerHTML = '<div class="search-empty">No results found. Try different keywords.</div>';
+        }
+    } catch (err) {
+        container.innerHTML = `<div class="search-empty" style="color:var(--accent-red)">Search error: ${escapeHtml(err.message)}</div>`;
+    }
+    btn.disabled = false;
+}
+
+// =============================================
+//  HEALTH GAUGES
+// =============================================
+function renderHealthGauges(healthData) {
+    if (!healthData) return;
+    const circumference = 2 * Math.PI * 22; // r=22
+
+    function setGauge(id, valId, rawVal, colorVar) {
+        const el = document.getElementById(id);
+        const valEl = document.getElementById(valId);
+        if (!el || !valEl) return;
+        const pct = parseFloat(rawVal) || 0;
+        const offset = circumference - (pct / 100) * circumference;
+        el.style.strokeDashoffset = offset;
+        valEl.textContent = rawVal || '--';
+        // Color shift: green < 60%, amber 60-80%, red > 80%
+        if (pct > 80) el.setAttribute('stroke', 'var(--accent-red)');
+        else if (pct > 60) el.setAttribute('stroke', 'var(--accent-amber)');
+        else el.setAttribute('stroke', colorVar);
+    }
+
+    setGauge('gaugeDisk', 'gaugeDiskVal', healthData.disk, 'var(--accent-green)');
+    setGauge('gaugeMemory', 'gaugeMemoryVal', healthData.memory, 'var(--accent-cyan)');
+    // Load: normalize to percentage (assuming 2 cores, load 2.0 = 100%)
+    const loadPct = Math.min(100, Math.round((parseFloat(healthData.load) || 0) / 2 * 100));
+    setGauge('gaugeLoad', 'gaugeLoadVal', healthData.load, 'var(--accent-amber)');
+    const loadEl = document.getElementById('gaugeLoad');
+    if (loadEl) {
+        const offset = circumference - (loadPct / 100) * circumference;
+        loadEl.style.strokeDashoffset = offset;
+    }
+}
+
+function renderHealthScore(data) {
+    const badge = document.getElementById('healthScoreBadge');
+    const label = document.getElementById('healthScoreLabel');
+    if (!badge || !label || !isLive) return;
+
+    let score = 0, factors = 0;
+
+    if (data.services) {
+        const up = data.services.filter(s => s.status === 'up').length;
+        score += (up / Math.max(1, data.services.length)) * 100;
+        factors++;
+    }
+    if (data.health && data.health.status === 'ok') { score += 100; factors++; }
+    else if (data.health) { score += 30; factors++; }
+    if (data._tagCoverage !== undefined) { score += data._tagCoverage * 100; factors++; }
+    if (data.health && data.health.disk) {
+        score += Math.max(0, 100 - (parseFloat(data.health.disk) || 0));
+        factors++;
+    }
+
+    const avg = factors > 0 ? Math.round(score / factors) : 0;
+    badge.style.display = 'inline-flex';
+    label.textContent = `Health: ${avg}%`;
+    const dot = badge.querySelector('.dot');
+    if (avg >= 80) { dot.style.background = 'var(--accent-green)'; badge.style.borderColor = 'rgba(52,211,153,0.3)'; }
+    else if (avg >= 50) { dot.style.background = 'var(--accent-amber)'; badge.style.borderColor = 'rgba(251,191,36,0.3)'; }
+    else { dot.style.background = 'var(--accent-red)'; badge.style.borderColor = 'rgba(248,113,113,0.3)'; }
+    badge.title = `Vault health: ${avg}% \u2014 Services: ${data.services ? data.services.filter(s=>s.status==='up').length + '/' + data.services.length : '?'} up`;
+}
+
+// =============================================
+//  CHAT HISTORY
+// =============================================
+function renderChatHistory(items) {
+    const container = document.getElementById('chatHistoryList');
+    if (!items || items.length === 0) {
+        container.innerHTML = '<div style="color:var(--text-tertiary);font-size:13px;padding:12px;text-align:center">No conversations yet. Ask the vault something!</div>';
+        return;
+    }
+    container.innerHTML = items.map((item, i) => {
+        const q = typeof item.q === 'string' ? item.q : (item.question || '');
+        const sources = item.sources || [];
+        const ago = item.ts ? timeAgo(new Date(item.ts)) : '';
+        const sourcesStr = sources.slice(0, 3).map(s => typeof s === 'string' ? s.split('/').pop().replace('.md','') : '').join(', ');
+        return `<div class="chat-history-item" role="button" tabindex="0" onclick="restoreChatItem(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();restoreChatItem(${i})}">
+            <div style="flex:1;min-width:0">
+                <div class="ch-q">${escapeHtml(q)}</div>
+                ${sourcesStr ? `<div class="ch-sources">${escapeHtml(sourcesStr)}</div>` : ''}
+            </div>
+            <div class="ch-time">${ago}</div>
+        </div>`;
+    }).join('');
+}
+
+let chatHistoryData = [];
+function restoreChatItem(idx) {
+    const item = chatHistoryData[idx];
+    if (!item) return;
+    const resultDiv = document.getElementById('askResult');
+    const a = item.a || item.answer || '';
+    const sources = (item.sources || []).map(s => typeof s === 'string' ? s : s.file || '');
+    resultDiv.innerHTML = `
+        <div class="answer">${escapeHtml(a)}</div>
+        ${sources.length ? `<div class="sources">Sources: ${sources.map(s => `<span>${escapeHtml(s.split('/').pop())}</span>`).join('')}</div>` : ''}
+    `;
+    // Scroll to ask section
+    document.getElementById('askInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function closeNotePreview() {
+    document.getElementById('notePreviewPanel').classList.remove('open');
+    setTimeout(() => document.getElementById('notePreviewOverlay').classList.remove('open'), 250);
+}
+
+// Delegated wikilink click handler (safe — no inline onclick)
+document.addEventListener('click', (e) => {
+    const wl = e.target.closest('.wikilink');
+    if (wl) {
+        const note = wl.dataset.note;
+        if (note) openNotePreview(note + '.md', note);
+    }
+});
+
+async function triggerReindex() {
+    const btn = document.getElementById('reindexBtn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.classList.add('running');
+    btn.innerHTML = '<i data-lucide="loader" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;animation:spin 1s linear infinite"></i>Reindexing...';
+    lucide.createIcons();
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/rag/index?force=true`, { signal: AbortSignal.timeout(60000) });
+        const data = await resp.json();
+        btn.innerHTML = '<i data-lucide="check" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Done!';
+        btn.style.color = 'var(--accent-green)';
+        btn.style.borderColor = 'var(--accent-green)';
+        lucide.createIcons();
+        showToast(`Reindex complete — ${data.total_chunks || '?'} chunks indexed`, 'success');
+        // Update chunks count
+        if (data.total_chunks) document.getElementById('statChunks').textContent = data.total_chunks;
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            lucide.createIcons();
+        }, 3000);
+    } catch (err) {
+        btn.innerHTML = '<i data-lucide="alert-circle" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Failed';
+        btn.style.color = 'var(--accent-red)';
+        lucide.createIcons();
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.classList.remove('running');
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:12px;height:12px;margin-right:4px;vertical-align:-1px"></i>Reindex';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+            lucide.createIcons();
+        }, 3000);
+    }
+}
+
+// =============================================
+//  PAWSITIVEID RESEARCH PIPELINE
+// =============================================
+async function loadResearchPipeline() {
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/health/pawsitiveid-research`, {signal: AbortSignal.timeout(8000)});
+        const d = await resp.json();
+
+        document.getElementById('rsNotes').textContent = d.research_notes || 0;
+        document.getElementById('rsJobs').textContent = d.notebooklm_jobs || 0;
+        document.getElementById('rsCoverage').textContent = `${d.verticals_covered || 0}/${d.verticals_total || 6}`;
+        document.getElementById('rsDigests').textContent = d.digests || 0;
+
+        // Vertical list
+        const vList = document.getElementById('verticalList');
+        if (vList && d.verticals_list) {
+            vList.innerHTML = Object.entries(d.verticals_list).map(([name, covered]) => {
+                const safeName = escapeHtml(name).replace(/'/g, '&#39;');
+                return `<div class="vertical-row">
+                    <span class="vr-name">${safeName}</span>
+                    <span style="display:flex;gap:6px;align-items:center">
+                        ${!covered ? `<button class="vr-action" onclick="queueVerticalResearch('${safeName}', this)">Queue</button>` : ''}
+                        <span class="vr-status ${covered ? 'covered' : 'gap'}">${covered ? 'COVERED' : 'GAP'}</span>
+                    </span>
+                </div>`; }
+            ).join('');
+        }
+
+        // Gaps + recommendations
+        const gapsEl = document.getElementById('researchGaps');
+        if (gapsEl && d.gaps && d.gaps.length > 0) {
+            const suggestions = {
+                "AI Matching": "Computer vision for pet ID, facial recognition for animals",
+                "Business Model": "SaaS pricing for pet services, shelter budget analysis",
+                "Competitors": "PetFinder, PawBoost, Finding Rover, Petco Love Lost",
+                "Pet Recovery": "Microchip registries, GPS collar tech, lost pet networks",
+                "Shelter Tech": "ShelterLuv, PetPoint, Pawlytics platforms",
+                "Vet Partnerships": "Clinic software integrations, AVMA trends",
+            };
+            gapsEl.innerHTML = '<strong>Research needed:</strong>' +
+                d.gaps.map(g => { const sg = escapeHtml(g).replace(/'/g, '&#39;'); return `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+                    <span>• <strong>${sg}</strong> — <span style="font-size:12px;color:var(--text-tertiary)">${escapeHtml(suggestions[g] || 'Queue research')}</span></span>
+                    <button class="vr-action" onclick="queueVerticalResearch('${sg}', this)" style="flex-shrink:0;margin-left:8px">Queue</button>
+                </div>`; }).join('');
+        } else if (gapsEl) {
+            gapsEl.innerHTML = '<strong style="color:var(--accent-green)">All verticals covered!</strong>';
+        }
+
+        // Latest digest
+        const digestEl = document.getElementById('researchDigestInfo');
+        if (digestEl) {
+            if (d.latest_digest) {
+                digestEl.textContent = `Latest: ${d.latest_digest} (${d.digests} total)`;
+            } else {
+                digestEl.textContent = 'First digest generates at 9 PM UTC';
+            }
+        }
+    } catch(e) { console.warn('API unavailable:', e.message); }
+}
+
+async function queueVerticalResearch(vertical, btn) {
+    if (btn.classList.contains('queued')) return;
+    btn.textContent = '...';
+    btn.disabled = true;
+    const suggestions = {
+        "AI Matching": "Research computer vision for pet identification, facial recognition algorithms for animals, breed detection ML models",
+        "Business Model": "Research SaaS pricing models for pet services, shelter budget constraints, freemium vs paid analysis",
+        "Competitors": "Research PetFinder, PawBoost, Finding Rover, Petco Love Lost — features, pricing, market share, gaps",
+        "Pet Recovery": "Research microchip registries, GPS collar technology, lost pet social networks, Amber Alert for pets",
+        "Shelter Tech": "Research ShelterLuv, PetPoint, Pawlytics — features, integrations, API capabilities, adoption rates",
+        "Vet Partnerships": "Research veterinary clinic software integrations, AVMA industry trends, clinic partnership models",
+    };
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/notes/braindump`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: `PawsitiveID Research — ${vertical}`,
+                content: `## Research Queue: ${vertical}\n\n${suggestions[vertical] || 'Deep-dive research needed for this vertical.'}\n\n### Key Questions\n- What solutions exist today?\n- What are the gaps and opportunities?\n- How does this integrate with PawsitiveID?\n\n### Sources to Explore\n- [ ] YouTube deep-dive (queue via /yt-research)\n- [ ] Academic papers\n- [ ] Industry reports\n- [ ] Competitor analysis`,
+                tags: ['pawsitiveid', 'research', vertical.toLowerCase().replace(/\s+/g, '-')]
+            })
+        });
+        if (resp.ok) {
+            btn.textContent = 'Queued';
+            btn.classList.add('queued');
+        } else {
+            btn.textContent = 'Error';
+            setTimeout(() => { btn.textContent = 'Queue'; btn.disabled = false; }, 2000);
+        }
+    } catch(e) {
+        btn.textContent = 'Offline';
+        setTimeout(() => { btn.textContent = 'Queue'; btn.disabled = false; }, 2000);
+    }
+}
+
+async function loadTagExplorer() {
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/health/vault-tags`, {signal: AbortSignal.timeout(8000)});
+        const d = await resp.json();
+        document.getElementById('tagUnique').textContent = d.unique_tags || '--';
+        document.getElementById('tagWithTags').textContent = d.notes_with_tags || '--';
+        document.getElementById('tagNormNeeded').textContent = d.notes_needing_normalization || '0';
+        document.getElementById('tagAliasGroups').textContent = (d.alias_groups_found || []).length || '0';
+        const cloud = document.getElementById('tagCloud');
+        if (cloud && d.top_tags) {
+            cloud.innerHTML = d.top_tags.slice(0, 25).map(t =>
+                `<span class="tag-pill">${t.tag} <span class="tag-count">${t.count}</span></span>`
+            ).join('');
+        }
+    } catch(e) { console.warn('API unavailable:', e.message); }
+}
+async function loadVaultQuality() {
+    try {
+        const resp = await fetch(`${API_GATEWAY}/api/health/vault-quality`, {signal: AbortSignal.timeout(12000)});
+        const d = await resp.json();
+        if (d.error) return;
+        document.getElementById('qualityAvg').textContent = d.average_score || '--';
+        const dist = d.distribution || {};
+        const a = dist.A || 0, b = dist.B || 0, c = dist.C || 0, df = (dist.D || 0) + (dist.F || 0);
+        document.getElementById('qualityA').textContent = a;
+        document.getElementById('qualityBC').textContent = b + c;
+        document.getElementById('qualityDF').textContent = df;
+        const total = a + b + c + df || 1;
+        const bar = document.getElementById('qualityBar');
+        if (bar) {
+            bar.innerHTML = [
+                a > 0 ? `<div style="width:${a/total*100}%;background:#4ade80">A:${a}</div>` : '',
+                b > 0 ? `<div style="width:${b/total*100}%;background:#22d3ee">B:${b}</div>` : '',
+                c > 0 ? `<div style="width:${c/total*100}%;background:#fbbf24">C:${c}</div>` : '',
+                df > 0 ? `<div style="width:${df/total*100}%;background:#f87171">D/F:${df}</div>` : ''
+            ].join('');
+        }
+        const bottom = document.getElementById('qualityBottomList');
+        if (bottom && d.bottom_20) {
+            bottom.innerHTML = '<div style="font-weight:600;margin-bottom:6px;color:var(--text-tertiary)">Lowest Quality Notes:</div>' +
+                d.bottom_20.slice(0, 8).map(n => {
+                    const name = (n.file || '').split('/').pop().replace('.md','');
+                    const issues = (n.issues || []).slice(0,2).join(', ');
+                    return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border-subtle)"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${issues}">${name}</span><span style="color:var(--accent-red);font-weight:600;margin-left:8px">${n.score}</span></div>`;
+                }).join('');
+        }
+    } catch(e) { console.warn('API unavailable:', e.message); }
+}
+
+// =============================================
+//  TOAST NOTIFICATION SYSTEM
+// =============================================
+function showToast(message, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const icons = {
+        success: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+        error: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        info: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        warning: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    };
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// =============================================
+//  SCROLL-TO-TOP + SECTION NAV
+// =============================================
+function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function initScrollObservers() {
+    const scrollBtn = document.getElementById('scrollTopBtn');
+    const sectionNav = document.getElementById('sectionNav');
+    const dots = sectionNav ? sectionNav.querySelectorAll('.section-nav-dot') : [];
+
+    // Show/hide scroll-to-top + section nav based on scroll position
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const y = window.scrollY;
+                if (scrollBtn) scrollBtn.classList.toggle('visible', y > 400);
+                if (sectionNav) sectionNav.classList.toggle('visible', y > 200);
+
+                // Floating search shadow
+                const fs = document.getElementById('floatingSearch');
+                if (fs) fs.classList.toggle('scrolled', y > 60);
+
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
+
+    // Intersection observer for section nav active state
+    const sectionIds = ['sec-graph','sec-stats','sec-vault','sec-search','sec-ask','sec-braindump','sec-tags','sec-system'];
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                dots.forEach(d => d.classList.toggle('active', d.dataset.target === entry.target.id));
+            }
+        });
+    }, { rootMargin: '-20% 0px -60% 0px' });
+
+    sectionIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+    });
+}
+
+// =============================================
+//  FLOATING SEARCH (syncs with vault search)
+// =============================================
+// Phase 7: Graph search highlight
+function graphSearchHighlight(query) {
+    if (!g3.nodeMeshes || !g3.nodes3d) return;
+    const q = (query || '').trim().toLowerCase();
+    if (!q) {
+        // Clear highlights — restore all nodes
+        g3.nodeMeshes.forEach(m => {
+            m.material.opacity = 0.92;
+            m.material.emissiveIntensity = 0.5;
+            m.userData._scaleTarget = 1;
+            if (m.userData._glow) m.userData._glow.material.opacity = 0.35;
+        });
+        g3.lineMeshes.forEach(l => {
+            l.material.opacity = l.userData._baseOpacity || 0.12;
+        });
+        g3._searchPulse = [];
+        const badge = document.getElementById('graphSearchBadge');
+        if (badge) badge.style.display = 'none';
+        return;
+    }
+    const matches = [];
+    g3.nodeMeshes.forEach((m, i) => {
+        const n = m.userData;
+        const name = (n.id || '').toLowerCase();
+        if (name.includes(q)) {
+            matches.push({ mesh: m, node: n, idx: i });
+            m.material.opacity = 1;
+            m.material.emissiveIntensity = 1.2;
+            if (n._glow) n._glow.material.opacity = 0.6;
+        } else {
+            m.material.opacity = 0.1;
+            m.material.emissiveIntensity = 0.1;
+            if (n._glow) n._glow.material.opacity = 0.02;
+        }
+    });
+    g3.lineMeshes.forEach(l => { l.material.opacity = 0.03; });
+    // Pulse matching nodes
+    g3._searchPulse = matches.map(m => ({ mesh: m.mesh, elapsed: 0 }));
+    // Show match count
+    let badge = document.getElementById('graphSearchBadge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.id = 'graphSearchBadge';
+        badge.style.cssText = 'position:absolute;top:-8px;right:-8px;background:var(--accent-indigo,#6366f1);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;z-index:60;';
+        const searchWrap = document.querySelector('.floating-search-wrap');
+        if (searchWrap) { searchWrap.style.position = 'relative'; searchWrap.appendChild(badge); }
+    }
+    if (badge) { badge.style.display = matches.length > 0 ? 'flex' : 'none'; badge.textContent = matches.length; }
+}
+
+function graphSearchFlyTo(query) {
+    if (!g3.nodeMeshes || !g3.nodes3d) return;
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return;
+    const match = g3.nodes3d.find(n => (n.id || '').toLowerCase().includes(q));
+    if (match && g3.targetLookAt) {
+        g3.targetLookAt.set(match.x, match._baseY || match.y, match.z);
+        g3.targetDist = 80;
+        g3._setAutoRotate(false);
+        // Scroll graph into view
+        const graphSection = document.getElementById('sec-graph');
+        if (graphSection) graphSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+function initFloatingSearch() {
+    const floatingInput = document.getElementById('floatingSearchInput');
+    const searchInput = document.getElementById('searchInput');
+    if (!floatingInput || !searchInput) return;
+
+    floatingInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            searchInput.value = floatingInput.value;
+            searchVault();
+            graphSearchFlyTo(floatingInput.value);
+            // Scroll to search results
+            const searchSection = document.getElementById('sec-search');
+            if (searchSection) searchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (e.key === 'Escape') {
+            floatingInput.value = '';
+            graphSearchHighlight('');
+        }
+    });
+
+    // Sync both inputs + graph highlight
+    floatingInput.addEventListener('input', () => {
+        searchInput.value = floatingInput.value;
+        graphSearchHighlight(floatingInput.value);
+    });
+    searchInput.addEventListener('input', () => { floatingInput.value = searchInput.value; });
+}
+
+// =============================================
+//  INIT
+// =============================================
+(async function init() {
+    // Initialize Lucide icons (wrapped for resilience)
+    try { if (typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { console.warn('Lucide icons failed:', e); }
+
+    // Start the "last updated" live ticker
+    startLastUpdatedTicker();
+
+    // Initialize UI enhancements
+    initScrollObservers();
+    initFloatingSearch();
+    initGraphSearch();
+
+    // Keyboard shortcuts
+    initKeyboardShortcuts();
+
+    // Recent searches
+    renderRecentSearches();
+
+    // Show loading skeletons while fetching
+    showSkeletons();
+
+    // Render demo data immediately for fast first paint
+    renderAll(DEMO);
+    initGraph(DEMO_GRAPH);
+
+    // Then check if live
+    const live = await checkLive();
+    setMode(live);
+
+    if (live) {
+        const data = await fetchLiveData();
+        renderAll(data);
+        // Fetch live 3D graph
+        try {
+            const gResp = await fetch(`${API_GATEWAY}/api/graph/graph`, {signal: AbortSignal.timeout(10000)});
+            const gData = await gResp.json();
+            if (gData.nodes && gData.nodes.length > 0) {
+                // Cache graph nodes for folder drill-down
+                graphNodesCache = gData.nodes;
+                // Cap at 250 nodes for smooth 3D performance
+                if (gData.nodes.length > 250) {
+                    const sorted = [...gData.nodes].sort((a, b) => (b.connections || 0) - (a.connections || 0));
+                    const topNodes = sorted.slice(0, 150);
+                    const nodeIds = new Set(topNodes.map(n => n.id));
+                    const filteredEdges = (gData.edges || []).filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+                    initGraph({ nodes: topNodes, edges: filteredEdges, stats: gData.stats, communities: gData.communities });
+                    showToast(`Showing top 150 of ${gData.nodes.length} nodes (sorted by connections)`, 'info', 4000);
+                } else {
+                    initGraph(gData);
+                }
+                // Update graph background if light theme
+                if (getTheme() === 'light' && g3.scene) {
+                    g3.scene.background = new THREE.Color(0xdde4ed);
+                    g3.scene.fog = new THREE.FogExp2(0xdde4ed, 0.001);
+                }
+            }
+        } catch(e) { /* keep demo graph */ }
+        // Load research pipeline, tag explorer, and quality panels in parallel
+        loadResearchPipeline();
+        loadTagExplorer();
+        loadVaultQuality();
+        startAutoRefresh();
+    }
+
+// =============================================
+//  GRAPH INTELLIGENCE PANEL
+// =============================================
+function computeGraphIntelligence() {
+    if (!g3.nodes3d || !g3.edges3d) return null;
+    const nodes = g3.nodes3d;
+    const edges = g3.edges3d;
+    const n = nodes.length;
+    const adj = {};
+    nodes.forEach(nd => { adj[nd.id] = []; });
+    edges.forEach(e => {
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        if (adj[sid]) adj[sid].push(tid);
+        if (adj[tid]) adj[tid].push(sid);
+    });
+    const degrees = {};
+    nodes.forEach(nd => { degrees[nd.id] = (adj[nd.id] || []).length; });
+    const sortedByDegree = [...nodes].sort((a, b) => degrees[b.id] - degrees[a.id]);
+    const orphans = nodes.filter(nd => degrees[nd.id] === 0);
+    // Label propagation for community detection
+    const labels = {};
+    nodes.forEach((nd, i) => { labels[nd.id] = i; });
+    for (let iter = 0; iter < 5; iter++) {
+        const shuffled = [...nodes].sort(() => Math.random() - 0.5);
+        shuffled.forEach(nd => {
+            const neighbors = adj[nd.id] || [];
+            if (neighbors.length === 0) return;
+            const counts = {};
+            neighbors.forEach(nid => { const l = labels[nid]; counts[l] = (counts[l] || 0) + 1; });
+            let maxL = labels[nd.id], maxC = 0;
+            Object.entries(counts).forEach(([l, ct]) => { if (ct > maxC) { maxC = ct; maxL = parseInt(l); } });
+            labels[nd.id] = maxL;
+        });
+    }
+    const clusterSizes = {};
+    Object.values(labels).forEach(l => { clusterSizes[l] = (clusterSizes[l] || 0) + 1; });
+    const clusters = Object.entries(clusterSizes)
+        .filter(([,s]) => s > 1)
+        .sort((a, b) => b[1] - a[1])
+        .map(([l, s]) => {
+            const members = nodes.filter(nd => labels[nd.id] === parseInt(l));
+            const topNode = members.sort((a, b) => degrees[b.id] - degrees[a.id])[0];
+            return { label: topNode ? topNode.id.replace(/.md$/, '').split('/').pop() : 'Cluster', size: s, members };
+        });
+    const bridges = nodes.filter(nd => {
+        const neighbors = adj[nd.id] || [];
+        if (neighbors.length < 2) return false;
+        const neighborLabels = new Set(neighbors.map(nid => labels[nid]));
+        return neighborLabels.size > 1;
+    }).sort((a, b) => degrees[b.id] - degrees[a.id]).slice(0, 5);
+    const gaps = [];
+    for (let i = 0; i < Math.min(clusters.length, 5); i++) {
+        for (let j = i + 1; j < Math.min(clusters.length, 5); j++) {
+            const c1 = new Set(clusters[i].members.map(m => m.id));
+            const c2 = new Set(clusters[j].members.map(m => m.id));
+            let cross = 0;
+            edges.forEach(e => {
+                const s = typeof e.source === 'object' ? e.source.id : e.source;
+                const t = typeof e.target === 'object' ? e.target.id : e.target;
+                if ((c1.has(s) && c2.has(t)) || (c1.has(t) && c2.has(s))) cross++;
+            });
+            if (cross < 2 && clusters[i].size >= 3 && clusters[j].size >= 3)
+                gaps.push({ a: clusters[i].label, b: clusters[j].label, edges: cross });
+        }
+    }
+    return {
+        totalNodes: n, totalEdges: edges.length,
+        avgDegree: n > 0 ? (edges.length * 2 / n).toFixed(1) : 0,
+        topHubs: sortedByDegree.slice(0, 5).map(nd => ({ name: nd.id.replace(/.md$/, '').split('/').pop(), degree: degrees[nd.id] })),
+        orphans: orphans.slice(0, 8).map(nd => nd.id.replace(/.md$/, '').split('/').pop()),
+        orphanCount: orphans.length,
+        clusters, bridges: bridges.map(nd => ({ name: nd.id.replace(/.md$/, '').split('/').pop(), degree: degrees[nd.id] })),
+        gaps: gaps.slice(0, 3),
+        density: n > 1 ? (2 * edges.length / (n * (n - 1)) * 100).toFixed(2) : 0
+    };
+}
+
+function renderGraphIntel(intel) {
+    const panel = document.getElementById('graphIntelPanel');
+    if (!panel || !intel) return;
+    panel.innerHTML = `
+        <div class="graph-intel-section">
+            <h4>Overview</h4>
+            <div class="graph-intel-item"><span>Nodes</span><span class="intel-val">${intel.totalNodes}</span></div>
+            <div class="graph-intel-item"><span>Edges</span><span class="intel-val">${intel.totalEdges}</span></div>
+            <div class="graph-intel-item"><span>Avg connections</span><span class="intel-val">${intel.avgDegree}</span></div>
+            <div class="graph-intel-item"><span>Density</span><span class="intel-val">${intel.density}%</span></div>
+            <div class="graph-intel-item"><span>Clusters</span><span class="intel-val">${intel.clusters.length}</span></div>
+        </div>
+        <div class="graph-intel-section">
+            <h4>Top Hub Notes</h4>
+            ${intel.topHubs.map(h => `<div class="graph-intel-item"><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(h.name)}</span><span class="intel-val">${h.degree} links</span></div>`).join('')}
+        </div>
+        ${intel.clusters.length > 0 ? `<div class="graph-intel-section"><h4>Knowledge Clusters</h4>${intel.clusters.slice(0, 6).map(cl => `<div class="graph-intel-item"><span style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(cl.label)}</span><span class="intel-val">${cl.size} notes</span></div>`).join('')}</div>` : ''}
+        ${intel.bridges.length > 0 ? `<div class="graph-intel-section"><h4>Bridge Notes</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Connect different clusters</div>${intel.bridges.map(b => `<div class="graph-intel-item"><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(b.name)}</span><span class="intel-val">${b.degree}</span></div>`).join('')}</div>` : ''}
+        ${intel.orphanCount > 0 ? `<div class="graph-intel-section"><h4>Orphan Notes (${intel.orphanCount})</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">No connections - consider linking</div>${intel.orphans.map(o => `<span class="graph-intel-orphan" data-node="${escapeHtml(o)}">${escapeHtml(o)}</span> `).join('')}</div>` : ''}
+        ${intel.gaps.length > 0 ? `<div class="graph-intel-section"><h4>Knowledge Gaps</h4><div style="font-size:10px;color:var(--text-tertiary);margin-bottom:4px">Clusters that could be linked</div>${intel.gaps.map(g => `<div class="graph-intel-gap">${escapeHtml(g.a)} &harr; ${escapeHtml(g.b)} <span style="opacity:0.6">(${g.edges} links)</span></div>`).join('')}</div>` : ''}
+    `;
+}
+
+function toggleGraphIntel() {
+    const panel = document.getElementById('graphIntelPanel');
+    if (!panel) return;
+    if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+    const intel = computeGraphIntelligence();
+    renderGraphIntel(intel);
+    panel.classList.add('open');
+    // Event delegation for orphan node clicks
+    panel.querySelectorAll('.graph-intel-orphan').forEach(el => {
+        el.addEventListener('click', () => graphZoomToNode(el.dataset.node));
+    });
+}
+
+// =============================================
+//  AUTOPILOT / SCENIC TOUR
+// =============================================
+
+function toggleAutopilot() { autopilotActive ? stopAutopilot() : startAutopilot(); }
+
+function startAutopilot() {
+    if (!g3.nodes3d || g3.nodes3d.length === 0) return;
+    autopilotActive = true;
+    autopilotQueue = [...g3.nodes3d]
+        .filter(nd => (nd.connections || 0) > 0)
+        .sort((a, b) => (b.connections || 0) - (a.connections || 0))
+        .slice(0, 30);
+    if (autopilotQueue.length === 0) { showToast('No connected nodes to tour', 'info'); autopilotActive = false; return; }
+    autopilotIndex = 0;
+    const ind = document.getElementById('autopilotIndicator');
+    if (ind) ind.classList.add('active');
+    const btn = document.getElementById('autopilotBtn');
+    if (btn) btn.style.color = 'var(--accent-indigo)';
+    if (g3._setAutoRotate) g3._setAutoRotate(false);
+    autopilotVisitNext();
+}
+
+function stopAutopilot() {
+    autopilotActive = false;
+    if (autopilotTimer) { clearTimeout(autopilotTimer); autopilotTimer = null; }
+    const ind = document.getElementById('autopilotIndicator');
+    if (ind) ind.classList.remove('active');
+    const btn = document.getElementById('autopilotBtn');
+    if (btn) btn.style.color = '';
+    if (g3.nodeMeshes) {
+        g3.nodeMeshes.forEach(m => { m.material.opacity = 0.92; m.material.emissiveIntensity = 0.5; });
+        g3.lineMeshes.forEach(l => { const e = l.userData; l.material.opacity = e.type === 'shared_tags' ? 0.25 : (e.type === 'wikilink' ? 0.6 : 0.45); });
+    }
+    if (g3._setAutoRotate) g3._setAutoRotate(true);
+}
+
+function autopilotVisitNext() {
+    if (!autopilotActive || autopilotIndex >= autopilotQueue.length) {
+        if (autopilotActive && autopilotQueue.length > 0) autopilotIndex = 0;
+        else { stopAutopilot(); return; }
+    }
+    const node = autopilotQueue[autopilotIndex++];
+    const nameLabel = document.getElementById('autopilotNodeName');
+    const cleanName = (node.id || '').replace(/.md$/, '').split('/').pop();
+    if (nameLabel) nameLabel.textContent = cleanName;
+    const mesh = g3.nodeMeshes.find(m => m.userData.id === node.id);
+    if (!mesh) { autopilotTimer = setTimeout(autopilotVisitNext, 500); return; }
+    
+    // Cinematic fly to node with faster transition for autopilot tour
+    const nodePos = new THREE.Vector3(mesh.position.x, mesh.position.y, mesh.position.z);
+    const zoomDist = 60 + Math.max(0, 30 - (node.connections || 0) * 3);
+    cinematicCamera.flyTo(
+        cinematicCamera.theta, // Maintain orbital angle
+        Math.PI * 0.38,  // Slight elevation
+        zoomDist,
+        nodePos
+    );
+    // Highlight node + neighbors
+    const neighborIds = new Set();
+    g3.edges3d.forEach(e => {
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        if (sid === node.id) neighborIds.add(tid);
+        if (tid === node.id) neighborIds.add(sid);
+    });
+    g3.nodeMeshes.forEach(m => {
+        const nid = m.userData.id;
+        if (nid === node.id) { m.material.opacity = 1; m.material.emissiveIntensity = 1.2; }
+        else if (neighborIds.has(nid)) { m.material.opacity = 0.85; m.material.emissiveIntensity = 0.7; }
+        else { m.material.opacity = 0.15; m.material.emissiveIntensity = 0.1; }
+    });
+    g3.lineMeshes.forEach(l => {
+        const e = l.userData;
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        l.material.opacity = (sid === node.id || tid === node.id) ? 0.8 : 0.03;
+    });
+    autopilotTimer = setTimeout(autopilotVisitNext, 4000);
+}
+
+// =============================================
+//  SCREENSHOT GRAPH
+// =============================================
+function screenshotGraph() {
+    if (!g3.renderer) { showToast('No graph to screenshot', 'error'); return; }
+    try { if (g3.composer) g3.composer.render(); else g3.renderer.render(g3.scene, g3.camera); } catch(e) {}
+    const canvas = g3.renderer.domElement;
+    const dataUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'knowledge-graph-' + (currentGraphMode || 'playful') + '-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.png';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const container = document.getElementById('graphContainer') || document.getElementById('graphFullscreenContainer');
+    if (container) {
+        const flash = document.createElement('div');
+        flash.style.cssText = 'position:absolute;inset:0;background:white;z-index:100;animation:screenshotFlash 0.3s ease-out forwards;pointer-events:none';
+        container.style.position = 'relative';
+        container.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+    }
+    showToast('Screenshot saved!', 'success', 2000);
+}
+
+// =============================================
+//  RAG-TO-GRAPH BRIDGE
+// =============================================
+function viewInGraph(noteName) {
+    const clean = noteName.replace(/.md$/, '').split('/').pop();
+    if (g3.nodeMeshes && g3.nodeMeshes.length > 0) {
+        scrollToSection('sec-graph');
+        setTimeout(() => {
+            if (typeof graphZoomToNode === 'function') graphZoomToNode(clean);
+            else {
+                const mesh = g3.nodeMeshes.find(m => {
+                    const id = (m.userData.id || '').replace(/.md$/, '').split('/').pop().toLowerCase();
+                    return id.includes(clean.toLowerCase()) || clean.toLowerCase().includes(id);
+                });
+                if (mesh) {
+                    cinematicCamera.flyTo(
+                        cinematicCamera.theta,
+                        Math.PI * 0.4,
+                        80,
+                        mesh.position
+                    );
+                    showToast('Flying to: ' + clean, 'success', 2000);
+                } else showToast('Node not found in graph: ' + clean, 'info', 3000);
+            }
+        }, 500);
+    } else showToast('Graph not loaded yet', 'info');
+}
+
+// Extra keyboard shortcuts: P = autopilot, I = intelligence
+document.addEventListener('keydown', function(e) {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); toggleAutopilot(); }
+    if ((e.key === 'i' || e.key === 'I') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); toggleGraphIntel(); }
+});
+
+// Nash It button - Analyze selected node in Cassandra AI
+document.getElementById('analyze-cassandra-btn')?.addEventListener('click', function() {
+    // Find the currently selected/highlighted node
+    let selectedNode = null;
+    if (g3.nodeMeshes && g3.nodeMeshes.length > 0) {
+        // Look for a node with high opacity (selected state)
+        const highlightedMesh = g3.nodeMeshes.find(m => m.material.opacity > 0.9);
+        if (highlightedMesh && highlightedMesh.userData) {
+            selectedNode = highlightedMesh.userData;
+        }
+    }
+    
+    if (!selectedNode || !selectedNode.id) {
+        showToast('Please select a node in the knowledge graph first', 'info', 3000);
+        return;
+    }
+    
+    // Open Nash sidebar with selected node
+    if (window.nashSidebar) {
+        window.nashSidebar.open(selectedNode);
+    } else {
+        console.error('Nash sidebar not initialized');
+        showToast('Nash sidebar not available', 'error', 2000);
+    }
+});
+
+// ==== RICH CONTEXT PANEL FUNCTIONS ====
+
+let currentContextNode = null;
+
+// Enhanced node data with rich context (example crisis nodes)
+const RICH_NODE_DATA = {
+    'Cuban Missile Crisis': {
+        icon: '☢️',
+        subtitle: 'October 1962 • Nuclear Standoff',
+        description: 'The Cuban Missile Crisis was a 13-day confrontation between the United States and Soviet Union concerning Soviet ballistic missiles in Cuba. Closest the Cold War came to nuclear war.',
+        stats: {
+            'Duration': '13 days',
+            'Key Players': 'US, USSR, Cuba',
+            'Outcome': 'Peaceful Resolution',
+            'Casualties': '0 direct'
+        },
+        timeline: [
+            { date: 'Oct 14, 1962', event: 'Discovery', desc: 'U-2 spy plane photographs Soviet missile sites in Cuba' },
+            { date: 'Oct 22, 1962', event: 'Blockade', desc: 'Kennedy announces naval blockade of Cuba' },
+            { date: 'Oct 24, 1962', event: 'Tension Peaks', desc: 'Soviet ships approach quarantine line' },
+            { date: 'Oct 27, 1962', event: 'Black Saturday', desc: 'U-2 shot down, negotiations intensify' },
+            { date: 'Oct 28, 1962', event: 'Resolution', desc: 'Khrushchev agrees to remove missiles' }
+        ],
+        gameTheory: {
+            summary: 'Classic game of Chicken - both sides faced catastrophic losses if neither backed down, but backing down meant losing credibility.',
+            nash: 'The Nash equilibrium was avoiding mutual destruction through coordinated de-escalation and backchannel negotiations.'
+        },
+        media: {
+            images: [
+                { url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400', caption: 'Missile Site Aerial Photo' },
+                { url: 'https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?w=400', caption: 'Kennedy Address' }
+            ],
+            links: [
+                { text: 'JFK Library Archive', url: 'https://www.jfklibrary.org/learn/about-jfk/jfk-in-history/cuban-missile-crisis' },
+                { text: 'Nuclear Threat Today', url: 'https://www.cfr.org/backgrounder/cuban-missile-crisis' }
+            ]
+        }
+    },
+    'Bay of Pigs': {
+        icon: '🏝️',
+        subtitle: 'April 1961 • Failed Invasion',
+        description: 'A failed CIA-backed invasion attempt by Cuban exiles to overthrow Fidel Castro\'s revolutionary government.',
+        stats: {
+            'Duration': '3 days',
+            'Casualties': '~176 killed',
+            'Captured': '~1,200',
+            'Outcome': 'Complete Failure'
+        },
+        timeline: [
+            { date: 'Apr 15, 1961', event: 'Air Strikes', desc: 'CIA planes attack Cuban airfields' },
+            { date: 'Apr 17, 1961', event: 'Invasion', desc: '1,400 exiles land at Bay of Pigs' },
+            { date: 'Apr 19, 1961', event: 'Defeat', desc: 'Cuban forces crush invasion force' },
+            { date: 'Dec 1962', event: 'Release', desc: 'Prisoners exchanged for $53M in supplies' }
+        ],
+        gameTheory: {
+            summary: 'Information asymmetry and overconfidence led to catastrophic miscalculation. CIA assumed popular uprising would support invasion.',
+            nash: 'Optimal strategy would have been full commitment or no action - the middle path of limited support ensured failure.'
+        },
+        media: {
+            images: [
+                { url: 'https://images.unsplash.com/photo-1589519160732-57fc498494f8?w=400', caption: 'Cuban Coast' }
+            ],
+            links: [
+                { text: 'CIA Declassified Report', url: 'https://www.cia.gov/readingroom/collection/bay-pigs-release' },
+                { text: 'Historical Analysis', url: 'https://history.state.gov/milestones/1961-1968/bay-of-pigs' }
+            ]
+        }
+    }
+};
+
+function openContextPanel(nodeData) {
+    currentContextNode = nodeData;
+    
+    // Get rich data or use basic node data
+    const richData = RICH_NODE_DATA[nodeData.id] || {};
+    
+    // Populate header
+    document.getElementById('contextIcon').textContent = richData.icon || nodeData._emoji || '📄';
+    document.getElementById('contextTitle').textContent = nodeData.id;
+    document.getElementById('contextSubtitle').textContent = richData.subtitle || `${nodeData.folder} • ${nodeData.word_count || 0} words`;
+    
+    // Populate overview
+    const statsHtml = Object.entries(richData.stats || {
+        'Words': nodeData.word_count || 0,
+        'Connections': nodeData.connections || 0,
+        'Folder': nodeData.folder
+    }).map(([label, value]) => `
+        <div class="overview-stat">
+            <div class="overview-stat-label">${label}</div>
+            <div class="overview-stat-value">${value}</div>
+        </div>
+    `).join('');
+    document.getElementById('overviewStats').innerHTML = statsHtml;
+    
+    document.getElementById('overviewDescription').textContent = 
+        richData.description || `Knowledge node from ${nodeData.folder} with ${nodeData.connections || 0} connections.`;
+    
+    // Populate timeline
+    if (richData.timeline && richData.timeline.length > 0) {
+        const timelineHtml = richData.timeline.map(item => `
+            <div class="timeline-item">
+                <div class="timeline-date">${item.date}</div>
+                <div class="timeline-event">${item.event}</div>
+                <div class="timeline-desc">${item.desc}</div>
+            </div>
+        `).join('');
+        document.getElementById('timelineContent').innerHTML = timelineHtml;
+        document.getElementById('sectionTimeline').style.display = 'block';
+    } else {
+        document.getElementById('sectionTimeline').style.display = 'none';
+    }
+    
+    // Populate analysis
+    if (richData.gameTheory) {
+        const analysisHtml = `
+            <div class="analysis-card">
+                <div class="analysis-label">Game Theory Summary</div>
+                <div class="analysis-text">${richData.gameTheory.summary}</div>
+            </div>
+            <div class="analysis-card">
+                <div class="analysis-label">Nash Equilibrium</div>
+                <div class="analysis-text">${richData.gameTheory.nash}</div>
+            </div>
+        `;
+        document.getElementById('analysisContent').innerHTML = analysisHtml;
+        document.getElementById('sectionAnalysis').style.display = 'block';
+    } else {
+        document.getElementById('analysisContent').innerHTML = '<p style="color:var(--text-secondary);font-size:13px">No analysis available yet. Use the button below to analyze with Nash.</p>';
+        document.getElementById('sectionAnalysis').style.display = 'block';
+    }
+    
+    // Populate media
+    if (richData.media) {
+        if (richData.media.images && richData.media.images.length > 0) {
+            const imagesHtml = richData.media.images.map(img => `
+                <div class="media-item" onclick="window.open('${img.url}', '_blank')">
+                    <img src="${img.url}" alt="${img.caption}" loading="lazy">
+                    <div class="media-item-label">${img.caption}</div>
+                </div>
+            `).join('');
+            document.getElementById('mediaImages').innerHTML = imagesHtml;
+        } else {
+            document.getElementById('mediaImages').innerHTML = '';
+        }
+        
+        if (richData.media.links && richData.media.links.length > 0) {
+            const linksHtml = richData.media.links.map(link => `
+                <a href="${link.url}" target="_blank" rel="noopener" class="media-link">
+                    <i data-lucide="external-link" class="link-icon"></i>
+                    ${link.text}
+                </a>
+            `).join('');
+            document.getElementById('mediaLinks').innerHTML = linksHtml;
+        } else {
+            document.getElementById('mediaLinks').innerHTML = '';
+        }
+        
+        document.getElementById('sectionMedia').style.display = 'block';
+    } else {
+        document.getElementById('sectionMedia').style.display = 'none';
+    }
+    
+    // Show panel
+    const overlay = document.getElementById('contextPanelOverlay');
+    overlay.classList.add('open');
+    
+    // Re-render lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeContextPanel() {
+    document.getElementById('contextPanelOverlay').classList.remove('open');
+    currentContextNode = null;
+}
+
+function toggleSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section.classList.toggle('collapsed');
+}
+
+function analyzeWithNash() {
+    if (!currentContextNode) return;
+    
+    // Open Nash sidebar with current node
+    if (window.nashSidebar) {
+        window.nashSidebar.open(currentContextNode);
+    } else {
+        console.error('Nash sidebar not initialized');
+        showToast('Nash sidebar not available', 'error', 2000);
+    }
+}
+
+// Close panel on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('contextPanelOverlay').classList.contains('open')) {
+        closeContextPanel();
+    }
+});
+
+})();
