@@ -73,13 +73,31 @@ The same two files import into your cloud workspace, and because the generator
 emits **stable IDs**, re-importing a regenerated file **replaces** the existing
 collection/environment instead of creating duplicates.
 
-1. Open your workspace in the browser and click **Import** (left sidebar).
-2. Paste these raw GitHub links (they always point at the latest `main`):
-   - Collection: `https://raw.githubusercontent.com/Just-Krispy/Return_Rover/main/playwright-api-lab/postman/Return-Rover-API-Lab.postman_collection.json`
-   - Environment: `https://raw.githubusercontent.com/Just-Krispy/Return_Rover/main/playwright-api-lab/postman/Return-Rover-API-Lab.postman_environment.json`
-3. Choose your workspace and confirm. Pick the **Return Rover API Lab**
-   environment from the dropdown (top-right).
-4. When you regenerate the files later, just re-run the same import — Replace.
+**Recommended: import by dragging the files (no links, no repo visibility
+needed).** This works in any browser and never depends on GitHub being public
+or the raw CDN being reachable.
+
+1. Open your workspace in the browser and click **Collections** in the left
+   sidebar (sometimes the **Overview** landing page hides the Import button;
+   you can also use the top-left **Import** control).
+2. In File Explorer, grab the two files from `playwright-api-lab/postman/`:
+   - `Return-Rover-API-Lab.postman_collection.json`
+   - `Return-Rover-API-Lab.postman_environment.json`
+3. Drag them **directly onto the Postman browser tab**. A "Choose where to
+   import" dialog appears — pick your workspace (e.g. My-Workspace) and confirm.
+4. Pick the **Return Rover API Lab** environment from the dropdown (top-right).
+5. When you regenerate the files later, drag-and-drop them again — because of
+   the stable IDs, it replaces the existing assets instead of making copies.
+
+**Alternative: import from link.** These raw GitHub links work only while the
+repo is **public** (if the repo is private, raw fetching 404s and you get
+"file not found"). They always point at the latest `main`:
+
+   - Collection: `https://raw.githubusercontent.com/Just-Krisky/Return_Rover/main/playwright-api-lab/postman/Return-Rover-API-Lab.postman_collection.json`
+   - Environment: `https://raw.githubusercontent.com/Just-Krisky/Return_Rover/main/playwright-api-lab/postman/Return-Rover-API-Lab.postman_environment.json`
+
+   Paste them into the Import-by-link box, choose your workspace, then use the
+   environment dropdown as in step 4.
 
 **Learning bonus:** because base URLs come from *environment variables*, clone
 this environment (right-click → Duplicate), rename it `staging`, and point its
@@ -90,6 +108,9 @@ calls environments/overrides.
 > Tip: if the web app can't reach a request (it asks for an agent), that's the
 > browser-sandbox limitation. Install the free **Postman desktop agent** (or the
 > desktop app) and re-run — the web UI is otherwise identical.
+
+In the **web workspace**: drag-and-drop the regenerated `postman/*.json` files
+again — stable IDs make it a replace, not a duplicate.
 
 ## Re-syncing after a data change
 
