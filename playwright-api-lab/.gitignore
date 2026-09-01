@@ -6,3 +6,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Generated handoff brief (machine-specific paths — regenerate with npm run handoff)
+postman/SETUP-BRIEF.md

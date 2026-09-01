@@ -112,6 +112,34 @@ calls environments/overrides.
 In the **web workspace**: drag-and-drop the regenerated `postman/*.json` files
 again — stable IDs make it a replace, not a duplicate.
 
+## Hand the whole setup to the Postman agent
+
+Two helper commands are built in (no credentials needed for the first):
+
+```bash
+npm run handoff          # 1. regenerate + validate + print a paste-ready brief
+npm run postman:import   # 2. optional: push collection + env via Postman API
+```
+
+**`npm run handoff`** regenerates the Postman files from `shared/api-data.json`,
+validates them (stable IDs, all request URLs resolve), writes
+`postman/SETUP-BRIEF.md`, and prints a complete brief. Paste that brief into
+Postman Agent (or point the agent at `SETUP-BRIEF.md`) — it contains the exact
+file paths, import steps, environment selection, folder run order, and known
+caveats (like the missing `images` resource).
+
+**`npm run postman:import`** skips the UI entirely and pushes the collection +
+environment into a workspace via the Postman API (create-or-update, matching
+the stable-ID replace behavior). It needs one-time API access:
+
+1. Postman web app → **Settings → API keys → Create API Key** (workspace-level key is fine)
+2. Set it: `set POSTMAN_API_KEY=<your-key>` (PowerShell) or
+   `export POSTMAN_API_KEY=<your-key>` (bash), optionally `POSTMAN_WORKSPACE=My-Workspace`
+3. Run `npm run postman:import`
+
+No key? Just use drag-and-drop from the section above — the brief tells you the
+files either way.
+
 ## Re-syncing after a data change
 
 ```bash

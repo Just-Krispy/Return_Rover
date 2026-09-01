@@ -661,7 +661,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Dr. Circuit Book 1\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"inStock\": true,\n  \"rating\": 4.8,\n  \"tags\": \"stem,book\",\n  \"createdAt\": \"2026-01-15\"\n}",
+              "raw": "{\n  \"name\": \"Dr. Circuit Book 1\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"in_stock\": true,\n  \"rating\": 4.8,\n  \"tags\": \"stem,book\",\n  \"createdAt\": \"2026-01-15\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -705,7 +705,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Dr. Circuit Book 2\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"inStock\": true,\n  \"rating\": 4.7,\n  \"tags\": \"stem,book,magnet\",\n  \"createdAt\": \"2026-02-20\"\n}",
+              "raw": "{\n  \"name\": \"Dr. Circuit Book 2\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"in_stock\": true,\n  \"rating\": 4.7,\n  \"tags\": \"stem,book,magnet\",\n  \"createdAt\": \"2026-02-20\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -749,7 +749,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Dr. Circuit Book 3\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"inStock\": false,\n  \"rating\": 4.6,\n  \"tags\": \"stem,book,computer\",\n  \"createdAt\": \"2026-03-10\"\n}",
+              "raw": "{\n  \"name\": \"Dr. Circuit Book 3\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"in_stock\": false,\n  \"rating\": 4.6,\n  \"tags\": \"stem,book,computer\",\n  \"createdAt\": \"2026-03-10\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -793,7 +793,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Lego Style Blocks\",\n  \"category\": \"toy\",\n  \"price\": 24.5,\n  \"inStock\": true,\n  \"rating\": 4.9,\n  \"tags\": \"toy,blocks\",\n  \"createdAt\": \"2026-04-01\"\n}",
+              "raw": "{\n  \"name\": \"Lego Style Blocks\",\n  \"category\": \"toy\",\n  \"price\": 24.5,\n  \"in_stock\": true,\n  \"rating\": 4.9,\n  \"tags\": \"toy,blocks\",\n  \"createdAt\": \"2026-04-01\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -837,7 +837,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Solar Bot Kit\",\n  \"category\": \"toy\",\n  \"price\": 34,\n  \"inStock\": false,\n  \"rating\": 4.2,\n  \"tags\": \"stem,toy,robot\",\n  \"createdAt\": \"2026-04-15\"\n}",
+              "raw": "{\n  \"name\": \"Solar Bot Kit\",\n  \"category\": \"toy\",\n  \"price\": 34,\n  \"in_stock\": false,\n  \"rating\": 4.2,\n  \"tags\": \"stem,toy,robot\",\n  \"createdAt\": \"2026-04-15\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

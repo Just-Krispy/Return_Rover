@@ -16,7 +16,7 @@
     }
   },
   "mockapi": {
-    "_note": "MockAPI stores JSON only, not binary files. 'Image upload' is modelled as a JSON record whose imageDataBase64 holds a data: URL string. 'Products' is a catalog used to exercise MockAPI's free-tier query params (search, sortBy, order, limit) — the advanced `filter=` operator requires a paid plan and 404s on this workspace.",
+    "_note": "MockAPI stores JSON only, not binary files. 'Image upload' is modelled as a JSON record whose imageDataBase64 holds a data: URL string. 'Products' is a catalog used to exercise MockAPI's free-tier query params. VERIFIED LIVE: search (200 w/ match, 404 on no-match), sortBy+order, page, and limit all work. The legacy `filter=field:value` operator 404s (paid-plan feature on this workspace), and the bracketed `filter[field]=value` form returns 200 but is silently ignored (never filters). Field names use snake_case `in_stock` to match MockAPI's auto-generated schema field exactly.",
     "baseUrl": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name",
     "existingItemId": "47",
     "createItem": {
@@ -39,11 +39,11 @@
     },
     "productsBaseUrl": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/products",
     "productsSeed": [
-      { "name": "Dr. Circuit Book 1", "category": "book", "price": 12.99, "inStock": true, "rating": 4.8, "tags": "stem,book", "createdAt": "2026-01-15" },
-      { "name": "Dr. Circuit Book 2", "category": "book", "price": 12.99, "inStock": true, "rating": 4.7, "tags": "stem,book,magnet", "createdAt": "2026-02-20" },
-      { "name": "Dr. Circuit Book 3", "category": "book", "price": 12.99, "inStock": false, "rating": 4.6, "tags": "stem,book,computer", "createdAt": "2026-03-10" },
-      { "name": "Lego Style Blocks", "category": "toy", "price": 24.5, "inStock": true, "rating": 4.9, "tags": "toy,blocks", "createdAt": "2026-04-01" },
-      { "name": "Solar Bot Kit", "category": "toy", "price": 34.0, "inStock": false, "rating": 4.2, "tags": "stem,toy,robot", "createdAt": "2026-04-15" }
+      { "name": "Dr. Circuit Book 1", "category": "book", "price": 12.99, "in_stock": true, "rating": 4.8, "tags": "stem,book", "createdAt": "2026-01-15" },
+      { "name": "Dr. Circuit Book 2", "category": "book", "price": 12.99, "in_stock": true, "rating": 4.7, "tags": "stem,book,magnet", "createdAt": "2026-02-20" },
+      { "name": "Dr. Circuit Book 3", "category": "book", "price": 12.99, "in_stock": false, "rating": 4.6, "tags": "stem,book,computer", "createdAt": "2026-03-10" },
+      { "name": "Lego Style Blocks", "category": "toy", "price": 24.5, "in_stock": true, "rating": 4.9, "tags": "toy,blocks", "createdAt": "2026-04-01" },
+      { "name": "Solar Bot Kit", "category": "toy", "price": 34.0, "in_stock": false, "rating": 4.2, "tags": "stem,toy,robot", "createdAt": "2026-04-15" }
     ],
     "productQueryCases": [
       { "label": "search for 'robot'", "query": "search=robot", "type": "search", "expected": { "match": "robot" } },
