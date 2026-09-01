@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dr. Circuit — Image Upload Lab</title>
+<style>
+  :root {
+    --bg: #0f1420;
+    --panel: #1a2233;
+    --panel-2: #202b40;
+    --text: #e6edf7;
+    --muted: #9fb0c9;
+    --accent: #38bdf8;
+    --accent-2: #818cf8;
+    --ok: #34d399;
+    --err: #f87171;
+    --warn: #fbbf24;
+    --border: #2d3a52;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(1200px 700px at 20% -10%, #1d2b47 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  header .badge {
+    font-size: 28px;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 12px;
+    color: #06121f;
+    font-weight: 700;
+  }
+  h1 { margin: 0; font-size: 22px; letter-spacing: 0.2px; }
+  .subtitle { color: var(--muted); margin: 4px 0 22px; font-size: 14px; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 34px 20px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: var(--panel-2);
+  }
+  .dropzone.over { border-color: var(--accent); background: #15233a; color: var(--text); }
+  .dropzone strong { color: var(--text); }
+  .dz-icon { font-size: 34px; margin-bottom: 8px; }
+  fieldset { border: none; margin: 0; padding: 0; }
+  legend {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin: 14px 0 8px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+  input[type=text], input[type=number] {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+  }
+  input[type=file] { display: none; }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .meta .full { grid-column: 1 / -1; }
+  .mono { font-family: "Cascadia Code", Consolas, monospace; font-size: 13px; }
+  .preview {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 14px;
+  }
+  .preview.hidden { display: none; }
+  .preview img {
+    max-width: 120px; max-height: 120px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0b1019;
+    object-fit: contain;
+  }
+  .preview .info { font-size: 13px; color: var(--muted); line-height: 1.7; }
+  .preview .info b { color: var(--text); }
+  .actions { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+  button {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .06s, filter .15s;
+  }
+  button:active { transform: translateY(1px); }
+  button.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #06121f; }
+  button.ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  #results {
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 12.5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #0b1019;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    max-height: 260px;
+    overflow: auto;
+    margin-top: 12px;
+    min-height: 40px;
+  }
+  .status {
+    border-radius: 8px;
+    padding: 11px 13px;
+    margin-top: 14px;
+    font-size: 13.5px;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.ok { background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.5); color: var(--ok); }
+  .status.err { background: rgba(248,113,113,.12); border: 1px solid rgba(248,113,113,.5); color: var(--err); }
+  .status.notfound { background: rgba(251,191,36,.12); border: 1px solid rgba(251,191,36,.5); color: var(--warn); }
+  .status .head { font-weight: 700; margin-bottom: 4px; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+  .toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #0b1019; border: 1px solid var(--border); color: var(--text);
+    padding: 10px 16px; border-radius: 8px; font-size: 13px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="badge">DC</div>
+      <div>
+        <h1>Dr. Circuit — Image Upload Lab</h1>
+      </div>
+    </header>
+    <p class="subtitle">MockAPI stores JSON, not binary files — so this lab encodes the image as a base64 <span class="mono">data:</span> URL inside a JSON record.</p>
+
+    <div class="card">
+      <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Choose or drop an image">
+        <div class="dz-icon">🖼️</div>
+        <div><strong>Drag &amp; drop</strong> an image here, or <strong>click to browse</strong></div>
+        <div class="hint">PNG, JPEG, GIF, WebP, SVG… — anything your browser can decode</div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+
+      <div class="preview hidden" id="preview">
+        <img id="previewImg" alt="Preview thumbnail">
+        <div class="info" id="previewInfo"></div>
+      </div>
+
+      <fieldset>
+        <legend>Auto-derived metadata</legend>
+        <div class="meta">
+          <div>
+            <label for="name">Name</label>
+            <input type="text" id="name" class="mono">
+          </div>
+          <div>
+            <label for="mimeType">MIME type</label>
+            <input type="text" id="mimeType" class="mono">
+          </div>
+          <div>
+            <label for="width">Width (px)</label>
+            <input type="number" id="width" min="0">
+          </div>
+          <div>
+            <label for="height">Height (px)</label>
+            <input type="number" id="height" min="0">
+          </div>
+          <div>
+            <label for="sizeBytes">Size (bytes)</label>
+            <input type="number" id="sizeBytes" min="0">
+          </div>
+          <div>
+            <label for="base64Len">Data URL length</label>
+            <input type="number" id="base64Len" readonly>
+          </div>
+          <div class="full">
+            <label for="tags">Tags (comma-separated)</label>
+            <input type="text" id="tags" value="upload">
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button class="primary" id="uploadBtn" disabled>Upload to MockAPI</button>
+        <button class="ghost" id="copyBtn" disabled>Copy payload</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <legend style="margin:0 0 4px;">Server response / results</legend>
+      <div class="status" id="status"></div>
+      <pre id="results">No request yet. Select an image to begin.</pre>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ENDPOINT = "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/images";
+
+  var $ = function (id) { return document.getElementById(id); };
+  var dropzone = $("dropzone");
+  var fileInput = $("fileInput");
+  var preview = $("preview");
+  var previewImg = $("previewImg");
+  var previewInfo = $("previewInfo");
+  var nameEl = $("name"), mimeEl = $("mimeType"), wEl = $("width"),
+      hEl = $("height"), sizeEl = $("sizeBytes"), lenEl = $("base64Len"),
+      tagsEl = $("tags");
+  var uploadBtn = $("uploadBtn"), copyBtn = $("copyBtn");
+  var status = $("status"), results = $("results");
+  var toast = $("toast");
+
+  var state = {
+    dataUrl: null,
+    width: 0,
+    height: 0,
+    sizeBytes: 0,
+    name: ""
+  };
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function () { toast.classList.remove("show"); }, 1800);
+  }
+
+  function setStatus(kind, head, body) {
+    status.className = "status show " + (kind || "err");
+    status.innerHTML = "";
+    var h = document.createElement("div");
+    h.className = "head";
+    h.textContent = head;
+    status.appendChild(h);
+    if (body) {
+      var b = document.createElement("div");
+      b.textContent = body;
+      status.appendChild(b);
+    }
+  }
+  function clearStatus() { status.className = "status"; status.innerHTML = ""; }
+
+  function formatBytes(n) {
+    if (isNaN(n) || n < 0) return "?";
+    if (n < 1024) return n + " B";
+    if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+    return (n / 1048576).toFixed(2) + " MB";
+  }
+
+  // ---- File handling ---------------------------------------------------
+  function handleFile(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type) && !/\.(png|jpe?g|gif|webp|svg|bmp|avif)$/i.test(file.name)) {
+      setStatus("err", "That doesn't look like an image",
+        "Please choose an image file (file.type: \"" + (file.type || "unknown") + "\").");
+      return;
+    }
+
+    state.sizeBytes = file.size;
+    state.name = file.name;
+    nameEl.value = file.name;
+    mimeEl.value = file.type || "application/octet-stream";
+    sizeEl.value = file.size;
+    uploadBtn.disabled = true;
+    copyBtn.disabled = true;
+    clearStatus();
+
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      state.dataUrl = String(ev.target.result);
+      lenEl.value = state.dataUrl.length;
+      var img = new Image();
+      img.onload = function () {
+        state.width = img.naturalWidth;
+        state.height = img.naturalHeight;
+        wEl.value = img.naturalWidth;
+        hEl.value = img.naturalHeight;
+        previewImg.src = state.dataUrl;
+        previewInfo.innerHTML =
+          "<b>" + (file.name || "image") + "</b><br>" +
+          (file.type || "?") + " &middot; " + formatBytes(file.size) +
+          "<br>" + img.naturalWidth + " &times; " + img.naturalHeight + " px";
+        preview.classList.remove("hidden");
+        uploadBtn.disabled = false;
+        copyBtn.disabled = false;
+        setStatus("ok", "Image ready", "Metadata derived. Dimensions read from a temporary <img>: " +
+          img.naturalWidth + " x " + img.naturalHeight + " px.");
+      };
+      img.onerror = function () {
+        wEl.value = 0; hEl.value = 0; state.width = 0; state.height = 0;
+        previewImg.src = state.dataUrl;
+        preview.classList.remove("hidden");
+        uploadBtn.disabled = false;
+        copyBtn.disabled = false;
+        setStatus("warn", "Image loaded, but no pixels",
+          "Could not read naturalWidth/naturalHeight. Wrote 0 x 0. You can still upload.");
+      };
+      img.src = state.dataUrl;
+    };
+    reader.onerror = function () {
+      setStatus("err", "Could not read the file",
+        "The browser could not read this file as a data URL.");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropzone.addEventListener("click", function () { fileInput.click(); });
+  dropzone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener("change", function () { handleFile(fileInput.files[0]); });
+
+  ["dragenter", "dragover"].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault(); dropzone.classList.add("over");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault(); dropzone.classList.remove("over");
+    });
+  });
+  dropzone.addEventListener("drop", function (e) {
+    var files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length) handleFile(files[0]);
+  });
+
+  // ---- Payload ---------------------------------------------------------
+  function buildPayload() {
+    return {
+      name: (state.name || "").trim() || "untitled-image",
+      mimeType: mimeEl.value.trim() || "application/octet-stream",
+      imageDataBase64: state.dataUrl,
+      width: Number(wEl.value) || 0,
+      height: Number(hEl.value) || 0,
+      sizeBytes: Number(sizeEl.value) || 0,
+      tags: (tagsEl.value || "upload").trim() || "upload"
+    };
+  }
+
+  // ---- Copy payload ----------------------------------------------------
+  copyBtn.addEventListener("click", function () {
+    if (!state.dataUrl) return;
+    try {
+      var text = JSON.stringify(buildPayload(), null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          showToast("Payload copied to clipboard");
+        }, function () {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    } catch (e) {
+      showToast("Copy failed: " + e.message);
+    }
+  });
+
+  function fallbackCopy(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); showToast("Payload copied to clipboard"); }
+    catch (e) { showToast("Copy unavailable (clipboard blocked). Manually select the JSON."); }
+    document.body.removeChild(ta);
+  }
+
+  // ---- Upload ----------------------------------------------------------
+  uploadBtn.addEventListener("click", function () {
+    if (!state.dataUrl) return;
+    var payload = buildPayload();
+    clearStatus();
+    uploadBtn.disabled = true;
+    copyBtn.disabled = true;
+    results.textContent = "POSTing to " + ENDPOINT + " …";
+    setStatus("ok", "Uploading…", "Sending JSON POST with Content-Type application/json.");
+
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      if (res.status === 404) {
+        results.textContent = "HTTP 404: endpoint not found.";
+        setStatus("notfound", "Resource not found / not created yet",
+          "The server returned HTTP " + res.status + " for " + ENDPOINT + ". " +
+          "On MockAPI this usually means the \"/images\" resource has not been created yet on the dashboard. " +
+          "Create the resource, then retry.");
+        uploadBtn.disabled = false;
+        copyBtn.disabled = false;
+        return;
+      }
+      if (!res.ok) {
+        res.text().then(function (body) {
+          results.textContent = "HTTP " + res.status + " " + res.statusText + "\n" + (body || "");
+          setStatus("err", "Request failed (HTTP " + res.status + ")",
+            "The server responded but rejected the upload. Details shown in the results panel.");
+          uploadBtn.disabled = false; copyBtn.disabled = false;
+        });
+        return;
+      }
+      res.json().then(function (record) {
+        results.textContent = JSON.stringify(record, null, 2);
+        var idExtra = record && record.id ? " Created record id: " + record.id + "." : "";
+        setStatus("ok", "Upload succeeded ✔" + idExtra,
+          "The image record was created on MockAPI. See the results panel for its fields (note the new \"id\" field).");
+        uploadBtn.disabled = false;
+        copyBtn.disabled = false;
+      }).catch(function () {
+        setStatus("err", "Bad response",
+          "Received a success status but could not parse the JSON body. Raw text is shown in results.");
+      });
+    }).catch(function (err) {
+      // Network failure, CORS or offline
+      results.textContent = "Network error: " + (err && err.message ? err.message : String(err));
+      setStatus("err", "Could not reach the server",
+        "The request did not complete — this is usually a CORS block (opened from disk / mixed content) or a network/offline issue. " +
+        "Open this file through a local server (e.g. the Playwright lab host) to avoid CORS, and check your connection.");
+      uploadBtn.disabled = false;
+      copyBtn.disabled = false;
+    });
+  });
+
+  results.textContent = "No request yet. Select an image to begin.";
+})();
+</script>
+</body>
+</html>

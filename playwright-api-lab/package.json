@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
-    "test:api": "playwright test tests/jsonplaceholder-posts.api.spec.ts tests/mockapi-items.api.spec.ts",
-    "build:postman": "node scripts/generate-postman-collection.mjs"
+    "test:api": "playwright test tests/jsonplaceholder-posts.api.spec.ts tests/mockapi-items.api.spec.ts tests/mockapi-image-upload.api.spec.ts tests/mockapi-filters.api.spec.ts",
+    "build:postman": "node scripts/generate-postman-collection.mjs",
+    "check:mockapi": "node scripts/check-mockapi-resources.mjs"
   },
   "keywords": [],
   "author": "",

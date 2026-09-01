@@ -11,7 +11,9 @@ playwright-api-lab/
 │   └── api-data.json            ← SINGLE SOURCE OF TRUTH (edit me)
 ├── tests/
 │   ├── jsonplaceholder-posts.api.spec.ts   ← reads shared data
-│   └── mockapi-items.api.spec.ts           ← reads shared data
+│   ├── mockapi-items.api.spec.ts           ← reads shared data
+│   ├── mockapi-image-upload.api.spec.ts    ← image "upload" (base64 JSON)
+│   └── mockapi-filters.api.spec.ts         ← filter/sort/search on products
 ├── postman/
 │   ├── Return-Rover-API-Lab.postman_collection.json   ← generated
 │   └── Return-Rover-API-Lab.postman_environment.json  ← generated
@@ -128,3 +130,66 @@ npm run test:api                           # just the two API specs
   URL to see overrides in action.
 - Try Postman's `pm.response.to.have.jsonSchema()` if you want to compare with
   Playwright's JSON schema matchers.
+
+## Image upload + filters resources (MockAPI)
+
+Two more MockAPI resources are modelled in `shared/api-data.json` and covered by
+`mockapi-image-upload.api.spec.ts` and `mockapi-filters.api.spec.ts`.
+
+**The honest caveat:** MockAPI stores **JSON only** — it cannot store a binary
+file. So an "image upload" here means a JSON record whose `imageDataBase64`
+field holds a `data:` URL (base64) string plus metadata (`name`, `mimeType`,
+`width`, `height`, `sizeBytes`, `tags`). The Playwright/Postman tests create
+such a record, read it back, verify it round-trips, then clean up.
+
+### Creating the resources in the MockAPI dashboard
+
+MockAPI resources (schemas) are created in the web dashboard
+(app.mockapi.io) — there is no public API to create a resource, and it needs
+your login. In the project, click **New Resource** and add fields:
+
+**Resource `images`** (image upload records)
+| Field | Type |
+| ----- | ---- |
+| name | string |
+| mimeType | string |
+| imageDataBase64 | string |
+| width | number |
+| height | number |
+| sizeBytes | number |
+| tags | string |
+
+**Resource `products`** (filterable catalog)
+| Field | Type |
+| ----- | ---- |
+| name | string |
+| category | string |
+| price | number |
+| inStock | boolean |
+| rating | number |
+| tags | string |
+| createdAt | string |
+
+That gives you the endpoints `https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/images`
+and `.../lab/v1/products`.
+
+> **Status on this workspace:** the `products` resource already exists and the
+> tests run green. The `images` resource has **not been created yet** — the
+> image spec skips itself until you create it in the dashboard; run the two
+> URLs above after creating it.
+
+### Query params you can demo (MockAPI free tier)
+
+- `?search=robot` — full-text search across fields
+- `?sortBy=rating&order=desc` — sort descending / ascending
+- `?limit=2&page=1` — page size + page (MockAPI only applies `limit` when
+  `page` is also present; try `page=2` too)
+
+> From MockAPI's docs, `?filter=field:value` (exact/boolean/numeric-match
+> filtering) is a **paid-plan** feature — this workspace returns 404 for it,
+> so the lab sticks to the free tier. Good excuse to try it later on a Pro
+> workspace.
+
+Run the Playwright side: `npm run test:api` (or the two new specs directly).
+Regenerate Postman: `npm run build:postman`. Add rows to the `productsSeed` /
+`createImage` objects in `shared/api-data.json` and re-run.

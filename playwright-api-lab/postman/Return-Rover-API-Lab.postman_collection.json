@@ -488,6 +488,557 @@
           ]
         }
       ]
+    },
+    {
+      "name": "MockAPI Image Upload",
+      "item": [
+        {
+          "name": "Upload image record (base64)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiImagesBaseUrl}}",
+              "host": [
+                "{{mockapiImagesBaseUrl}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"dr-circuit-cover {{$timestamp}}\",\n  \"mimeType\": \"image/png\",\n  \"imageDataBase64\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAEklEQVR4nGN4tsXmPzJmIF0AAAamLVECTwz3AAAAAElFTkSuQmCC\",\n  \"width\": 4,\n  \"height\": 4,\n  \"sizeBytes\": 75,\n  \"tags\": \"cover,test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Upload image record (base64)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"POST returns 201\", () => pm.response.to.have.status(201));",
+                  "const img = pm.response.json();",
+                  "pm.test(\"Image record has an id\", () => pm.expect(img.id).to.exist);",
+                  "pm.test(\"mimeType is image/png\", () => pm.expect(img.mimeType).to.eql(\"image/png\"));",
+                  "pm.test(\"imageDataBase64 is a data URL\", () => pm.expect(img.imageDataBase64).to.include(\"data:image/\"));",
+                  "pm.collectionVariables.set(\"createdImageId\", img.id);",
+                  "pm.collectionVariables.set(\"createdImageName\", img.name);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get created image",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiImagesBaseUrl}}/{{createdImageId}}?cacheBust={{$timestamp}}",
+              "host": [
+                "{{mockapiImagesBaseUrl}}"
+              ],
+              "path": [
+                "{{createdImageId}}"
+              ],
+              "query": [
+                {
+                  "key": "cacheBust",
+                  "value": "{{$timestamp}}",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Mirrors the \"Get created image\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const img = pm.response.json();",
+                  "pm.test(\"Returned the image we uploaded\", () => {",
+                  "  pm.expect(String(img.id)).to.eql(pm.collectionVariables.get(\"createdImageId\"));",
+                  "  pm.expect(img.name).to.eql(pm.collectionVariables.get(\"createdImageName\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete created image (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiImagesBaseUrl}}/{{createdImageId}}",
+              "host": [
+                "{{mockapiImagesBaseUrl}}"
+              ],
+              "path": [
+                "{{createdImageId}}"
+              ]
+            },
+            "description": "Mirrors the \"Delete created image (cleanup)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = pm.collectionVariables.get(\"createdImageId\");",
+                  "if (!id) throw new Error(\"No created image to delete. Run 'Upload image record' first.\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"DELETE returns 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.unset(\"createdImageId\");",
+                  "pm.collectionVariables.unset(\"createdImageName\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MockAPI Filters (products)",
+      "item": [
+        {
+          "name": "Seed catalog (1/5) — Dr. Circuit Book 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Circuit Book 1\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"inStock\": true,\n  \"rating\": 4.8,\n  \"tags\": \"stem,book\",\n  \"createdAt\": \"2026-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Seed catalog (1/5) — Dr. Circuit Book 1\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seed POST returns 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed catalog (2/5) — Dr. Circuit Book 2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Circuit Book 2\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"inStock\": true,\n  \"rating\": 4.7,\n  \"tags\": \"stem,book,magnet\",\n  \"createdAt\": \"2026-02-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Seed catalog (2/5) — Dr. Circuit Book 2\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seed POST returns 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed catalog (3/5) — Dr. Circuit Book 3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Dr. Circuit Book 3\",\n  \"category\": \"book\",\n  \"price\": 12.99,\n  \"inStock\": false,\n  \"rating\": 4.6,\n  \"tags\": \"stem,book,computer\",\n  \"createdAt\": \"2026-03-10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Seed catalog (3/5) — Dr. Circuit Book 3\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seed POST returns 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed catalog (4/5) — Lego Style Blocks",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Lego Style Blocks\",\n  \"category\": \"toy\",\n  \"price\": 24.5,\n  \"inStock\": true,\n  \"rating\": 4.9,\n  \"tags\": \"toy,blocks\",\n  \"createdAt\": \"2026-04-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Seed catalog (4/5) — Lego Style Blocks\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seed POST returns 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed catalog (5/5) — Solar Bot Kit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Solar Bot Kit\",\n  \"category\": \"toy\",\n  \"price\": 34,\n  \"inStock\": false,\n  \"rating\": 4.2,\n  \"tags\": \"stem,toy,robot\",\n  \"createdAt\": \"2026-04-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Seed catalog (5/5) — Solar Bot Kit\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Seed POST returns 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Search for robot",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}?search=robot",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "robot",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Mirrors the \"Search for robot\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test(\"A row mentions robot\", () => rows.forEach(r => pm.expect(JSON.stringify(r).toLowerCase()).to.include(\"robot\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sort by rating descending",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}?sortBy=rating&order=desc",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "rating",
+                  "disabled": false
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Mirrors the \"Sort by rating descending\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test(\"Ratings are sorted descending\", () => {",
+                  "  for (let i = 1; i < rows.length; i++) pm.expect(rows[i-1].rating).to.be.at.least(rows[i].rating);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sort by price ascending",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}?sortBy=price&order=asc",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "sortBy",
+                  "value": "price",
+                  "disabled": false
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Mirrors the \"Sort by price ascending\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test(\"Prices are sorted ascending\", () => {",
+                  "  for (let i = 1; i < rows.length; i++) pm.expect(rows[i-1].price).to.be.at.most(rows[i].price);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paginate (limit 2, page 1)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{mockapiProductsBaseUrl}}?limit=2&page=1",
+              "host": [
+                "{{mockapiProductsBaseUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2",
+                  "disabled": false
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Mirrors the \"Paginate (limit 2, page 1)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const rows = pm.response.json();",
+                  "pm.test(\"Exactly 2 rows returned\", () => pm.expect(rows.length).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "variable": [

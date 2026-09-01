@@ -297,6 +297,158 @@ pm.collectionVariables.unset("createdItemName");
 };
 
 /* ------------------------------------------------------------------ *
+ * MockAPI Image Upload folder (mirrors mockapi-image-upload.api.spec.ts)
+ * ------------------------------------------------------------------ */
+
+const ENV_MOCKAPI_IMAGES = '{{mockapiImagesBaseUrl}}';
+
+const mockapiImageUploadFolder = {
+  name: 'MockAPI Image Upload',
+  item: [
+    request({
+      name: 'Upload image record (base64)',
+      method: 'POST',
+      rawUrl: `${ENV_MOCKAPI_IMAGES}`,
+      headers: [['Content-Type', 'application/json'], ...jsonAccept],
+      body: jsonBody(DATA.mockapi.createImage, true),
+      events: [
+        event('test', `
+pm.test("POST returns 201", () => pm.response.to.have.status(201));
+const img = pm.response.json();
+pm.test("Image record has an id", () => pm.expect(img.id).to.exist);
+pm.test("mimeType is image/png", () => pm.expect(img.mimeType).to.eql("image/png"));
+pm.test("imageDataBase64 is a data URL", () => pm.expect(img.imageDataBase64).to.include("data:image/"));
+pm.collectionVariables.set("createdImageId", img.id);
+pm.collectionVariables.set("createdImageName", img.name);
+`),
+      ],
+    }),
+    request({
+      name: 'Get created image',
+      method: 'GET',
+      rawUrl: `${ENV_MOCKAPI_IMAGES}/{{createdImageId}}?cacheBust=${POSTMAN_TIMESTAMP}`,
+      headers: jsonAccept,
+      events: [
+        event('test', `
+pm.test("GET returns 200", () => pm.response.to.have.status(200));
+const img = pm.response.json();
+pm.test("Returned the image we uploaded", () => {
+  pm.expect(String(img.id)).to.eql(pm.collectionVariables.get("createdImageId"));
+  pm.expect(img.name).to.eql(pm.collectionVariables.get("createdImageName"));
+});
+`),
+      ],
+    }),
+    request({
+      name: 'Delete created image (cleanup)',
+      method: 'DELETE',
+      rawUrl: `${ENV_MOCKAPI_IMAGES}/{{createdImageId}}`,
+      headers: jsonAccept,
+      events: [
+        event('prerequest', `
+const id = pm.collectionVariables.get("createdImageId");
+if (!id) throw new Error("No created image to delete. Run 'Upload image record' first.");
+`),
+        event('test', `
+pm.test("DELETE returns 200", () => pm.response.to.have.status(200));
+pm.collectionVariables.unset("createdImageId");
+pm.collectionVariables.unset("createdImageName");
+`),
+      ],
+    }),
+  ],
+};
+
+/* ------------------------------------------------------------------ *
+ * MockAPI Filters folder (mirrors mockapi-filters.api.spec.ts)
+ * ------------------------------------------------------------------ */
+
+const ENV_MOCKAPI_PRODUCTS = '{{mockapiProductsBaseUrl}}';
+const productSeed = DATA.mockapi.productsSeed;
+
+/* Build one POST request per seed row so the Postman collection seeds the
+ * whole catalog, matching the Playwright seed test. */
+function seedRequests() {
+  return productSeed.map((row, i) =>
+    request({
+      name: `Seed catalog (${i + 1}/${productSeed.length}) — ${row.name}`,
+      method: 'POST',
+      rawUrl: `${ENV_MOCKAPI_PRODUCTS}`,
+      headers: [['Content-Type', 'application/json'], ...jsonAccept],
+      body: jsonBody(row),
+      events: [
+        event('test', `
+pm.test("Seed POST returns 201", () => pm.response.to.have.status(201));
+`),
+      ],
+    })
+  );
+}
+
+const mockapiFiltersFolder = {
+  name: 'MockAPI Filters (products)',
+  item: [
+    ...seedRequests(),
+    request({
+      name: 'Search for robot',
+      method: 'GET',
+      rawUrl: `${ENV_MOCKAPI_PRODUCTS}?search=robot`,
+      headers: jsonAccept,
+      events: [
+        event('test', `
+pm.test("GET returns 200", () => pm.response.to.have.status(200));
+const rows = pm.response.json();
+pm.test("A row mentions robot", () => rows.forEach(r => pm.expect(JSON.stringify(r).toLowerCase()).to.include("robot")));
+`),
+      ],
+    }),
+    request({
+      name: 'Sort by rating descending',
+      method: 'GET',
+      rawUrl: `${ENV_MOCKAPI_PRODUCTS}?sortBy=rating&order=desc`,
+      headers: jsonAccept,
+      events: [
+        event('test', `
+pm.test("GET returns 200", () => pm.response.to.have.status(200));
+const rows = pm.response.json();
+pm.test("Ratings are sorted descending", () => {
+  for (let i = 1; i < rows.length; i++) pm.expect(rows[i-1].rating).to.be.at.least(rows[i].rating);
+});
+`),
+      ],
+    }),
+    request({
+      name: 'Sort by price ascending',
+      method: 'GET',
+      rawUrl: `${ENV_MOCKAPI_PRODUCTS}?sortBy=price&order=asc`,
+      headers: jsonAccept,
+      events: [
+        event('test', `
+pm.test("GET returns 200", () => pm.response.to.have.status(200));
+const rows = pm.response.json();
+pm.test("Prices are sorted ascending", () => {
+  for (let i = 1; i < rows.length; i++) pm.expect(rows[i-1].price).to.be.at.most(rows[i].price);
+});
+`),
+      ],
+    }),
+    request({
+      name: 'Paginate (limit 2, page 1)',
+      method: 'GET',
+      rawUrl: `${ENV_MOCKAPI_PRODUCTS}?limit=2&page=1`,
+      headers: jsonAccept,
+      events: [
+        event('test', `
+pm.test("GET returns 200", () => pm.response.to.have.status(200));
+const rows = pm.response.json();
+pm.test("Exactly 2 rows returned", () => pm.expect(rows.length).to.eql(2));
+`),
+      ],
+    }),
+  ],
+};
+
+/* ------------------------------------------------------------------ *
  * Collection + environment
  * ------------------------------------------------------------------ */
 
@@ -312,7 +464,7 @@ const collection = {
     schema:
       'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
   },
-  item: [jsonplaceholderFolder, mockapiFolder],
+  item: [jsonplaceholderFolder, mockapiFolder, mockapiImageUploadFolder, mockapiFiltersFolder],
   variable: [
     { key: 'postId', value: String(DATA.jsonplaceholder.postId) },
     { key: 'unknownPostId', value: String(DATA.jsonplaceholder.unknownPostId) },
@@ -333,6 +485,18 @@ const environment = {
     {
       key: 'mockapiBaseUrl',
       value: DATA.mockapi.baseUrl,
+      type: 'default',
+      enabled: true,
+    },
+    {
+      key: 'mockapiImagesBaseUrl',
+      value: DATA.mockapi.imagesBaseUrl,
+      type: 'default',
+      enabled: true,
+    },
+    {
+      key: 'mockapiProductsBaseUrl',
+      value: DATA.mockapi.productsBaseUrl,
       type: 'default',
       enabled: true,
     },
