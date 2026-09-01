@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import apiData from '../shared/api-data.json';
+import { retryFor429 } from './http-helpers';
 
 // Image "upload" resource on MockAPI.
 // NOTE: MockAPI stores JSON, not binary files. An image upload is modelled as
@@ -17,7 +18,7 @@ test.describe('MockAPI image upload workflow', () => {
     // MockAPI resources are created in the web UI, not via API. If the
     // /images resource hasn't been created yet, skip this file with a hint
     // instead of failing.
-    const probe = await request.get(`${imagesBaseUrl}?limit=1`);
+    const probe = await retryFor429(() => request.get(`${imagesBaseUrl}?limit=1`));
     test.skip(
       !probe.ok(),
       'MockAPI resource /images does not exist yet. Create it in the MockAPI web UI (New Resource → images), then re-run this workflow.'
@@ -31,10 +32,12 @@ test.describe('MockAPI image upload workflow', () => {
       name: uniqueName(createImage.name),
     };
 
-    const response = await request.post(imagesBaseUrl, {
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      data: payload,
-    });
+    const response = await retryFor429(() =>
+      request.post(imagesBaseUrl, {
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        data: payload,
+      })
+    );
 
     expect(response.status()).toBe(201);
 
@@ -55,9 +58,11 @@ test.describe('MockAPI image upload workflow', () => {
       await expect
         .poll(
           async () => {
-            const get = await request.get(`${imagesBaseUrl}/${id}?cacheBust=${Date.now()}`, {
-              headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
-            });
+            const get = await retryFor429(() =>
+              request.get(`${imagesBaseUrl}/${id}`, {
+                headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+              })
+            );
             if (!get.ok()) return false;
             const item = await get.json();
             return (
@@ -70,7 +75,7 @@ test.describe('MockAPI image upload workflow', () => {
         )
         .toBe(true);
     } finally {
-      await request.delete(`${imagesBaseUrl}/${id}`);
+      await retryFor429(() => request.delete(`${imagesBaseUrl}/${id}`));
     }
   });
 });

@@ -1,9 +1,15 @@
 import { test, expect } from '@playwright/test';
 import apiData from '../shared/api-data.json';
+import { retryFor429 } from './http-helpers';
 
 // ============================================================
 // VERIFIED LIVE against (2026-09-01):
-//   https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/products
+//   https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/filter
+//
+// IMPORTANT: target resource is the "filter" catalog the user created
+//   in the MockAPI dashboard (NOT "products" — that's a separate,
+//   pre-existing resource with a snake_case in_stock field). The
+//   "filter" resource stores camelCase `inStock`, confirmed live.
 //
 // Query form                        -> HTTP   actual behavior
 // ------------------------------------------------------------------
@@ -31,18 +37,31 @@ const { productsBaseUrl, productsSeed } = apiData.mockapi;
 const url = (query: string) => `${productsBaseUrl}?${query}`;
 
 async function getJson(request: any, query: string) {
-  const res = await request.get(url(query));
+  const res = await retryFor429(() => request.get(url(query)));
   if (res.status() === 404) return { status: 404, rows: <any[]>[] };
   return { status: res.status(), rows: <any[]>await res.json() };
 }
 
 async function clearExisting(request: any) {
   // Empty the resource so our seeded rows are the only ones (deterministic).
-  const res = await request.get(`${productsBaseUrl}?page=1&limit=100`);
+  // GET + DELETE for the row ids is tolerant throughout: a 404 on DELETE means
+  // the row was already removed (e.g. by another tool) — that's fine, we just
+  // keep going. retryFor429 shields the shared free-tier endpoint from rate
+  // limits during this burst of delete requests.
+  const res = await retryFor429(() =>
+    request.get(`${productsBaseUrl}?page=1&limit=100`)
+  );
   if (!res.ok()) return;
-  const rows = await res.json();
+  const rows = <any[]>await res.json();
   for (const row of rows) {
-    if (row.id) await request.delete(`${productsBaseUrl}/${row.id}`);
+    if (row.id) {
+      const del = await retryFor429(() =>
+        request.delete(`${productsBaseUrl}/${row.id}`)
+      );
+      // 200/204 = gone, 404 = already gone; anything else still shouldn't abort
+      // the clear loop — the seed+verify below is what actually enforces state.
+      if (del.status() === 404) continue;
+    }
   }
 }
 
@@ -50,15 +69,39 @@ async function seed(request: any) {
   await clearExisting(request);
   const ids: string[] = [];
   for (const seedRow of productsSeed) {
-    const r = await request.post(productsBaseUrl, {
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      data: seedRow,
-    });
+    const r = await retryFor429(() =>
+      request.post(productsBaseUrl, {
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        data: seedRow,
+      })
+    );
     if (r.ok()) {
       const created = await r.json();
       if (created.id) ids.push(String(created.id));
     }
   }
+  // Poll until the 5 seeded rows are all visible through a fresh read. This
+  // eliminates the seed/clear race (a read running before POSTs are persisted
+  // would otherwise see 0 rows in webkit). Only after the resource demonstrably
+  // holds our catalog do the read/filter tests below run.
+  await expect
+    .poll(
+      async () => {
+        const res = await retryFor429(() =>
+          request.get(`${productsBaseUrl}?page=1&limit=100`)
+        );
+        if (!res.ok()) return 0;
+        const rows = <any[]>await res.json();
+        const names = new Set(rows.map((r: any) => r.name));
+        return productsSeed.filter((s: any) => names.has(s.name)).length;
+      },
+      {
+        message: 'Waiting for all 5 seeded rows to be present after seeding',
+        timeout: 15_000,
+        intervals: [200, 400, 800, 1_200],
+      }
+    )
+    .toBe(productsSeed.length);
   return ids;
 }
 
@@ -98,7 +141,7 @@ test.describe('MockAPI products: live-supported query mechanisms', () => {
   test('search with no match returns 404 "Not found" (MockAPI quirk)', async ({ request }) => {
     // Unlike most APIs, a search that matches nothing does NOT return an empty array —
     // MockAPI returns HTTP 404. Documented here rather than patched over.
-    const res = await request.get(url('search=zzzzzz'));
+    const res = await retryFor429(() => request.get(url('search=zzzzzz')));
     expect(res.status()).toBe(404);
     // MockAPI's 404 body is the JSON-encoded string "Not found" (literal quotes).
     expect(await res.text()).toContain('Not found');
@@ -165,14 +208,14 @@ test.describe('MockAPI products: live-supported query mechanisms', () => {
       expect(typeof r.id).toBe('string');               // MockAPI assigns string ids
       expect(r.price).toBe(seedCol.price);              // value round-trips
       expect(r.category).toBe(seedCol.category);        // value round-trips
-      expect(typeof r.in_stock).toBe('boolean');        // schema boolean field
+      expect(typeof r.inStock).toBe('boolean');       // schema boolean field
     }
   });
 
   test('filter=field:value colon operator is NOT supported -> 404', async ({ request }) => {
     // Legacy operator filter is a paid-plan feature: 404 on free tier. KEEPING this
     // assertion documents reality rather than pretending filtering works.
-    const res = await request.get(url('filter=category:book'));
+    const res = await retryFor429(() => request.get(url('filter=category:book')));
     expect(res.status()).toBe(404);
     // MockAPI's 404 body is the JSON-encoded string "Not found" (literal quotes).
     expect(await res.text()).toContain('Not found');

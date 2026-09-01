@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import apiData from '../shared/api-data.json';
+import { retryFor429 } from './http-helpers';
 
 // Test data lives in ../shared/api-data.json — the same single source of
 // truth used to generate the Postman collection (npm run build:postman).
@@ -14,11 +15,13 @@ test.describe('MockAPI items workflow', () => {
   test.describe.configure({ mode: 'serial' });
 
   test('GET returns the item collection', async ({ request }) => {
-    const response = await request.get(baseUrl, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
+    const response = await retryFor429(() =>
+      request.get(baseUrl, {
+        headers: {
+          Accept: 'application/json',
+        },
+      })
+    );
 
     expect(response.status()).toBe(200);
 
@@ -32,12 +35,14 @@ test.describe('MockAPI items workflow', () => {
     let itemId: string | number | undefined;
 
     try {
-      const createResponse = await request.post(baseUrl, {
-        data: {
-          name: itemName,
-          quantity: createItem.quantity,
-        },
-      });
+      const createResponse = await retryFor429(() =>
+        request.post(baseUrl, {
+          data: {
+            name: itemName,
+            quantity: createItem.quantity,
+          },
+        })
+      );
 
       expect(createResponse.status()).toBe(201);
 
@@ -50,14 +55,16 @@ test.describe('MockAPI items workflow', () => {
       await expect
         .poll(
           async () => {
-            const getResponse = await request.get(
-              `${baseUrl}/${itemId}?cacheBust=${Date.now()}`,
-              {
-                headers: {
-                  Accept: 'application/json',
-                  'Cache-Control': 'no-cache',
-                },
-              }
+            const getResponse = await retryFor429(() =>
+              request.get(
+                `${baseUrl}/${itemId}`,
+                {
+                  headers: {
+                    Accept: 'application/json',
+                    'Cache-Control': 'no-cache',
+                  },
+                }
+              )
             );
 
             if (!getResponse.ok()) {
@@ -81,7 +88,7 @@ test.describe('MockAPI items workflow', () => {
         .toBe(true);
     } finally {
       if (itemId !== undefined) {
-        await request.delete(`${baseUrl}/${itemId}`);
+        await retryFor429(() => request.delete(`${baseUrl}/${itemId}`));
       }
     }
   });
@@ -93,38 +100,44 @@ test.describe('MockAPI items workflow', () => {
     let itemId: string | undefined;
 
     try {
-      const createResponse = await request.post(baseUrl, {
-        data: {
-          name: originalName,
-          quantity: createItem.quantity,
-        },
-      });
+      const createResponse = await retryFor429(() =>
+        request.post(baseUrl, {
+          data: {
+            name: originalName,
+            quantity: createItem.quantity,
+          },
+        })
+      );
 
       expect(createResponse.status()).toBe(201);
 
       const createdItem = await createResponse.json();
       itemId = String(createdItem.id);
 
-      const updateResponse = await request.put(`${baseUrl}/${itemId}`, {
-        headers: {
-          Accept: 'application/json',
-        },
-        data: updateItem,
-      });
+      const updateResponse = await retryFor429(() =>
+        request.put(`${baseUrl}/${itemId}`, {
+          headers: {
+            Accept: 'application/json',
+          },
+          data: updateItem,
+        })
+      );
 
       expect(updateResponse.status()).toBe(200);
 
       await expect
         .poll(
           async () => {
-            const getResponse = await request.get(
-              `${baseUrl}/${itemId}?cacheBust=${Date.now()}`,
-              {
-                headers: {
-                  Accept: 'application/json',
-                  'Cache-Control': 'no-cache',
-                },
-              }
+            const getResponse = await retryFor429(() =>
+              request.get(
+                `${baseUrl}/${itemId}`,
+                {
+                  headers: {
+                    Accept: 'application/json',
+                    'Cache-Control': 'no-cache',
+                  },
+                }
+              )
             );
 
             if (!getResponse.ok()) {
@@ -148,7 +161,7 @@ test.describe('MockAPI items workflow', () => {
         .toBe(true);
     } finally {
       if (itemId !== undefined) {
-        await request.delete(`${baseUrl}/${itemId}`);
+        await retryFor429(() => request.delete(`${baseUrl}/${itemId}`));
       }
     }
   });
@@ -156,26 +169,30 @@ test.describe('MockAPI items workflow', () => {
   test('PUT updates existing item from shared data', async ({ request }) => {
     const itemId = existingItemId;
 
-    const updateResponse = await request.put(`${baseUrl}/${itemId}`, {
-      headers: {
-        Accept: 'application/json',
-      },
-      data: updateItem,
-    });
+    const updateResponse = await retryFor429(() =>
+      request.put(`${baseUrl}/${itemId}`, {
+        headers: {
+          Accept: 'application/json',
+        },
+        data: updateItem,
+      })
+    );
 
     expect(updateResponse.status()).toBe(200);
 
     await expect
       .poll(
         async () => {
-          const getResponse = await request.get(
-            `${baseUrl}/${itemId}?cacheBust=${Date.now()}`,
-            {
-              headers: {
-                Accept: 'application/json',
-                'Cache-Control': 'no-cache',
-              },
-            }
+          const getResponse = await retryFor429(() =>
+            request.get(
+              `${baseUrl}/${itemId}`,
+              {
+                headers: {
+                  Accept: 'application/json',
+                  'Cache-Control': 'no-cache',
+                },
+              }
+            )
           );
 
           if (!getResponse.ok()) {

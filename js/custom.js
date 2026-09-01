@@ -94,9 +94,11 @@
         inputEl.placeholder = "Return submitted — thank you!";
     }
 
-    function askCurrent() {
-        addMessage(STEPS[currentStep].prompt, "system");
-        updateProgress(currentStep, false);
+    function askCurrent(stepIndex) {
+        const step = STEPS[stepIndex] || STEPS[currentStep] || null;
+        if (!step) return;
+        addMessage(step.prompt, "system");
+        updateProgress(stepIndex, false);
         inputEl.focus();
     }
 
@@ -106,6 +108,7 @@
         if (!raw) return;
 
         const step = STEPS[currentStep];
+        if (!step) return;
         addMessage(raw, "user");
         inputEl.value = "";
 
@@ -121,7 +124,8 @@
         currentStep++;
 
         if (currentStep < STEPS.length) {
-            setTimeout(() => askCurrent(), 400);
+            const pendingStep = currentStep;
+            setTimeout(() => askCurrent(pendingStep), 400);
         } else {
             setTimeout(() => showSummary(), 400);
         }

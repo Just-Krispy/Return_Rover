@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import apiData from '../shared/api-data.json';
+import { retryFor429 } from './http-helpers';
 
 // Test data lives in ../shared/api-data.json — the same single source of
 // truth used to generate the Postman collection (npm run build:postman).
@@ -9,7 +10,7 @@ const { baseUrl, postId, unknownPostId, newPost, updatedPost } =
 
 test.describe('JSONPlaceholder posts API', () => {
   test('GET retrieves a post', async ({ request }) => {
-    const response = await request.get(`${baseUrl}/posts/${postId}`);
+    const response = await retryFor429(() => request.get(`${baseUrl}/posts/${postId}`));
 
     expect(response.status()).toBe(200);
 
@@ -21,15 +22,19 @@ test.describe('JSONPlaceholder posts API', () => {
   });
 
   test('GET returns 404 for an unknown post', async ({ request }) => {
-    const response = await request.get(`${baseUrl}/posts/${unknownPostId}`);
+    const response = await retryFor429(() =>
+      request.get(`${baseUrl}/posts/${unknownPostId}`)
+    );
 
     expect(response.status()).toBe(404);
   });
 
   test('POST creates a post', async ({ request }) => {
-    const response = await request.post(`${baseUrl}/posts`, {
-      data: newPost,
-    });
+    const response = await retryFor429(() =>
+      request.post(`${baseUrl}/posts`, {
+        data: newPost,
+      })
+    );
 
     expect(response.status()).toBe(201);
 
@@ -41,9 +46,11 @@ test.describe('JSONPlaceholder posts API', () => {
   });
 
   test('PUT updates a post', async ({ request }) => {
-    const response = await request.put(`${baseUrl}/posts/${postId}`, {
-      data: updatedPost,
-    });
+    const response = await retryFor429(() =>
+      request.put(`${baseUrl}/posts/${postId}`, {
+        data: updatedPost,
+      })
+    );
 
     expect(response.status()).toBe(200);
 
@@ -54,7 +61,9 @@ test.describe('JSONPlaceholder posts API', () => {
   });
 
   test('DELETE removes a post', async ({ request }) => {
-    const response = await request.delete(`${baseUrl}/posts/${postId}`);
+    const response = await retryFor429(() =>
+      request.delete(`${baseUrl}/posts/${postId}`)
+    );
 
     expect(response.status()).toBe(200);
   });

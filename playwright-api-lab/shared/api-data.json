@@ -37,13 +37,13 @@
       "sizeBytes": 75,
       "tags": "cover,test"
     },
-    "productsBaseUrl": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/products",
+    "productsBaseUrl": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/filter",
     "productsSeed": [
-      { "name": "Dr. Circuit Book 1", "category": "book", "price": 12.99, "in_stock": true, "rating": 4.8, "tags": "stem,book", "createdAt": "2026-01-15" },
-      { "name": "Dr. Circuit Book 2", "category": "book", "price": 12.99, "in_stock": true, "rating": 4.7, "tags": "stem,book,magnet", "createdAt": "2026-02-20" },
-      { "name": "Dr. Circuit Book 3", "category": "book", "price": 12.99, "in_stock": false, "rating": 4.6, "tags": "stem,book,computer", "createdAt": "2026-03-10" },
-      { "name": "Lego Style Blocks", "category": "toy", "price": 24.5, "in_stock": true, "rating": 4.9, "tags": "toy,blocks", "createdAt": "2026-04-01" },
-      { "name": "Solar Bot Kit", "category": "toy", "price": 34.0, "in_stock": false, "rating": 4.2, "tags": "stem,toy,robot", "createdAt": "2026-04-15" }
+      { "name": "Dr. Circuit Book 1", "category": "book", "price": 12.99, "inStock": true, "rating": 4.8, "tags": "stem,book", "createdAt": "2026-01-15" },
+      { "name": "Dr. Circuit Book 2", "category": "book", "price": 12.99, "inStock": true, "rating": 4.7, "tags": "stem,book,magnet", "createdAt": "2026-02-20" },
+      { "name": "Dr. Circuit Book 3", "category": "book", "price": 12.99, "inStock": false, "rating": 4.6, "tags": "stem,book,computer", "createdAt": "2026-03-10" },
+      { "name": "Lego Style Blocks", "category": "toy", "price": 24.5, "inStock": true, "rating": 4.9, "tags": "toy,blocks", "createdAt": "2026-04-01" },
+      { "name": "Solar Bot Kit", "category": "toy", "price": 34.0, "inStock": false, "rating": 4.2, "tags": "stem,toy,robot", "createdAt": "2026-04-15" }
     ],
     "productQueryCases": [
       { "label": "search for 'robot'", "query": "search=robot", "type": "search", "expected": { "match": "robot" } },

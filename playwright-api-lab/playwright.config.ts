@@ -17,10 +17,19 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * The API specs hit LIVE free-tier MockAPI, which rate-limits (HTTP 429) under
+   * bursts of requests. Retry once-ish so a stray transient 429 auto-heals.
+   */
+  retries: process.env.CI ? 2 : 1,
+  /*
+   * Keep parallelism deliberately LOW. The API specs share a single free-tier
+   * MockAPI resource, and Playwright's `request` fixture needs no real browser.
+   * Running the same shared resource from many workers at once (the old default of
+   * 3+ browser projects in parallel) triple-hammers it and races the /filter seed.
+   * Serial workers + retries below are what actually keep this green.
+   */
+  workers: process.env.CI ? 1 : 2,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -34,18 +43,35 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    /*
+     * Dedicated project for the shared live-API specs (*.api.spec.ts). These
+     * specs use only the `request` fixture (they need no browser), so we scope
+     * them to THIS single project and run them exactly ONCE instead of once per
+     * browser. All three browser projects below ignore *.api.spec.ts so the API
+     * suite doesn't redundantly hammer the shared free-tier MockAPI/JSONPlaceholder
+     * endpoints in triplicate.
+     */
+    {
+      name: 'api',
+      testMatch: /\.api\.spec\.ts/,
+      use: {},
+    },
+
     {
       name: 'chromium',
+      testIgnore: /\.api\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
+      testIgnore: /\.api\.spec\.ts/,
       use: { ...devices['Desktop Firefox'] },
     },
 
     {
       name: 'webkit',
+      testIgnore: /\.api\.spec\.ts/,
       use: { ...devices['Desktop Safari'] },
     },
 
