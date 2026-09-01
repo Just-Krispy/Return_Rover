@@ -1,0 +1,568 @@
+{
+  "info": {
+    "name": "Return Rover API Lab",
+    "description": "Generated from shared/api-data.json by scripts/generate-postman-collection.mjs.\nReproduces the same requests, payloads, and assertions as the Playwright tests in ./tests — edit the shared data file once and regenerate with `npm run build:postman`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "JSONPlaceholder Posts",
+      "item": [
+        {
+          "name": "List posts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://jsonplaceholder.typicode.com/posts",
+              "protocol": "https",
+              "host": [
+                "jsonplaceholder",
+                "typicode",
+                "com"
+              ],
+              "path": [
+                "posts"
+              ],
+              "query": []
+            },
+            "description": "Mirrors the \"List posts\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const posts = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(Array.isArray(posts)).to.be.true);",
+                  "pm.test(\"Array is not empty\", () => pm.expect(posts.length).to.be.greaterThan(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get post 1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://jsonplaceholder.typicode.com/posts/{{postId}}",
+              "protocol": "https",
+              "host": [
+                "jsonplaceholder",
+                "typicode",
+                "com"
+              ],
+              "path": [
+                "posts",
+                "%7B%7BpostId%7D%7D"
+              ],
+              "query": []
+            },
+            "description": "Mirrors the \"Get post 1\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const post = pm.response.json();",
+                  "pm.test(\"Post id matches the request\", () => pm.expect(post.id).to.eql(Number(pm.collectionVariables.get(\"postId\"))));",
+                  "pm.test(\"User id is 1\", () => pm.expect(post.userId).to.eql(1));",
+                  "pm.test(\"Title is present\", () => pm.expect(post.title).to.be.a(\"string\").and.to.have.lengthOf.greaterThan(0));",
+                  "pm.collectionVariables.set(\"postTitle\", post.title);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get unknown post (expect 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://jsonplaceholder.typicode.com/posts/{{unknownPostId}}",
+              "protocol": "https",
+              "host": [
+                "jsonplaceholder",
+                "typicode",
+                "com"
+              ],
+              "path": [
+                "posts",
+                "%7B%7BunknownPostId%7D%7D"
+              ],
+              "query": []
+            },
+            "description": "Mirrors the \"Get unknown post (expect 404)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 404 for an unknown post\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://jsonplaceholder.typicode.com/posts",
+              "protocol": "https",
+              "host": [
+                "jsonplaceholder",
+                "typicode",
+                "com"
+              ],
+              "path": [
+                "posts"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"New Post from API Lab\",\n  \"body\": \"Created by our shared test data\",\n  \"userId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Create post\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"POST returns 201\", () => pm.response.to.have.status(201));",
+                  "const post = pm.response.json();",
+                  "pm.test(\"Title matches what we sent\", () => pm.expect(post.title).to.eql(\"New Post from API Lab\"));",
+                  "pm.test(\"Response includes a new id\", () => pm.expect(post.id).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update post 1",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://jsonplaceholder.typicode.com/posts/{{postId}}",
+              "protocol": "https",
+              "host": [
+                "jsonplaceholder",
+                "typicode",
+                "com"
+              ],
+              "path": [
+                "posts",
+                "%7B%7BpostId%7D%7D"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated title from API Lab\",\n  \"body\": \"Updated by our shared test data\",\n  \"userId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Update post 1\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PUT returns 200\", () => pm.response.to.have.status(200));",
+                  "const post = pm.response.json();",
+                  "pm.test(\"Title was updated\", () => pm.expect(post.title).to.eql(\"Updated title from API Lab\"));",
+                  "pm.test(\"Same post id\", () => pm.expect(post.id).to.eql(Number(pm.collectionVariables.get(\"postId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete post 1",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://jsonplaceholder.typicode.com/posts/{{postId}}",
+              "protocol": "https",
+              "host": [
+                "jsonplaceholder",
+                "typicode",
+                "com"
+              ],
+              "path": [
+                "posts",
+                "%7B%7BpostId%7D%7D"
+              ],
+              "query": []
+            },
+            "description": "Mirrors the \"Delete post 1\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"DELETE returns 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MockAPI Items workflow",
+      "item": [
+        {
+          "name": "List items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name",
+              "protocol": "https",
+              "host": [
+                "6a95ddc0fa33b37f821afa85",
+                "mockapi",
+                "io"
+              ],
+              "path": [
+                "lab",
+                "v1",
+                "name"
+              ],
+              "query": []
+            },
+            "description": "Mirrors the \"List items\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const items = pm.response.json();",
+                  "pm.test(\"Response is an array\", () => pm.expect(Array.isArray(items)).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name",
+              "protocol": "https",
+              "host": [
+                "6a95ddc0fa33b37f821afa85",
+                "mockapi",
+                "io"
+              ],
+              "path": [
+                "lab",
+                "v1",
+                "name"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Symbah {{$timestamp}}\",\n  \"quantity\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Create item\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"POST returns 201\", () => pm.response.to.have.status(201));",
+                  "const item = pm.response.json();",
+                  "pm.test(\"Item has an id\", () => pm.expect(item.id).to.exist);",
+                  "pm.test(\"Quantity matches\", () => pm.expect(item.quantity).to.eql(7));",
+                  "pm.collectionVariables.set(\"createdItemId\", item.id);",
+                  "pm.collectionVariables.set(\"createdItemName\", item.name);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get created item",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name/{{createdItemId}}?cacheBust={{$timestamp}}",
+              "protocol": "https",
+              "host": [
+                "6a95ddc0fa33b37f821afa85",
+                "mockapi",
+                "io"
+              ],
+              "path": [
+                "lab",
+                "v1",
+                "name",
+                "%7B%7BcreatedItemId%7D%7D"
+              ],
+              "query": [
+                {
+                  "key": "cacheBust",
+                  "value": "{{$timestamp}}",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Mirrors the \"Get created item\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"GET returns 200\", () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json();",
+                  "pm.test(\"Returned the item we created\", () => {",
+                  "  pm.expect(String(item.id)).to.eql(pm.collectionVariables.get(\"createdItemId\"));",
+                  "  pm.expect(item.name).to.eql(pm.collectionVariables.get(\"createdItemName\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update existing item (id 47)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name/{{existingItemId}}",
+              "protocol": "https",
+              "host": [
+                "6a95ddc0fa33b37f821afa85",
+                "mockapi",
+                "io"
+              ],
+              "path": [
+                "lab",
+                "v1",
+                "name",
+                "%7B%7BexistingItemId%7D%7D"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Symbah Updated\",\n  \"quantity\": 9\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Mirrors the \"Update existing item (id 47)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"PUT returns 200\", () => pm.response.to.have.status(200));",
+                  "const item = pm.response.json();",
+                  "pm.test(\"Name was updated\", () => pm.expect(item.name).to.eql(\"Symbah Updated\"));",
+                  "pm.test(\"Quantity was updated\", () => pm.expect(item.quantity).to.eql(9));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete created item (cleanup)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name/{{createdItemId}}",
+              "protocol": "https",
+              "host": [
+                "6a95ddc0fa33b37f821afa85",
+                "mockapi",
+                "io"
+              ],
+              "path": [
+                "lab",
+                "v1",
+                "name",
+                "%7B%7BcreatedItemId%7D%7D"
+              ],
+              "query": []
+            },
+            "description": "Mirrors the \"Delete created item (cleanup)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Mirrors the Playwright \"finally\" block that cleans up after the test.",
+                  "const id = pm.collectionVariables.get(\"createdItemId\");",
+                  "if (!id) throw new Error(\"No created item to delete. Run 'Create item' first.\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"DELETE returns 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.unset(\"createdItemId\");",
+                  "pm.collectionVariables.unset(\"createdItemName\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "postId",
+      "value": "1"
+    },
+    {
+      "key": "unknownPostId",
+      "value": "999999"
+    },
+    {
+      "key": "existingItemId",
+      "value": "47"
+    }
+  ]
+}

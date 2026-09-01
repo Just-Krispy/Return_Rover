@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MockAPI + Playwright Workflow Quick Reference</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #101827;
+      --panel: #182438;
+      --panel-2: #202f47;
+      --text: #edf4ff;
+      --muted: #a9b9d0;
+      --accent: #72b7ff;
+      --good: #79dfac;
+      --border: #304565;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #101827, #13233b);
+      color: var(--text);
+      font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 36px 20px 64px; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { margin-bottom: 8px; color: var(--accent); }
+    h2 { margin-top: 0; color: var(--good); }
+    h3 { color: var(--accent); margin-bottom: 8px; }
+    p, li { color: var(--muted); }
+    code { color: #d7e8ff; }
+
+    .subtitle { font-size: 1.1rem; margin-top: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+    section {
+      background: rgba(24, 36, 56, .94);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-top: 18px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .18);
+    }
+
+    pre {
+      position: relative;
+      overflow-x: auto;
+      background: #0b1220;
+      border: 1px solid #263956;
+      border-radius: 9px;
+      padding: 14px;
+      color: #e5efff;
+      font: 13px/1.55 Consolas, "Cascadia Code", monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .note { border-left: 4px solid var(--accent); padding-left: 12px; }
+    .warning { border-left: 4px solid #ffc46b; padding-left: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); padding: 10px 8px; }
+    th { color: var(--accent); }
+    kbd { background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 6px; color: var(--text); }
+    .footer { color: var(--muted); margin-top: 28px; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>MockAPI + Playwright Workflow</h1>
+    <p class="subtitle">Your project-specific copy/paste guide for PowerShell, MockAPI, TypeScript, and Playwright.</p>
+
+    <section>
+      <h2>Project account details</h2>
+      <table>
+        <tbody>
+          <tr><th>MockAPI project</th><td><code>api-test-lab</code></td></tr>
+          <tr><th>Project ID</th><td><code>6a95ddc0fa33b37f821afa85</code></td></tr>
+          <tr><th>API prefix</th><td><code>/lab/v1</code></td></tr>
+          <tr><th>Current resource</th><td><code>name</code></td></tr>
+          <tr><th>Resource fields</th><td><code>id</code> (Object ID), <code>name</code> (String), <code>quantity</code> (Number)</td></tr>
+          <tr><th>Working endpoint</th><td><code>https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name</code></td></tr>
+        </tbody>
+      </table>
+      <p class="warning">This page contains your public MockAPI project endpoint, but never place your MockAPI login password, email password, or private tokens in this file or in test code.</p>
+    </section>
+
+    <section>
+      <h2>1. Start here</h2>
+      <pre><code>cd C:\Users\ryanc\GitHub\Return_Rover\playwright-api-lab
+
+# Confirm your files
+Get-ChildItem .\tests -File
+
+# Open the project in VS Code
+code .</code></pre>
+      <p class="note">The <code>(.venv)</code> label is your Python environment. Playwright uses Node.js and npm, so the label can remain visible.</p>
+    </section>
+
+    <div class="grid">
+      <section>
+        <h2>2. Playwright commands</h2>
+        <pre><code># Run every discovered test
+npx playwright test
+
+# Run one file
+npx playwright test "tests/mockapi-items.api.spec.ts"
+
+# Run API tests once in Chromium
+npx playwright test "tests/*.api.spec.ts" --project=chromium
+
+# Show tests Playwright discovered
+npx playwright test --list
+
+# Run with debugging help
+npx playwright test --debug
+
+# Open the HTML report
+npx playwright show-report</code></pre>
+      </section>
+
+      <section>
+        <h2>3. Useful file commands</h2>
+        <pre><code># Display a file
+Get-Content .\tests\mockapi-items.api.spec.ts
+
+# Open a specific file in VS Code
+code .\tests\mockapi-items.api.spec.ts
+
+# Find test files
+Get-ChildItem .\tests -Recurse -File
+
+# Check the installed Playwright version
+npx playwright --version
+
+# Check Node and npm
+node --version
+npm --version</code></pre>
+      </section>
+    </div>
+
+    <section>
+      <h2>4. Configure the MockAPI endpoint</h2>
+      <pre><code># Set the endpoint for this PowerShell window.
+$env:MOCK_API_URL = "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name"
+
+# Assign it to a shorter variable.
+$api = $env:MOCK_API_URL
+
+# Confirm the endpoint variable.
+$api</code></pre>
+      <p>Your current MockAPI resource is named <code>name</code>, so the route ends in <code>/name</code>.</p>
+    </section>
+
+    <section>
+      <h2>5. PowerShell API workflow</h2>
+      <h3>GET: read the collection</h3>
+      <pre><code>$items = Invoke-RestMethod -Uri $api -Method Get
+$items</code></pre>
+
+      <h3>POST: create an item</h3>
+      <pre><code>$body = @{
+    name = "PowerShell learning item"
+    quantity = 7
+} | ConvertTo-Json
+
+$created = Invoke-RestMethod `
+    -Uri $api `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body
+
+$created</code></pre>
+
+      <h3>GET: retrieve the created item</h3>
+      <pre><code>$itemId = $created.id
+
+$retrieved = Invoke-RestMethod `
+    -Uri "$api/$itemId" `
+    -Method Get
+
+$retrieved</code></pre>
+
+      <h3>DELETE: clean up the learning item</h3>
+      <pre><code>Invoke-RestMethod `
+    -Uri "$api/$itemId" `
+    -Method Delete</code></pre>
+
+      <p class="warning">PowerShell’s backtick <code>`</code> means “continue this command on the next line.” It must be the final character on the line—no spaces after it.</p>
+    </section>
+
+    <section>
+      <h2>6. What each HTTP method means</h2>
+      <table>
+        <thead><tr><th>Method</th><th>Purpose</th><th>Typical Playwright call</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td>Read data</td><td><code>request.get(url)</code></td></tr>
+          <tr><td><code>POST</code></td><td>Create data</td><td><code>request.post(url, { data })</code></td></tr>
+          <tr><td><code>PUT</code></td><td>Replace/update data</td><td><code>request.put(url, { data })</code></td></tr>
+          <tr><td><code>PATCH</code></td><td>Partially update data</td><td><code>request.patch(url, { data })</code></td></tr>
+          <tr><td><code>DELETE</code></td><td>Remove data</td><td><code>request.delete(url)</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>7. Playwright API test pattern</h2>
+      <pre><code>import { test, expect } from '@playwright/test';
+
+const apiUrl =
+  'https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name';
+
+test('POST creates an item and GET retrieves it', async ({ request }) => {
+  const createResponse = await request.post(apiUrl, {
+    data: {
+      name: `Playwright item ${Date.now()}`,
+      quantity: 7,
+    },
+  });
+
+  expect(createResponse.status()).toBe(201);
+
+  const createdItem = await createResponse.json();
+
+  const getResponse = await request.get(
+    `${apiUrl}/${createdItem.id}`
+  );
+
+  expect(getResponse.status()).toBe(200);
+
+  const retrievedItem = await getResponse.json();
+  expect(retrievedItem.name).toBe(createdItem.name);
+});</code></pre>
+      <p><code>request</code> sends HTTP calls. <code>response</code> represents the server response. <code>await</code> waits for the network operation. <code>expect</code> verifies the result.</p>
+    </section>
+
+    <section>
+      <h2>8. API → UI workflow</h2>
+      <ol>
+        <li>Use GET to confirm the API is available.</li>
+        <li>Use POST to create a uniquely named item.</li>
+        <li>Use the returned ID in a GET request.</li>
+        <li>Open your UI and refresh or trigger its data request.</li>
+        <li>Assert that the item appears in the UI.</li>
+        <li>Delete the test item during cleanup.</li>
+      </ol>
+      <pre><code>// Add this only after your local UI is running.
+await page.goto('http://localhost:3000/items');
+await expect(page.getByText(itemName)).toBeVisible();</code></pre>
+    </section>
+
+    <section>
+      <h2>9. Common problems</h2>
+      <table>
+        <thead><tr><th>Message</th><th>Likely cause</th><th>Check</th></tr></thead>
+        <tbody>
+          <tr><td>No tests found</td><td>Wrong filename or path</td><td><code>Get-ChildItem .\tests -File</code></td></tr>
+          <tr><td>Invalid URL</td><td>Relative URL without <code>baseURL</code></td><td>Use a complete <code>https://</code> URL</td></tr>
+          <tr><td>Cast to ObjectId failed</td><td>Placeholder project ID was copied</td><td>Replace <code>YOUR_PROJECT_ID</code></td></tr>
+          <tr><td>404 from MockAPI</td><td>Wrong resource route</td><td>Your current route ends in <code>/name</code></td></tr>
+          <tr><td>UI navigation failed</td><td>Local UI is not running</td><td>Start the UI or temporarily omit the UI step</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>10. Good testing habits</h2>
+      <ul>
+        <li>Use unique names with <code>Date.now()</code> when tests create records.</li>
+        <li>Assert status codes and important response fields.</li>
+        <li>Clean up created records with DELETE.</li>
+        <li>Keep API tests independent so they can run in parallel.</li>
+        <li>Use <kbd>Ctrl</kbd> + <kbd>S</kbd> to save before running tests.</li>
+        <li>Use <code>--project=chromium</code> for API-only practice to avoid running the same API test three times.</li>
+      </ul>
+    </section>
+
+    <p class="footer">Keep this page open while practicing. These examples use your current MockAPI project and resource: <code>api-test-lab/lab/v1/name</code>.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "playwright-api-lab",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test tests/jsonplaceholder-posts.api.spec.ts tests/mockapi-items.api.spec.ts",
+    "build:postman": "node scripts/generate-postman-collection.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^26.4.0"
+  }
+}

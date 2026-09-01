@@ -1,0 +1,30 @@
+{
+  "_README": "Single source of truth for API test data. Edit values here, then run `npm run build:postman` to regenerate the Postman collection. The Playwright tests read this file directly, so both tools always use the same data. The special value {{timestamp}} is replaced at runtime: Playwright uses Date.now(), Postman uses its built-in {{$timestamp}} dynamic variable.",
+  "jsonplaceholder": {
+    "baseUrl": "https://jsonplaceholder.typicode.com",
+    "postId": 1,
+    "unknownPostId": 999999,
+    "newPost": {
+      "title": "New Post from API Lab",
+      "body": "Created by our shared test data",
+      "userId": 1
+    },
+    "updatedPost": {
+      "title": "Updated title from API Lab",
+      "body": "Updated by our shared test data",
+      "userId": 1
+    }
+  },
+  "mockapi": {
+    "baseUrl": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name",
+    "existingItemId": "47",
+    "createItem": {
+      "name": "Symbah {{timestamp}}",
+      "quantity": 7
+    },
+    "updateItem": {
+      "name": "Symbah Updated",
+      "quantity": 9
+    }
+  }
+}
