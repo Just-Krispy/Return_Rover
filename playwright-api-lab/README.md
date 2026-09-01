@@ -197,35 +197,46 @@ MockAPI resources (schemas) are created in the web dashboard
 (app.mockapi.io) — there is no public API to create a resource, and it needs
 your login. In the project, click **New Resource** and add fields:
 
-**Resource `images`** (image upload records)
-| Field | Type |
-| ----- | ---- |
-| name | string |
-| mimeType | string |
-| imageDataBase64 | string |
-| width | number |
-| height | number |
-| sizeBytes | number |
-| tags | string |
+**Resource `images`** (image upload records) — exact fields/types to create:
+| Field | Type | Example from shared data |
+| ----- | ---- | -------------------- |
+| name | string | `dr-circuit-cover {{timestamp}}` |
+| mimeType | string | `image/png` |
+| imageDataBase64 | string | `data:image/png;base64,iVBORw0KGgoAAAAN...` |
+| width | number | `4` |
+| height | number | `4` |
+| sizeBytes | number | `75` |
+| tags | string | `cover,test` |
 
-**Resource `products`** (filterable catalog)
-| Field | Type |
-| ----- | ---- |
-| name | string |
-| category | string |
-| price | number |
-| inStock | boolean |
-| rating | number |
-| tags | string |
-| createdAt | string |
+In the MockAPI **New Resource** dialog, add each field one at a time with the
+**Add Field** button, choose the exact type, and name it *exactly* as above
+(matching `shared/api-data.json`). MockAPI auto-adds `id` for you.
+
+**Resource `products`** (filterable catalog) — exact fields/types to create.
+Note the field is `in_stock` (snake_case) — that is what MockAPI's
+auto-generated schema actually produces and what the tests seed:
+| Field | Type | Example from shared data |
+| ----- | ---- | -------------------- |
+| name | string | `Dr. Circuit Book 1` |
+| category | string | `book` |
+| price | number | `12.99` |
+| in_stock | boolean | `true` |
+| rating | number | `4.8` |
+| tags | string | `stem,book` |
+| createdAt | string | `2026-01-15` |
 
 That gives you the endpoints `https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/images`
 and `.../lab/v1/products`.
 
-> **Status on this workspace:** the `products` resource already exists and the
-> tests run green. The `images` resource has **not been created yet** — the
-> image spec skips itself until you create it in the dashboard; run the two
-> URLs above after creating it.
+> **Status on this workspace:** `products` exists and tests run green. `images`
+> still returns **404** as of this check — the image spec skips itself until the
+> resource is reachable. To verify you created it in the right project, open
+> `https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/images` in your browser —
+> a JSON array means it's live; `"Not found"` means it's not in the project
+> that endpoint points to. (It's easy to create the resource in the wrong
+> MockAPI project — pick the project whose id starts `6a95ddc0fa33b37f821afa85`.)
+> Once it 200s, `npm run test:api` stops skipping the image case and the
+> Postman Image Upload folder runs.
 
 ### Query params you can demo (MockAPI free tier)
 
