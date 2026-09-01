@@ -228,15 +228,9 @@ auto-generated schema actually produces and what the tests seed:
 That gives you the endpoints `https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/images`
 and `.../lab/v1/products`.
 
-> **Status on this workspace:** `products` exists and tests run green. `images`
-> still returns **404** as of this check — the image spec skips itself until the
-> resource is reachable. To verify you created it in the right project, open
-> `https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/images` in your browser —
-> a JSON array means it's live; `"Not found"` means it's not in the project
-> that endpoint points to. (It's easy to create the resource in the wrong
-> MockAPI project — pick the project whose id starts `6a95ddc0fa33b37f821afa85`.)
-> Once it 200s, `npm run test:api` stops skipping the image case and the
-> Postman Image Upload folder runs.
+> **Status on this workspace:** both `products` and `images` resources are live,
+> and **all 23 Playwright tests pass** (`npx playwright test --workers=1`).
+> Verify with `npm run check:mockapi` (expect `BOTH READY`).
 
 ### Query params you can demo (MockAPI free tier)
 

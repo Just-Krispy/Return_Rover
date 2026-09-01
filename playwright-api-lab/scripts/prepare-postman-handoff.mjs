@@ -141,11 +141,10 @@ Drag both onto the Postman web tab, or use Import → link with these (public re
 ${folderLines}
 
 ## Notes for the agent
-- **MockAPI Image Upload**: the \`/images\` resource does not exist yet on the
-  MockAPI project. It must be created in the MockAPI web dashboard
-  (app.mockapi.io → New Resource → \`images\`) with fields
-  \`name, mimeType, imageDataBase64, width, height, sizeBytes, tags\` — the
-  Playwright test skips until then, and this Postman folder will 404 on it.
+- **MockAPI Image Upload**: the /images resource is live now (created in the
+  MockAPI dashboard). This folder creates a base64 image record, reads it back,
+  and cleans up. If it ever starts failing, check the \`images\` resource still
+  exists in the MockAPI project (id \`6a95ddc0fa33b37f821afa85\`).
 - **MockAPI Filters**: uses free-tier query params only (\`search\`, \`sortBy\`,
   \`order\`, \`limit\`+\`page\`). MockAPI's \`?filter=\` operator is a paid-plan
   feature and returns 404 on this workspace.
