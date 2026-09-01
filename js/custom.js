@@ -95,10 +95,11 @@
     }
 
     function askCurrent(stepIndex) {
-        const step = STEPS[stepIndex] || STEPS[currentStep] || null;
+        const effectiveStep = stepIndex !== undefined ? stepIndex : currentStep;
+        const step = STEPS[effectiveStep] || STEPS[currentStep] || null;
         if (!step) return;
         addMessage(step.prompt, "system");
-        updateProgress(stepIndex, false);
+        updateProgress(effectiveStep, false);
         inputEl.focus();
     }
 
