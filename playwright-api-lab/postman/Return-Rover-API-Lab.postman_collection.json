@@ -1,7 +1,8 @@
 {
   "info": {
+    "_postman_id": "f1d3a2c4-8b6e-4f0a-9d1c-5e7b2a4c9f11",
     "name": "Return Rover API Lab",
-    "description": "Generated from shared/api-data.json by scripts/generate-postman-collection.mjs.\nReproduces the same requests, payloads, and assertions as the Playwright tests in ./tests — edit the shared data file once and regenerate with `npm run build:postman`.",
+    "description": "Generated from shared/api-data.json by scripts/generate-postman-collection.mjs.\nReproduces the same requests, payloads, and assertions as the Playwright tests in ./tests — edit the shared data file once and regenerate with `npm run build:postman`.\nBase URLs come from the selected environment; clone it to a \"staging\" env to override them.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -19,17 +20,13 @@
               }
             ],
             "url": {
-              "raw": "https://jsonplaceholder.typicode.com/posts",
-              "protocol": "https",
+              "raw": "{{jsonplaceholderBaseUrl}}/posts",
               "host": [
-                "jsonplaceholder",
-                "typicode",
-                "com"
+                "{{jsonplaceholderBaseUrl}}"
               ],
               "path": [
                 "posts"
-              ],
-              "query": []
+              ]
             },
             "description": "Mirrors the \"List posts\" workflow in the Playwright tests (tests/*.api.spec.ts)."
           },
@@ -60,18 +57,14 @@
               }
             ],
             "url": {
-              "raw": "https://jsonplaceholder.typicode.com/posts/{{postId}}",
-              "protocol": "https",
+              "raw": "{{jsonplaceholderBaseUrl}}/posts/{{postId}}",
               "host": [
-                "jsonplaceholder",
-                "typicode",
-                "com"
+                "{{jsonplaceholderBaseUrl}}"
               ],
               "path": [
                 "posts",
-                "%7B%7BpostId%7D%7D"
-              ],
-              "query": []
+                "{{postId}}"
+              ]
             },
             "description": "Mirrors the \"Get post 1\" workflow in the Playwright tests (tests/*.api.spec.ts)."
           },
@@ -104,18 +97,14 @@
               }
             ],
             "url": {
-              "raw": "https://jsonplaceholder.typicode.com/posts/{{unknownPostId}}",
-              "protocol": "https",
+              "raw": "{{jsonplaceholderBaseUrl}}/posts/{{unknownPostId}}",
               "host": [
-                "jsonplaceholder",
-                "typicode",
-                "com"
+                "{{jsonplaceholderBaseUrl}}"
               ],
               "path": [
                 "posts",
-                "%7B%7BunknownPostId%7D%7D"
-              ],
-              "query": []
+                "{{unknownPostId}}"
+              ]
             },
             "description": "Mirrors the \"Get unknown post (expect 404)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
           },
@@ -147,17 +136,13 @@
               }
             ],
             "url": {
-              "raw": "https://jsonplaceholder.typicode.com/posts",
-              "protocol": "https",
+              "raw": "{{jsonplaceholderBaseUrl}}/posts",
               "host": [
-                "jsonplaceholder",
-                "typicode",
-                "com"
+                "{{jsonplaceholderBaseUrl}}"
               ],
               "path": [
                 "posts"
-              ],
-              "query": []
+              ]
             },
             "body": {
               "mode": "raw",
@@ -201,18 +186,14 @@
               }
             ],
             "url": {
-              "raw": "https://jsonplaceholder.typicode.com/posts/{{postId}}",
-              "protocol": "https",
+              "raw": "{{jsonplaceholderBaseUrl}}/posts/{{postId}}",
               "host": [
-                "jsonplaceholder",
-                "typicode",
-                "com"
+                "{{jsonplaceholderBaseUrl}}"
               ],
               "path": [
                 "posts",
-                "%7B%7BpostId%7D%7D"
-              ],
-              "query": []
+                "{{postId}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -252,18 +233,14 @@
               }
             ],
             "url": {
-              "raw": "https://jsonplaceholder.typicode.com/posts/{{postId}}",
-              "protocol": "https",
+              "raw": "{{jsonplaceholderBaseUrl}}/posts/{{postId}}",
               "host": [
-                "jsonplaceholder",
-                "typicode",
-                "com"
+                "{{jsonplaceholderBaseUrl}}"
               ],
               "path": [
                 "posts",
-                "%7B%7BpostId%7D%7D"
-              ],
-              "query": []
+                "{{postId}}"
+              ]
             },
             "description": "Mirrors the \"Delete post 1\" workflow in the Playwright tests (tests/*.api.spec.ts)."
           },
@@ -296,19 +273,10 @@
               }
             ],
             "url": {
-              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name",
-              "protocol": "https",
+              "raw": "{{mockapiBaseUrl}}",
               "host": [
-                "6a95ddc0fa33b37f821afa85",
-                "mockapi",
-                "io"
-              ],
-              "path": [
-                "lab",
-                "v1",
-                "name"
-              ],
-              "query": []
+                "{{mockapiBaseUrl}}"
+              ]
             },
             "description": "Mirrors the \"List items\" workflow in the Playwright tests (tests/*.api.spec.ts)."
           },
@@ -342,19 +310,10 @@
               }
             ],
             "url": {
-              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name",
-              "protocol": "https",
+              "raw": "{{mockapiBaseUrl}}",
               "host": [
-                "6a95ddc0fa33b37f821afa85",
-                "mockapi",
-                "io"
-              ],
-              "path": [
-                "lab",
-                "v1",
-                "name"
-              ],
-              "query": []
+                "{{mockapiBaseUrl}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -396,18 +355,12 @@
               }
             ],
             "url": {
-              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name/{{createdItemId}}?cacheBust={{$timestamp}}",
-              "protocol": "https",
+              "raw": "{{mockapiBaseUrl}}/{{createdItemId}}?cacheBust={{$timestamp}}",
               "host": [
-                "6a95ddc0fa33b37f821afa85",
-                "mockapi",
-                "io"
+                "{{mockapiBaseUrl}}"
               ],
               "path": [
-                "lab",
-                "v1",
-                "name",
-                "%7B%7BcreatedItemId%7D%7D"
+                "{{createdItemId}}"
               ],
               "query": [
                 {
@@ -452,20 +405,13 @@
               }
             ],
             "url": {
-              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name/{{existingItemId}}",
-              "protocol": "https",
+              "raw": "{{mockapiBaseUrl}}/{{existingItemId}}",
               "host": [
-                "6a95ddc0fa33b37f821afa85",
-                "mockapi",
-                "io"
+                "{{mockapiBaseUrl}}"
               ],
               "path": [
-                "lab",
-                "v1",
-                "name",
-                "%7B%7BexistingItemId%7D%7D"
-              ],
-              "query": []
+                "{{existingItemId}}"
+              ]
             },
             "body": {
               "mode": "raw",
@@ -505,20 +451,13 @@
               }
             ],
             "url": {
-              "raw": "https://6a95ddc0fa33b37f821afa85.mockapi.io/lab/v1/name/{{createdItemId}}",
-              "protocol": "https",
+              "raw": "{{mockapiBaseUrl}}/{{createdItemId}}",
               "host": [
-                "6a95ddc0fa33b37f821afa85",
-                "mockapi",
-                "io"
+                "{{mockapiBaseUrl}}"
               ],
               "path": [
-                "lab",
-                "v1",
-                "name",
-                "%7B%7BcreatedItemId%7D%7D"
-              ],
-              "query": []
+                "{{createdItemId}}"
+              ]
             },
             "description": "Mirrors the \"Delete created item (cleanup)\" workflow in the Playwright tests (tests/*.api.spec.ts)."
           },

@@ -65,6 +65,30 @@ milliseconds — same idea, slightly different units. Good thing to know.)
    The Create request stores `createdItemId` as a collection variable that the
    later requests use (mirrors the Playwright tests' create/verify/cleanup flow).
 
+## Using the Postman web workspace (postman.co)
+
+The same two files import into your cloud workspace, and because the generator
+emits **stable IDs**, re-importing a regenerated file **replaces** the existing
+collection/environment instead of creating duplicates.
+
+1. Open your workspace in the browser and click **Import** (left sidebar).
+2. Paste these raw GitHub links (they always point at the latest `main`):
+   - Collection: `https://raw.githubusercontent.com/Just-Krispy/Return_Rover/main/playwright-api-lab/postman/Return-Rover-API-Lab.postman_collection.json`
+   - Environment: `https://raw.githubusercontent.com/Just-Krispy/Return_Rover/main/playwright-api-lab/postman/Return-Rover-API-Lab.postman_environment.json`
+3. Choose your workspace and confirm. Pick the **Return Rover API Lab**
+   environment from the dropdown (top-right).
+4. When you regenerate the files later, just re-run the same import — Replace.
+
+**Learning bonus:** because base URLs come from *environment variables*, clone
+this environment (right-click → Duplicate), rename it `staging`, and point its
+base URLs somewhere else (e.g. a MockAPI you control) — the same collection now
+hits a different server with zero request edits. That's the concept Postman
+calls environments/overrides.
+
+> Tip: if the web app can't reach a request (it asks for an agent), that's the
+> browser-sandbox limitation. Install the free **Postman desktop agent** (or the
+> desktop app) and re-run — the web UI is otherwise identical.
+
 ## Re-syncing after a data change
 
 ```bash
@@ -83,6 +107,7 @@ collection files if you import them from the repo folder).
 | Assert status      | `expect(response.status()).toBe(200)`    | Test tab → `pm.test(...)` + `pm.response.to.have.status(200)` |
 | Read a JSON body   | `await response.json()`                  | `pm.response.json()`                     |
 | Variables          | TS constants from `api-data.json`        | `{{collectionVariables}}`, environments  |
+| Env overrides      | change `baseUrl` in `api-data.json`      | duplicate env, change base URLs          |
 | Chaining requests  | variables in the test                    | `pm.collectionVariables.set(...)`        |
 | Dynamic data       | `` `Symbah ${Date.now()}` ``             | `"Symbah {{$timestamp}}"`                |
 | Cleanup            | `finally { request.delete(...) }`        | Delete request + pre-request guard       |

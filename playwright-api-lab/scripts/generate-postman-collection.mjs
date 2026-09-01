@@ -27,13 +27,40 @@ const DATA = JSON.parse(
 
 const POSTMAN_TIMESTAMP = '{{$timestamp}}';
 
+/** Stable IDs so re-importing a regenerated file REPLACES (not duplicates)
+ *  the existing Postman collection/environment in web workspaces. */
+const COLLECTION_ID = 'f1d3a2c4-8b6e-4f0a-9d1c-5e7b2a4c9f11';
+const ENVIRONMENT_ID = 'e2a4b6c8-d0f1-4a3b-8c5d-9e7f2a4b6c88';
+
+const ENV_JSONPLACEHOLDER = '{{jsonplaceholderBaseUrl}}';
+const ENV_MOCKAPI = '{{mockapiBaseUrl}}';
+
 /** Replace the shared {{timestamp}} token with Postman's dynamic var. */
 function toPostmanTimestamp(value) {
   return value.replaceAll('{{timestamp}}', POSTMAN_TIMESTAMP);
 }
 
-/** Build Postman's object-style URL from a raw string. */
+/** Build Postman's object-style URL from a raw string. URLs that start
+ *  with a {{variable}} keep that variable as the host segment so the
+ *  environment file actually drives the requests (and can be overridden). */
 function postmanUrl(raw) {
+  const varMatch = raw.match(/^\{\{([A-Za-z0-9_]+)\}\}(.*)$/s);
+  if (varMatch) {
+    const [, variable, rest] = varMatch;
+    const [pathPart, queryPart] = rest.split('?');
+    return {
+      raw,
+      host: [`{{${variable}}}`],
+      ...(pathPart ? { path: pathPart.split('/').filter(Boolean) } : {}),
+      ...(queryPart
+        ? {
+            query: [...new URLSearchParams(queryPart).entries()].map(
+              ([key, value]) => ({ key, value, disabled: false })
+            ),
+          }
+        : {}),
+    };
+  }
   const u = new URL(raw);
   return {
     raw,
@@ -41,9 +68,9 @@ function postmanUrl(raw) {
     host: u.hostname.split('.'),
     path: u.pathname.split('/').filter(Boolean),
     ...(u.port ? { port: Number(u.port) } : {}),
-    query: [...u.searchParams.entries()].map(([k, v]) => ({
-      key: k,
-      value: v,
+    query: [...u.searchParams.entries()].map(([key, value]) => ({
+      key,
+      value,
       disabled: false,
     })),
   };
@@ -90,7 +117,7 @@ const jsonAccept = [['Accept', 'application/json']];
  * JSONPlaceholder folder (mirrors jsonplaceholder-posts.api.spec.ts)
  * ------------------------------------------------------------------ */
 
-const jp = (path) => `${DATA.jsonplaceholder.baseUrl}${path}`;
+const jp = (path) => `${ENV_JSONPLACEHOLDER}${path}`;
 
 const jsonplaceholderFolder = {
   name: 'JSONPlaceholder Posts',
@@ -190,7 +217,7 @@ const mockapiFolder = {
     request({
       name: 'List items',
       method: 'GET',
-      rawUrl: DATA.mockapi.baseUrl,
+      rawUrl: `${ENV_MOCKAPI}`,
       headers: jsonAccept,
       events: [
         event('test', `
@@ -203,7 +230,7 @@ pm.test("Response is an array", () => pm.expect(Array.isArray(items)).to.be.true
     request({
       name: 'Create item',
       method: 'POST',
-      rawUrl: DATA.mockapi.baseUrl,
+      rawUrl: `${ENV_MOCKAPI}`,
       headers: [['Content-Type', 'application/json'], ...jsonAccept],
       body: jsonBody(DATA.mockapi.createItem, true),
       events: [
@@ -220,7 +247,7 @@ pm.collectionVariables.set("createdItemName", item.name);
     request({
       name: 'Get created item',
       method: 'GET',
-      rawUrl: `${DATA.mockapi.baseUrl}/{{createdItemId}}?cacheBust=${POSTMAN_TIMESTAMP}`,
+      rawUrl: `${ENV_MOCKAPI}/{{createdItemId}}?cacheBust=${POSTMAN_TIMESTAMP}`,
       headers: jsonAccept,
       events: [
         event('test', `
@@ -236,7 +263,7 @@ pm.test("Returned the item we created", () => {
     request({
       name: 'Update existing item (id 47)',
       method: 'PUT',
-      rawUrl: `${DATA.mockapi.baseUrl}/{{existingItemId}}`,
+      rawUrl: `${ENV_MOCKAPI}/{{existingItemId}}`,
       headers: [['Content-Type', 'application/json'], ...jsonAccept],
       body: jsonBody(DATA.mockapi.updateItem),
       events: [
@@ -251,7 +278,7 @@ pm.test("Quantity was updated", () => pm.expect(item.quantity).to.eql(${DATA.moc
     request({
       name: 'Delete created item (cleanup)',
       method: 'DELETE',
-      rawUrl: `${DATA.mockapi.baseUrl}/{{createdItemId}}`,
+      rawUrl: `${ENV_MOCKAPI}/{{createdItemId}}`,
       headers: jsonAccept,
       events: [
         event('prerequest', `
@@ -275,11 +302,13 @@ pm.collectionVariables.unset("createdItemName");
 
 const collection = {
   info: {
+    _postman_id: COLLECTION_ID,
     name: 'Return Rover API Lab',
     description:
       'Generated from shared/api-data.json by scripts/generate-postman-collection.mjs.\n' +
       'Reproduces the same requests, payloads, and assertions as the Playwright tests in ./tests — ' +
-      'edit the shared data file once and regenerate with `npm run build:postman`.',
+      'edit the shared data file once and regenerate with `npm run build:postman`.\n' +
+      'Base URLs come from the selected environment; clone it to a "staging" env to override them.',
     schema:
       'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
   },
@@ -292,6 +321,7 @@ const collection = {
 };
 
 const environment = {
+  _postman_id: ENVIRONMENT_ID,
   name: 'Return Rover API Lab',
   values: [
     {
@@ -326,4 +356,7 @@ writeFileSync(environmentPath, JSON.stringify(environment, null, 2) + '\n');
 console.log('Wrote:');
 console.log('  ' + collectionPath);
 console.log('  ' + environmentPath);
-console.log('Import both into the Postman VS Code extension, select the environment, and run requests in folder order.');
+console.log('Import both into Postman (web workspace or VS Code extension), select the');
+console.log('"Return Rover API Lab" environment, and run requests in folder order.');
+console.log('Stable IDs: re-importing a regenerated file replaces the existing');
+console.log('collection/environment instead of creating a duplicate.');
